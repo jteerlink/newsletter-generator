@@ -1,0 +1,121 @@
+sources:
+  - name: OpenAI
+    url: https://openai.com/blog
+    feed: null
+  - name: Google DeepMind
+    url: https://deepmind.google/discover/blog/
+    feed: https://deepmind.google/discover/blog/rss.xml
+  - name: Meta AI
+    url: https://ai.meta.com/blog/
+    feed: https://ai.meta.com/blog/rss/
+  - name: Anthropic
+    url: https://www.anthropic.com/news
+    feed: null
+  - name: NVIDIA Blog
+    url: https://blogs.nvidia.com/ai-data-science/
+    feed: https://blogs.nvidia.com/feed
+  - name: MIT Technology Review - AI
+    url: https://www.technologyreview.com/artificial-intelligence
+    feed: https://www.technologyreview.com/feed/tag/artificial-intelligence/rss
+  - name: WIRED - Artificial Intelligence
+    url: https://www.wired.com/tag/artificial-intelligence/
+    feed: https://www.wired.com/feed/tag/artificial-intelligence/latest/rss
+  - name: TechCrunch - AI
+    url: https://techcrunch.com/category/artificial-intelligence/
+    feed: https://techcrunch.com/category/artificial-intelligence/feed/
+  - name: VentureBeat - The AI Effect
+    url: https://venturebeat.com/category/ai/
+    feed: https://venturebeat.com/category/ai/feed/
+  - name: The Verge - AI
+    url: https://www.theverge.com/ai-artificial-intelligence
+    feed: https://www.theverge.com/rss/index.xml
+  - name: Stanford AI Lab (SAIL)
+    url: https://ai.stanford.edu/blog/
+    feed: http://ai.stanford.edu/blog/feed.xml
+  - name: Berkeley AI Research (BAIR)
+    url: https://bair.berkeley.edu/blog/
+    feed: null
+  - name: MIT News - AI
+    url: https://news.mit.edu/topic/artificial-intelligence2
+    feed: https://news.mit.edu/rss/topic/artificial-intelligence2
+  - name: KDnuggets
+    url: https://www.kdnuggets.com/
+    feed: https://www.kdnuggets.com/feed
+  - name: Machine Learning Mastery
+    url: https://machinelearningmastery.com/blog/
+    feed: https://machinelearningmastery.com/feed/
+  - name: Towards Data Science
+    url: https://towardsdatascience.com/
+    feed: https://towardsdatascience.com/feed
+  - name: The Gradient
+    url: https://thegradient.pub
+    feed: https://thegradient.pub/rss/
+  - name: Ben's Bites
+    url: https://www.bensbites.co/
+    feed: https://www.bensbites.co/feed
+  - name: TLDR AI Newsletter
+    url: https://tldr.tech/ai
+    feed: null
+  - name: Hugging Face Blog
+    url: https://huggingface.co/blog
+    feed: https://huggingface.co/blog/feed.xml
+  - name: Microsoft AI Blog
+    url: https://blogs.microsoft.com/ai/
+    feed: https://blogs.microsoft.com/ai/feed/
+  - name: IBM Research AI Blog
+    url: https://www.ibm.com/research/blog
+    feed: https://www.ibm.com/blogs/research/feed/
+  - name: Amazon Science - ML
+    url: https://www.amazon.science/tag/machine-learning
+    feed: https://www.amazon.science/tag/machine-learning/rss
+  - name: Apple Machine Learning Research
+    url: https://machinelearning.apple.com/
+    feed: null
+  - name: Salesforce AI Blog
+    url: https://www.salesforce.com/news/stories/category/artificial-intelligence/
+    feed: https://www.salesforce.com/news/feed/?categories=artificial-intelligence
+  - name: Ars Technica - AI
+    url: https://arstechnica.com/information-technology/artificial-intelligence/
+    feed: https://arstechnica.com/information-technology/artificial-intelligence/feed/
+  - name: SyncedReview
+    url: https://syncedreview.com/
+    feed: https://syncedreview.com/feed/
+  - name: AI Trends
+    url: https://aitrends.com/
+    feed: https://aitrends.com/feed/
+  - name: Import AI Newsletter
+    url: https://importai.net/
+    feed: null
+  - name: Papers with Code
+    url: https://paperswithcode.com/
+    feed: https://paperswithcode.com/rss/
+  - name: ArXiv CS.AI
+    url: https://arxiv.org/list/cs.AI/new
+    feed: https://arxiv.org/rss/cs.AI
+  - name: Analytics Vidhya
+    url: https://www.analyticsvidhya.com/blog/
+    feed: http://feeds.feedburner.com/AnalyticsVidhya
+  - name: The Neuron
+    url: https://www.theneurondaily.com/
+    feed: https://www.theneurondaily.com/api/feed/posts
+  - name: Unite.AI
+    url: https://www.unite.ai/
+    feed: https://www.unite.ai/feed/
+  - name: MarkTechPost
+    url: https://www.marktechpost.com/
+    feed: https://www.marktechpost.com/feed/
+  - name: AI Business
+    url: https://aibusiness.com/
+    feed: null
+  - name: Topbots
+    url: https://www.topbots.com/
+    feed: https://www.topbots.com/feed/
+  - name: Allen Institute for AI (AI2)
+    url: https://allenai.org/blog
+    feed: https://allenai.org/blog/rss
+  - name: O'Reilly AI Radar
+    url: https://www.oreilly.com/radar/topics/ai/
+    feed: https://www.oreilly.com/radar/topics/ai/feed/
+  - name: IEEE Spectrum - AI
+    url: https://spectrum.ieee.org/artificial-intelligence
+    feed: https://spectrum.ieee.org/rss/tag/artificial-intelligence
