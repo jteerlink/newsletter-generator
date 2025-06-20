@@ -1,121 +1,376 @@
+# Newsletter Sources Configuration
+# Enhanced schema with categories, types, and additional metadata
+
 sources:
-  - name: OpenAI
-    url: https://openai.com/blog
+  # Company AI Research Blogs
+  - name: "OpenAI"
+    url: "https://openai.com/news"
+    type: "website"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .post-title a"
+    description: "OpenAI's official blog and research updates"
     feed: null
-  - name: Google DeepMind
-    url: https://deepmind.google/discover/blog/
-    feed: https://deepmind.google/discover/blog/rss.xml
-  - name: Meta AI
-    url: https://ai.meta.com/blog/
-    feed: https://ai.meta.com/blog/rss/
-  - name: Anthropic
-    url: https://www.anthropic.com/news
+
+  - name: "Google DeepMind"
+    url: "https://deepmind.google/discover/blog/"
+    rss_url: "https://deepmind.google/discover/blog/rss.xml"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Google DeepMind research and breakthroughs"
+
+  - name: "Meta AI"
+    url: "https://ai.meta.com/blog/"
+    rss_url: "https://ai.meta.com/blog/rss/"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Meta's AI research and developments"
+
+  - name: "Anthropic"
+    url: "https://www.anthropic.com/news"
+    type: "website"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .news-item a"
+    description: "Anthropic's AI safety and research news"
     feed: null
-  - name: NVIDIA Blog
-    url: https://blogs.nvidia.com/ai-data-science/
-    feed: https://blogs.nvidia.com/feed
-  - name: MIT Technology Review - AI
-    url: https://www.technologyreview.com/artificial-intelligence
-    feed: https://www.technologyreview.com/feed/tag/artificial-intelligence/rss
-  - name: WIRED - Artificial Intelligence
-    url: https://www.wired.com/tag/artificial-intelligence/
-    feed: https://www.wired.com/feed/tag/artificial-intelligence/latest/rss
-  - name: TechCrunch - AI
-    url: https://techcrunch.com/category/artificial-intelligence/
-    feed: https://techcrunch.com/category/artificial-intelligence/feed/
-  - name: VentureBeat - The AI Effect
-    url: https://venturebeat.com/category/ai/
-    feed: https://venturebeat.com/category/ai/feed/
-  - name: The Verge - AI
-    url: https://www.theverge.com/ai-artificial-intelligence
-    feed: https://www.theverge.com/rss/index.xml
-  - name: Stanford AI Lab (SAIL)
-    url: https://ai.stanford.edu/blog/
-    feed: http://ai.stanford.edu/blog/feed.xml
-  - name: Berkeley AI Research (BAIR)
-    url: https://bair.berkeley.edu/blog/
+
+  - name: "NVIDIA Blog"
+    url: "https://blogs.nvidia.com/ai-data-science/"
+    rss_url: "https://blogs.nvidia.com/feed"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "NVIDIA's AI and data science insights"
+
+  - name: "Microsoft AI Blog"
+    url: "https://blogs.microsoft.com/ai/"
+    rss_url: "https://blogs.microsoft.com/ai/feed/"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Microsoft's AI research and product updates"
+
+  - name: "IBM Research AI Blog"
+    url: "https://www.ibm.com/research/blog"
+    rss_url: "https://www.ibm.com/blogs/research/feed/"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "IBM's research and AI innovations"
+
+  - name: "Amazon Science - ML"
+    url: "https://www.amazon.science/tag/machine-learning"
+    rss_url: "https://www.amazon.science/tag/machine-learning/rss"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Amazon's machine learning research"
+
+  - name: "Apple Machine Learning Research"
+    url: "https://machinelearning.apple.com/"
+    type: "website"
+    category: "company-research"
+    active: true
+    scrape_frequency: "weekly"
+    selector: "article h2 a, .publication-title a"
+    description: "Apple's machine learning research publications"
     feed: null
-  - name: MIT News - AI
-    url: https://news.mit.edu/topic/artificial-intelligence2
-    feed: https://news.mit.edu/rss/topic/artificial-intelligence2
-  - name: KDnuggets
-    url: https://www.kdnuggets.com/
-    feed: https://www.kdnuggets.com/feed
-  - name: Machine Learning Mastery
-    url: https://machinelearningmastery.com/blog/
-    feed: https://machinelearningmastery.com/feed/
-  - name: Towards Data Science
-    url: https://towardsdatascience.com/
-    feed: https://towardsdatascience.com/feed
-  - name: The Gradient
-    url: https://thegradient.pub
-    feed: https://thegradient.pub/rss/
-  - name: Ben's Bites
-    url: https://www.bensbites.co/
-    feed: https://www.bensbites.co/feed
-  - name: TLDR AI Newsletter
-    url: https://tldr.tech/ai
+
+  - name: "Salesforce AI Blog"
+    url: "https://www.salesforce.com/news/stories/category/artificial-intelligence/"
+    rss_url: "https://www.salesforce.com/news/feed/?categories=artificial-intelligence"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Salesforce AI and ML developments"
+
+  - name: "Hugging Face Blog"
+    url: "https://huggingface.co/blog"
+    rss_url: "https://huggingface.co/blog/feed.xml"
+    type: "rss"
+    category: "company-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Hugging Face ML community blog"
+
+  # Academic and Research Institutions
+  - name: "Stanford AI Lab (SAIL)"
+    url: "https://ai.stanford.edu/blog/"
+    rss_url: "http://ai.stanford.edu/blog/feed.xml"
+    type: "rss"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Stanford AI Lab research updates"
+
+  - name: "Berkeley AI Research (BAIR)"
+    url: "https://bair.berkeley.edu/blog/"
+    type: "website"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .post-title a"
+    description: "UC Berkeley AI research blog"
     feed: null
-  - name: Hugging Face Blog
-    url: https://huggingface.co/blog
-    feed: https://huggingface.co/blog/feed.xml
-  - name: Microsoft AI Blog
-    url: https://blogs.microsoft.com/ai/
-    feed: https://blogs.microsoft.com/ai/feed/
-  - name: IBM Research AI Blog
-    url: https://www.ibm.com/research/blog
-    feed: https://www.ibm.com/blogs/research/feed/
-  - name: Amazon Science - ML
-    url: https://www.amazon.science/tag/machine-learning
-    feed: https://www.amazon.science/tag/machine-learning/rss
-  - name: Apple Machine Learning Research
-    url: https://machinelearning.apple.com/
+
+  - name: "MIT News - AI"
+    url: "https://news.mit.edu/topic/artificial-intelligence2"
+    rss_url: "https://news.mit.edu/rss/topic/artificial-intelligence2"
+    type: "rss"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "MIT's AI research and news"
+
+  - name: "Allen Institute for AI (AI2)"
+    url: "https://allenai.org/blog"
+    rss_url: "https://allenai.org/blog/rss"
+    type: "rss"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI2's research and blog posts"
+
+  - name: "ArXiv CS.AI"
+    url: "https://arxiv.org/list/cs.AI/new"
+    rss_url: "https://arxiv.org/rss/cs.AI"
+    type: "rss"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "Latest AI papers from ArXiv"
+
+  - name: "Papers with Code"
+    url: "https://paperswithcode.com/"
+    rss_url: "https://paperswithcode.com/rss/"
+    type: "rss"
+    category: "academic-research"
+    active: true
+    scrape_frequency: "daily"
+    description: "ML papers with code implementations"
+
+  # Tech News and Media
+  - name: "MIT Technology Review - AI"
+    url: "https://www.technologyreview.com/artificial-intelligence"
+    rss_url: "https://www.technologyreview.com/feed/tag/artificial-intelligence/rss"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "MIT Technology Review AI coverage"
+
+  - name: "WIRED - Artificial Intelligence"
+    url: "https://www.wired.com/tag/artificial-intelligence/"
+    rss_url: "https://www.wired.com/feed/tag/artificial-intelligence/latest/rss"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "WIRED's AI and tech coverage"
+
+  - name: "TechCrunch - AI"
+    url: "https://techcrunch.com/category/artificial-intelligence/"
+    rss_url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "TechCrunch AI startup and industry news"
+
+  - name: "VentureBeat - The AI Effect"
+    url: "https://venturebeat.com/category/ai/"
+    rss_url: "https://venturebeat.com/category/ai/feed/"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "VentureBeat AI business and technology news"
+
+  - name: "The Verge - AI"
+    url: "https://www.theverge.com/ai-artificial-intelligence"
+    rss_url: "https://www.theverge.com/rss/index.xml"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "The Verge AI and technology coverage"
+
+  - name: "Ars Technica - AI"
+    url: "https://arstechnica.com/information-technology/artificial-intelligence/"
+    rss_url: "https://arstechnica.com/information-technology/artificial-intelligence/feed/"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "Ars Technica AI technical coverage"
+
+  - name: "IEEE Spectrum - AI"
+    url: "https://spectrum.ieee.org/artificial-intelligence"
+    rss_url: "https://spectrum.ieee.org/rss/tag/artificial-intelligence"
+    type: "rss"
+    category: "tech-news"
+    active: true
+    scrape_frequency: "daily"
+    description: "IEEE Spectrum AI engineering news"
+
+  # Community and Educational Content
+  - name: "KDnuggets"
+    url: "https://www.kdnuggets.com/"
+    rss_url: "https://www.kdnuggets.com/feed"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "Data science and ML community content"
+
+  - name: "Machine Learning Mastery"
+    url: "https://machinelearningmastery.com/blog/"
+    rss_url: "https://machinelearningmastery.com/feed/"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "Practical ML tutorials and guides"
+
+  - name: "Towards Data Science"
+    url: "https://towardsdatascience.com/"
+    rss_url: "https://towardsdatascience.com/feed"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "Medium's data science publication"
+
+  - name: "Analytics Vidhya"
+    url: "https://www.analyticsvidhya.com/blog/"
+    rss_url: "http://feeds.feedburner.com/AnalyticsVidhya"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "Analytics and data science community"
+
+  - name: "The Gradient"
+    url: "https://thegradient.pub"
+    rss_url: "https://thegradient.pub/rss/"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI research and commentary"
+
+  - name: "O'Reilly AI Radar"
+    url: "https://www.oreilly.com/radar/topics/ai/"
+    rss_url: "https://www.oreilly.com/radar/topics/ai/feed/"
+    type: "rss"
+    category: "community-education"
+    active: true
+    scrape_frequency: "daily"
+    description: "O'Reilly's AI insights and trends"
+
+  # Newsletters and Aggregators
+  - name: "Ben's Bites"
+    url: "https://www.bensbites.co/"
+    rss_url: "https://www.bensbites.co/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI news and product updates"
+
+  - name: "TLDR AI Newsletter"
+    url: "https://tldr.tech/ai"
+    type: "website"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .newsletter-item a"
+    description: "Concise AI news and updates"
     feed: null
-  - name: Salesforce AI Blog
-    url: https://www.salesforce.com/news/stories/category/artificial-intelligence/
-    feed: https://www.salesforce.com/news/feed/?categories=artificial-intelligence
-  - name: Ars Technica - AI
-    url: https://arstechnica.com/information-technology/artificial-intelligence/
-    feed: https://arstechnica.com/information-technology/artificial-intelligence/feed/
-  - name: SyncedReview
-    url: https://syncedreview.com/
-    feed: https://syncedreview.com/feed/
-  - name: AI Trends
-    url: https://aitrends.com/
-    feed: https://aitrends.com/feed/
-  - name: Import AI Newsletter
-    url: https://importai.net/
+
+  - name: "Import AI Newsletter"
+    url: "https://importai.net/"
+    type: "website"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "weekly"
+    selector: "article h2 a, .post-title a"
+    description: "AI policy and research newsletter"
     feed: null
-  - name: Papers with Code
-    url: https://paperswithcode.com/
-    feed: https://paperswithcode.com/rss/
-  - name: ArXiv CS.AI
-    url: https://arxiv.org/list/cs.AI/new
-    feed: https://arxiv.org/rss/cs.AI
-  - name: Analytics Vidhya
-    url: https://www.analyticsvidhya.com/blog/
-    feed: http://feeds.feedburner.com/AnalyticsVidhya
-  - name: The Neuron
-    url: https://www.theneurondaily.com/
-    feed: https://www.theneurondaily.com/api/feed/posts
-  - name: Unite.AI
-    url: https://www.unite.ai/
-    feed: https://www.unite.ai/feed/
-  - name: MarkTechPost
-    url: https://www.marktechpost.com/
-    feed: https://www.marktechpost.com/feed/
-  - name: AI Business
-    url: https://aibusiness.com/
+
+  - name: "The Neuron"
+    url: "https://www.theneurondaily.com/"
+    rss_url: "https://www.theneurondaily.com/api/feed/posts"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI business and tech news"
+
+  # Industry and Business Focus
+  - name: "SyncedReview"
+    url: "https://syncedreview.com/"
+    rss_url: "https://syncedreview.com/feed/"
+    type: "rss"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI industry news and analysis"
+
+  - name: "AI Trends"
+    url: "https://aitrends.com/"
+    rss_url: "https://aitrends.com/feed/"
+    type: "rss"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI business trends and applications"
+
+  - name: "Unite.AI"
+    url: "https://www.unite.ai/"
+    rss_url: "https://www.unite.ai/feed/"
+    type: "rss"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI industry news and insights"
+
+  - name: "MarkTechPost"
+    url: "https://www.marktechpost.com/"
+    rss_url: "https://www.marktechpost.com/feed/"
+    type: "rss"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI and ML industry developments"
+
+  - name: "AI Business"
+    url: "https://aibusiness.com/"
+    type: "website"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .headline a"
+    description: "Enterprise AI business news"
     feed: null
-  - name: Topbots
-    url: https://www.topbots.com/
-    feed: https://www.topbots.com/feed/
-  - name: Allen Institute for AI (AI2)
-    url: https://allenai.org/blog
-    feed: https://allenai.org/blog/rss
-  - name: O'Reilly AI Radar
-    url: https://www.oreilly.com/radar/topics/ai/
-    feed: https://www.oreilly.com/radar/topics/ai/feed/
-  - name: IEEE Spectrum - AI
-    url: https://spectrum.ieee.org/artificial-intelligence
-    feed: https://spectrum.ieee.org/rss/tag/artificial-intelligence
+
+  - name: "Topbots"
+    url: "https://www.topbots.com/"
+    rss_url: "https://www.topbots.com/feed/"
+    type: "rss"
+    category: "industry-business"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI business strategy and implementation"
