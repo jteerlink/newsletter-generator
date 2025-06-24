@@ -6,7 +6,7 @@ from typing import Dict, List, Any
 from pathlib import Path
 import logging
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class SourceConfig:
@@ -29,8 +29,18 @@ class SourceConfig:
 class ConfigLoader:
     """Load and manage source configurations"""
     
-    def __init__(self, config_path: str = 'sources.yaml'):
-        self.config_path = Path(config_path)
+    def __init__(self, config_path: str = 'config/sources.yaml'):
+        # Try the provided path first
+        path = Path(config_path)
+        if not path.exists():
+            # Try relative to this file's parent (src/scrapers/../..)
+            project_root = Path(__file__).resolve().parent.parent.parent
+            alt_path = project_root / 'config' / 'sources.yaml'
+            if alt_path.exists():
+                path = alt_path
+            else:
+                raise FileNotFoundError(f"Could not find sources.yaml at '{config_path}' or '{alt_path}'. Current working directory: {Path.cwd()}")
+        self.config_path = path
         self.sources = []
         self.load_config()
     

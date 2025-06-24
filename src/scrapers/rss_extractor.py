@@ -18,7 +18,11 @@ class Article:
     """Article data structure"""
     def __init__(self, title: str, url: str, description: str = "", 
                  published: Optional[datetime] = None, source: str = "",
-                 category: str = "", tags: List[str] = None):
+                 category: str = "", tags: List[str] = None,
+                 raw_content: str = None, author: str = None, language: str = None,
+                 fetch_status: str = None, error_message: str = None, source_type: str = None,
+                 media_urls: List[str] = None, word_count: int = None, canonical_url: str = None,
+                 updated_at: Optional[datetime] = None):
         self.title = title.strip()
         self.url = url
         self.description = description.strip()
@@ -27,6 +31,16 @@ class Article:
         self.category = category
         self.tags = tags or []
         self.extracted_at = datetime.now(timezone.utc)
+        self.raw_content = raw_content
+        self.author = author
+        self.language = language
+        self.fetch_status = fetch_status
+        self.error_message = error_message
+        self.source_type = source_type
+        self.media_urls = media_urls or []
+        self.word_count = word_count
+        self.canonical_url = canonical_url
+        self.updated_at = updated_at
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert article to dictionary"""
@@ -38,7 +52,17 @@ class Article:
             'source': self.source,
             'category': self.category,
             'tags': self.tags,
-            'extracted_at': self.extracted_at.isoformat()
+            'extracted_at': self.extracted_at.isoformat(),
+            'raw_content': self.raw_content,
+            'author': self.author,
+            'language': self.language,
+            'fetch_status': self.fetch_status,
+            'error_message': self.error_message,
+            'source_type': self.source_type,
+            'media_urls': self.media_urls,
+            'word_count': self.word_count,
+            'canonical_url': self.canonical_url,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
     def __repr__(self):
@@ -93,22 +117,16 @@ class RSSExtractor:
     def _parse_rss_entry(self, entry: Any, source: SourceConfig) -> Optional[Article]:
         """Parse a single RSS entry into an Article"""
         try:
-            # Extract title
             title = getattr(entry, 'title', '').strip()
             if not title:
                 return None
-            
-            # Extract URL
             url = getattr(entry, 'link', '').strip()
             if not url:
                 return None
-            
-            # Make URL absolute if needed
             if not url.startswith(('http://', 'https://')):
                 url = urljoin(source.url, url)
-            
-            # Extract description/summary
             description = ''
+            raw_content = None
             if hasattr(entry, 'summary'):
                 description = entry.summary
             elif hasattr(entry, 'description'):
@@ -116,26 +134,30 @@ class RSSExtractor:
             elif hasattr(entry, 'content'):
                 if isinstance(entry.content, list) and entry.content:
                     description = entry.content[0].get('value', '')
+                    raw_content = entry.content[0].get('value', '')
                 else:
                     description = str(entry.content)
-            
+                    raw_content = str(entry.content)
             # Clean up description (remove HTML tags)
             if description:
                 from bs4 import BeautifulSoup
                 description = BeautifulSoup(description, 'html.parser').get_text().strip()
-            
-            # Extract published date
             published = None
             if hasattr(entry, 'published_parsed') and entry.published_parsed:
                 published = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
             elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
                 published = datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
-            
-            # Extract tags
             tags = []
             if hasattr(entry, 'tags'):
                 tags = [tag.term for tag in entry.tags if hasattr(tag, 'term')]
-            
+            author = getattr(entry, 'author', None)
+            language = getattr(entry, 'language', None)
+            media_urls = []
+            if hasattr(entry, 'media_content'):
+                media_urls = [m.get('url') for m in entry.media_content if 'url' in m]
+            word_count = len(description.split()) if description else None
+            canonical_url = getattr(entry, 'id', None) if getattr(entry, 'id', None) else url
+            updated_at = published
             return Article(
                 title=title,
                 url=url,
@@ -143,12 +165,39 @@ class RSSExtractor:
                 published=published,
                 source=source.name,
                 category=source.category,
-                tags=tags
+                tags=tags,
+                raw_content=raw_content,
+                author=author,
+                language=language,
+                fetch_status='success',
+                error_message=None,
+                source_type='rss',
+                media_urls=media_urls,
+                word_count=word_count,
+                canonical_url=canonical_url,
+                updated_at=updated_at
             )
-            
         except Exception as e:
             logger.error(f"Error parsing RSS entry from {source.name}: {str(e)}")
-            return None
+            return Article(
+                title=getattr(entry, 'title', 'ERROR'),
+                url=getattr(entry, 'link', ''),
+                description='',
+                published=None,
+                source=source.name,
+                category=source.category,
+                tags=[],
+                raw_content=None,
+                author=None,
+                language=None,
+                fetch_status='error',
+                error_message=str(e),
+                source_type='rss',
+                media_urls=[],
+                word_count=None,
+                canonical_url=None,
+                updated_at=None
+            )
     
     def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
         """Extract articles from multiple RSS sources"""

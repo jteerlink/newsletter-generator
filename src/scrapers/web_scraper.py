@@ -153,34 +153,83 @@ class WebScraper:
             title = link_element.get_text(strip=True)
             if not title or len(title) < 10:  # Skip very short titles
                 return None
-            
             # Get URL
             url = link_element.get('href', '')
             if not url:
                 return None
-            
             # Make URL absolute
             if not url.startswith(('http://', 'https://')):
                 url = urljoin(source.url, url)
-            
             # Try to extract description from nearby elements
             description = self._extract_description(link_element)
-            
             # Try to extract publication date
             published = self._extract_date(link_element)
-            
+            # Try to extract raw HTML content (if available)
+            raw_content = str(link_element)
+            # Author (not always available)
+            author = None
+            parent = link_element.parent
+            if parent:
+                author_elem = parent.find(class_='author')
+                if author_elem:
+                    author = author_elem.get_text(strip=True)
+            # Language (not always available)
+            language = None
+            html_elem = link_element.find_parent('html')
+            if html_elem and html_elem.has_attr('lang'):
+                language = html_elem['lang']
+            # Media URLs (look for images in parent)
+            media_urls = []
+            if parent:
+                for img in parent.find_all('img'):
+                    if img.has_attr('src'):
+                        media_urls.append(img['src'])
+            # Word count
+            word_count = len(description.split()) if description else None
+            # Canonical URL (not always available)
+            canonical_url = url
+            # Updated at (not available, fallback to published)
+            updated_at = published
             return Article(
                 title=title,
                 url=url,
                 description=description,
                 published=published,
                 source=source.name,
-                category=source.category
+                category=source.category,
+                tags=[],
+                raw_content=raw_content,
+                author=author,
+                language=language,
+                fetch_status='success',
+                error_message=None,
+                source_type='website',
+                media_urls=media_urls,
+                word_count=word_count,
+                canonical_url=canonical_url,
+                updated_at=updated_at
             )
-            
         except Exception as e:
             logger.error(f"Error extracting article from link: {e}")
-            return None
+            return Article(
+                title='ERROR',
+                url='',
+                description='',
+                published=None,
+                source=source.name,
+                category=source.category,
+                tags=[],
+                raw_content=None,
+                author=None,
+                language=None,
+                fetch_status='error',
+                error_message=str(e),
+                source_type='website',
+                media_urls=[],
+                word_count=None,
+                canonical_url=None,
+                updated_at=None
+            )
     
     def _extract_description(self, link_element) -> str:
         """Try to extract description/summary near the link"""

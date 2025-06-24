@@ -4,7 +4,7 @@
 sources:
   # Company AI Research Blogs
   - name: "OpenAI"
-    url: "https://openai.com/news"
+    url: "https://openai.com/research/index/release/"
     type: "website"
     category: "company-research"
     active: true

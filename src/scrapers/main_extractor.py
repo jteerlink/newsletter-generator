@@ -8,26 +8,38 @@ from typing import List, Dict, Any
 import argparse
 import json
 from pathlib import Path
+import sys
 
 from config_loader import ConfigLoader, SourceConfig
 from rss_extractor import RSSExtractor
 from web_scraper import SmartWebScraper
 from data_processor import DataProcessor, ReportGenerator
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('extraction.log'),
-        logging.StreamHandler()
-    ]
-)
+# Ensure logs directory exists at repo root
+log_dir = Path(__file__).resolve().parent.parent.parent / 'logs'
+log_dir.mkdir(parents=True, exist_ok=True)
+log_file = log_dir / 'extraction.log'
+
+# Remove all handlers associated with the root logger object (to avoid duplicate logs)
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
+# Set up file and stream handlers explicitly
+file_handler = logging.FileHandler(str(log_file))
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+logging.basicConfig(level=logging.INFO, handlers=[file_handler, stream_handler])
 logger = logging.getLogger(__name__)
 
 class NewsExtractor:
     """Main news extraction orchestrator"""
     
-    def __init__(self, config_path: str = 'sources.yaml', output_dir: str = 'output',
+    def __init__(self, config_path: str = 'config/sources.yaml', output_dir: str = 'output',
                  use_selenium: bool = False, max_articles_per_source: int = 50):
         self.config = ConfigLoader(config_path)
         self.data_processor = DataProcessor(output_dir)
@@ -266,20 +278,36 @@ def main():
         max_articles_per_source=args.max_articles
     )
     
+    # Helper to log and print
+    def logprint(*a, **k):
+        msg = ' '.join(str(x) for x in a)
+        print(msg, **k)
+        logger.info(msg)
+
     try:
         # Handle info commands
         if args.list_sources:
-            extractor.config.print_summary()
+            from io import StringIO
+            import contextlib
+            buf = StringIO()
+            with contextlib.redirect_stdout(buf):
+                extractor.config.print_summary()
+            summary = buf.getvalue()
+            print(summary)
+            logger.info(summary)
             return
         
         if args.stats:
             stats = extractor.data_processor.get_statistics()
-            print(json.dumps(stats, indent=2, default=str))
+            stats_json = json.dumps(stats, indent=2, default=str)
+            print(stats_json)
+            logger.info(stats_json)
             return
         
         # Handle maintenance
         if args.cleanup:
             extractor.cleanup_data()
+            logprint("Cleanup complete.")
             return
         
         # Handle exports
@@ -291,7 +319,7 @@ def main():
                 filters['since'] = since
             
             filepath = extractor.export_articles(format=args.export, **filters)
-            print(f"Articles exported to: {filepath}")
+            logprint(f"Articles exported to: {filepath}")
             return
         
         # Handle extraction
@@ -304,23 +332,23 @@ def main():
         else:
             results = extractor.extract_from_all_sources()
         
-        # Print summary
-        print("\n=== Extraction Summary ===")
-        print(f"Total articles extracted: {results['extraction_stats']['total_articles']}")
-        print(f"New articles stored: {results['processing_results']['new_articles']}")
-        print(f"Duplicate articles: {results['processing_results']['duplicate_articles']}")
-        print(f"Successful sources: {results['extraction_stats']['successful_sources']}")
-        print(f"Failed sources: {results['extraction_stats']['failed_sources']}")
+        # Print and log summary
+        logprint("\n=== Extraction Summary ===")
+        logprint(f"Total articles extracted: {results['extraction_stats']['total_articles']}")
+        logprint(f"New articles stored: {results['processing_results']['new_articles']}")
+        logprint(f"Duplicate articles: {results['processing_results']['duplicate_articles']}")
+        logprint(f"Successful sources: {results['extraction_stats']['successful_sources']}")
+        logprint(f"Failed sources: {results['extraction_stats']['failed_sources']}")
         
         if results['extraction_stats']['errors']:
-            print(f"\nErrors: {len(results['extraction_stats']['errors'])}")
+            logprint(f"\nErrors: {len(results['extraction_stats']['errors'])}")
             for error in results['extraction_stats']['errors'][:5]:  # Show first 5 errors
-                print(f"  - {error['source']} ({error['type']}): {error['error']}")
+                logprint(f"  - {error['source']} ({error['type']}): {error['error']}")
         
         # Generate report if requested
         if args.report:
             report_path = extractor.generate_report()
-            print(f"Report saved to: {report_path}")
+            logprint(f"Report saved to: {report_path}")
     
     except KeyboardInterrupt:
         logger.info("Extraction interrupted by user")

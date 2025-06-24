@@ -11,7 +11,9 @@
       "newsletters": "daily",
       "financial-news": "daily",
       "industry-reports": "daily",
-      "startup-news": "hourly"
+      "startup-news": "hourly",
+      "community-education": "daily",
+      "industry-business": "daily"
     },
     "max_articles_per_source": 100,
     "timeout_seconds": 30,

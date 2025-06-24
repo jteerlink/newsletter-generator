@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class SchedulerConfig:
     """Configuration for the scheduler"""
     
-    def __init__(self, config_path: str = 'scheduler_config.json'):
+    def __init__(self, config_path: str = 'config/scheduler_config.json'):
         self.config_path = Path(config_path)
         self.config = self.load_config()
     
@@ -234,8 +234,8 @@ News Extraction Scheduler
 class NewsExtractionScheduler:
     """Main scheduler class"""
     
-    def __init__(self, config_path: str = 'scheduler_config.json',
-                 extractor_config: str = 'sources.yaml',
+    def __init__(self, config_path: str = 'config/scheduler_config.json',
+                 extractor_config: str = 'config/sources.yaml',
                  output_dir: str = 'output'):
         self.config = SchedulerConfig(config_path)
         self.extractor = NewsExtractor(
@@ -506,9 +506,9 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='News Extraction Scheduler')
-    parser.add_argument('--config', default='scheduler_config.json', 
+    parser.add_argument('--config', default='config/scheduler_config.json', 
                        help='Scheduler configuration file')
-    parser.add_argument('--extractor-config', default='sources.yaml',
+    parser.add_argument('--extractor-config', default='config/sources.yaml',
                        help='Extractor configuration file')
     parser.add_argument('--output', default='output', help='Output directory')
     parser.add_argument('--daemon', action='store_true', help='Run as daemon')

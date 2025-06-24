@@ -1,0 +1,431 @@
+2025-06-23 21:47:16,377 - config_loader - INFO - Loaded 40 sources from /Users/jaredteerlink/repos/newsletter-generator/config/sources.yaml
+2025-06-23 21:47:16,385 - __main__ - INFO - Starting extraction from all sources
+2025-06-23 21:47:16,385 - __main__ - INFO - Processing 40 sources
+2025-06-23 21:47:16,385 - __main__ - INFO - Processing 33 RSS sources
+2025-06-23 21:47:16,385 - __main__ - INFO - Extracting from RSS: Google DeepMind
+2025-06-23 21:47:16,385 - rss_extractor - INFO - Extracting from RSS: Google DeepMind
+2025-06-23 21:47:17,637 - rss_extractor - WARNING - RSS parsing warning for Google DeepMind: <unknown>:3:0: syntax error
+2025-06-23 21:47:17,637 - rss_extractor - INFO - Extracted 0 articles from Google DeepMind
+2025-06-23 21:47:18,642 - __main__ - INFO - Extracting from RSS: Meta AI
+2025-06-23 21:47:18,643 - rss_extractor - INFO - Extracting from RSS: Meta AI
+2025-06-23 21:47:19,574 - rss_extractor - WARNING - RSS parsing warning for Meta AI: <unknown>:4:1451: not well-formed (invalid token)
+2025-06-23 21:47:19,574 - rss_extractor - INFO - Extracted 0 articles from Meta AI
+2025-06-23 21:47:20,579 - __main__ - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-23 21:47:20,580 - rss_extractor - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-23 21:47:22,185 - rss_extractor - INFO - Extracted 18 articles from NVIDIA Blog
+2025-06-23 21:47:23,187 - __main__ - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-23 21:47:23,187 - rss_extractor - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-23 21:47:23,394 - rss_extractor - INFO - Extracted 10 articles from Microsoft AI Blog
+2025-06-23 21:47:24,399 - __main__ - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-23 21:47:24,399 - rss_extractor - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-23 21:47:26,384 - rss_extractor - WARNING - RSS parsing warning for IBM Research AI Blog: text/html; charset=utf-8 is not an XML media type
+2025-06-23 21:47:26,384 - rss_extractor - INFO - Extracted 0 articles from IBM Research AI Blog
+2025-06-23 21:47:27,389 - __main__ - INFO - Extracting from RSS: Amazon Science - ML
+2025-06-23 21:47:27,390 - rss_extractor - INFO - Extracting from RSS: Amazon Science - ML
+2025-06-23 21:47:28,011 - rss_extractor - WARNING - RSS parsing warning for Amazon Science - ML: <unknown>:49:133: not well-formed (invalid token)
+2025-06-23 21:47:28,011 - rss_extractor - INFO - Extracted 0 articles from Amazon Science - ML
+2025-06-23 21:47:29,016 - __main__ - INFO - Extracting from RSS: Salesforce AI Blog
+2025-06-23 21:47:29,016 - rss_extractor - INFO - Extracting from RSS: Salesforce AI Blog
+2025-06-23 21:47:30,015 - rss_extractor - INFO - Extracted 10 articles from Salesforce AI Blog
+2025-06-23 21:47:31,020 - __main__ - INFO - Extracting from RSS: Hugging Face Blog
+2025-06-23 21:47:31,021 - rss_extractor - INFO - Extracting from RSS: Hugging Face Blog
+2025-06-23 21:47:31,462 - rss_extractor - INFO - Extracted 589 articles from Hugging Face Blog
+2025-06-23 21:47:31,462 - __main__ - INFO - Limited to 50 articles from Hugging Face Blog
+2025-06-23 21:47:32,467 - __main__ - INFO - Extracting from RSS: Stanford AI Lab (SAIL)
+2025-06-23 21:47:32,468 - rss_extractor - INFO - Extracting from RSS: Stanford AI Lab (SAIL)
+2025-06-23 21:47:33,316 - rss_extractor - WARNING - RSS parsing warning for Stanford AI Lab (SAIL): document declared as us-ascii, but parsed as utf-8
+2025-06-23 21:47:33,390 - rss_extractor - INFO - Extracted 15 articles from Stanford AI Lab (SAIL)
+2025-06-23 21:47:34,391 - __main__ - INFO - Extracting from RSS: MIT News - AI
+2025-06-23 21:47:34,392 - rss_extractor - INFO - Extracting from RSS: MIT News - AI
+2025-06-23 21:47:34,741 - rss_extractor - INFO - Extracted 50 articles from MIT News - AI
+2025-06-23 21:47:35,742 - __main__ - INFO - Extracting from RSS: Allen Institute for AI (AI2)
+2025-06-23 21:47:35,742 - rss_extractor - INFO - Extracting from RSS: Allen Institute for AI (AI2)
+2025-06-23 21:47:36,406 - rss_extractor - WARNING - RSS parsing warning for Allen Institute for AI (AI2): text/html; charset=utf-8 is not an XML media type
+2025-06-23 21:47:36,406 - rss_extractor - INFO - Extracted 0 articles from Allen Institute for AI (AI2)
+2025-06-23 21:47:37,408 - __main__ - INFO - Extracting from RSS: ArXiv CS.AI
+2025-06-23 21:47:37,408 - rss_extractor - INFO - Extracting from RSS: ArXiv CS.AI
+2025-06-23 21:47:38,059 - rss_extractor - INFO - Extracted 374 articles from ArXiv CS.AI
+2025-06-23 21:47:38,060 - __main__ - INFO - Limited to 50 articles from ArXiv CS.AI
+2025-06-23 21:47:39,065 - __main__ - INFO - Extracting from RSS: Papers with Code
+2025-06-23 21:47:39,066 - rss_extractor - INFO - Extracting from RSS: Papers with Code
+2025-06-23 21:47:39,384 - rss_extractor - WARNING - RSS parsing warning for Papers with Code: <unknown>:3:0: syntax error
+2025-06-23 21:47:39,385 - rss_extractor - INFO - Extracted 0 articles from Papers with Code
+2025-06-23 21:47:40,390 - __main__ - INFO - Extracting from RSS: MIT Technology Review - AI
+2025-06-23 21:47:40,390 - rss_extractor - INFO - Extracting from RSS: MIT Technology Review - AI
+2025-06-23 21:47:40,486 - rss_extractor - INFO - Extracted 10 articles from MIT Technology Review - AI
+2025-06-23 21:47:41,486 - __main__ - INFO - Extracting from RSS: WIRED - Artificial Intelligence
+2025-06-23 21:47:41,486 - rss_extractor - INFO - Extracting from RSS: WIRED - Artificial Intelligence
+2025-06-23 21:47:41,801 - rss_extractor - WARNING - RSS parsing warning for WIRED - Artificial Intelligence: <unknown>:2:0: not well-formed (invalid token)
+2025-06-23 21:47:41,801 - rss_extractor - INFO - Extracted 0 articles from WIRED - Artificial Intelligence
+2025-06-23 21:47:42,802 - __main__ - INFO - Extracting from RSS: TechCrunch - AI
+2025-06-23 21:47:42,802 - rss_extractor - INFO - Extracting from RSS: TechCrunch - AI
+2025-06-23 21:47:42,957 - rss_extractor - INFO - Extracted 20 articles from TechCrunch - AI
+2025-06-23 21:47:43,962 - __main__ - INFO - Extracting from RSS: VentureBeat - The AI Effect
+2025-06-23 21:47:43,962 - rss_extractor - INFO - Extracting from RSS: VentureBeat - The AI Effect
+2025-06-23 21:47:44,117 - rss_extractor - INFO - Extracted 26 articles from VentureBeat - The AI Effect
+2025-06-23 21:47:45,123 - __main__ - INFO - Extracting from RSS: The Verge - AI
+2025-06-23 21:47:45,123 - rss_extractor - INFO - Extracting from RSS: The Verge - AI
+2025-06-23 21:47:45,358 - rss_extractor - INFO - Extracted 10 articles from The Verge - AI
+2025-06-23 21:47:46,361 - __main__ - INFO - Extracting from RSS: Ars Technica - AI
+2025-06-23 21:47:46,361 - rss_extractor - INFO - Extracting from RSS: Ars Technica - AI
+2025-06-23 21:47:46,656 - rss_extractor - INFO - Extracted 0 articles from Ars Technica - AI
+2025-06-23 21:47:47,661 - __main__ - INFO - Extracting from RSS: IEEE Spectrum - AI
+2025-06-23 21:47:47,662 - rss_extractor - INFO - Extracting from RSS: IEEE Spectrum - AI
+2025-06-23 21:47:48,132 - rss_extractor - WARNING - RSS parsing warning for IEEE Spectrum - AI: <unknown>:17:39: not well-formed (invalid token)
+2025-06-23 21:47:48,132 - rss_extractor - INFO - Extracted 0 articles from IEEE Spectrum - AI
+2025-06-23 21:47:49,137 - __main__ - INFO - Extracting from RSS: KDnuggets
+2025-06-23 21:47:49,138 - rss_extractor - INFO - Extracting from RSS: KDnuggets
+2025-06-23 21:47:49,295 - rss_extractor - INFO - Extracted 10 articles from KDnuggets
+2025-06-23 21:47:50,301 - __main__ - INFO - Extracting from RSS: Machine Learning Mastery
+2025-06-23 21:47:50,301 - rss_extractor - INFO - Extracting from RSS: Machine Learning Mastery
+2025-06-23 21:47:50,552 - rss_extractor - INFO - Extracted 10 articles from Machine Learning Mastery
+2025-06-23 21:47:51,557 - __main__ - INFO - Extracting from RSS: Towards Data Science
+2025-06-23 21:47:51,557 - rss_extractor - INFO - Extracting from RSS: Towards Data Science
+2025-06-23 21:47:51,973 - rss_extractor - INFO - Extracted 20 articles from Towards Data Science
+2025-06-23 21:47:52,979 - __main__ - INFO - Extracting from RSS: Analytics Vidhya
+2025-06-23 21:47:52,979 - rss_extractor - INFO - Extracting from RSS: Analytics Vidhya
+2025-06-23 21:47:53,134 - rss_extractor - INFO - Extracted 10 articles from Analytics Vidhya
+2025-06-23 21:47:54,140 - __main__ - INFO - Extracting from RSS: The Gradient
+2025-06-23 21:47:54,140 - rss_extractor - INFO - Extracting from RSS: The Gradient
+2025-06-23 21:47:54,850 - rss_extractor - INFO - Extracted 15 articles from The Gradient
+2025-06-23 21:47:55,855 - __main__ - INFO - Extracting from RSS: O'Reilly AI Radar
+2025-06-23 21:47:55,855 - rss_extractor - INFO - Extracting from RSS: O'Reilly AI Radar
+2025-06-23 21:47:56,440 - rss_extractor - INFO - Extracted 15 articles from O'Reilly AI Radar
+2025-06-23 21:47:57,445 - __main__ - INFO - Extracting from RSS: Ben's Bites
+2025-06-23 21:47:57,445 - rss_extractor - INFO - Extracting from RSS: Ben's Bites
+2025-06-23 21:47:58,063 - rss_extractor - WARNING - RSS parsing warning for Ben's Bites: <unknown>:94:33: not well-formed (invalid token)
+2025-06-23 21:47:58,064 - rss_extractor - INFO - Extracted 0 articles from Ben's Bites
+2025-06-23 21:47:59,069 - __main__ - INFO - Extracting from RSS: The Neuron
+2025-06-23 21:47:59,069 - rss_extractor - INFO - Extracting from RSS: The Neuron
+2025-06-23 21:47:59,814 - rss_extractor - WARNING - RSS parsing warning for The Neuron: <unknown>:94:337: not well-formed (invalid token)
+2025-06-23 21:47:59,814 - rss_extractor - INFO - Extracted 0 articles from The Neuron
+2025-06-23 21:48:00,820 - __main__ - INFO - Extracting from RSS: SyncedReview
+2025-06-23 21:48:00,820 - rss_extractor - INFO - Extracting from RSS: SyncedReview
+2025-06-23 21:48:01,037 - rss_extractor - INFO - Extracted 10 articles from SyncedReview
+2025-06-23 21:48:02,042 - __main__ - INFO - Extracting from RSS: AI Trends
+2025-06-23 21:48:02,043 - rss_extractor - INFO - Extracting from RSS: AI Trends
+2025-06-23 21:48:02,289 - rss_extractor - INFO - Extracted 10 articles from AI Trends
+2025-06-23 21:48:03,295 - __main__ - INFO - Extracting from RSS: Unite.AI
+2025-06-23 21:48:03,295 - rss_extractor - INFO - Extracting from RSS: Unite.AI
+2025-06-23 21:48:03,610 - rss_extractor - WARNING - RSS parsing warning for Unite.AI: <unknown>:2:0: syntax error
+2025-06-23 21:48:03,610 - rss_extractor - INFO - Extracted 0 articles from Unite.AI
+2025-06-23 21:48:04,611 - __main__ - INFO - Extracting from RSS: MarkTechPost
+2025-06-23 21:48:04,612 - rss_extractor - INFO - Extracting from RSS: MarkTechPost
+2025-06-23 21:48:04,942 - rss_extractor - INFO - Extracted 10 articles from MarkTechPost
+2025-06-23 21:48:05,947 - __main__ - INFO - Extracting from RSS: Topbots
+2025-06-23 21:48:05,948 - rss_extractor - INFO - Extracting from RSS: Topbots
+2025-06-23 21:48:06,526 - rss_extractor - INFO - Extracted 10 articles from Topbots
+2025-06-23 21:48:07,531 - __main__ - INFO - Processing 7 website sources
+2025-06-23 21:48:07,532 - __main__ - INFO - Scraping website: OpenAI
+2025-06-23 21:48:07,532 - web_scraper - INFO - Scraping website: OpenAI
+2025-06-23 21:48:07,748 - web_scraper - ERROR - Requests failed for https://openai.com/news: 403 Client Error: Forbidden for url: https://openai.com/news
+2025-06-23 21:48:07,833 - web_scraper - ERROR - Requests failed for https://openai.com/news: 403 Client Error: Forbidden for url: https://openai.com/news
+2025-06-23 21:48:07,928 - web_scraper - ERROR - Requests failed for https://openai.com/news: 403 Client Error: Forbidden for url: https://openai.com/news
+2025-06-23 21:48:07,932 - web_scraper - ERROR - Failed to scrape OpenAI after 3 attempts
+2025-06-23 21:48:09,937 - __main__ - INFO - Scraping website: Anthropic
+2025-06-23 21:48:09,938 - web_scraper - INFO - Scraping website: Anthropic
+2025-06-23 21:48:10,453 - web_scraper - INFO - Extracted 0 articles from Anthropic
+2025-06-23 21:48:12,459 - __main__ - INFO - Scraping website: Apple Machine Learning Research
+2025-06-23 21:48:12,459 - web_scraper - INFO - Scraping website: Apple Machine Learning Research
+2025-06-23 21:48:12,784 - web_scraper - INFO - Extracted 0 articles from Apple Machine Learning Research
+2025-06-23 21:48:14,789 - __main__ - INFO - Scraping website: Berkeley AI Research (BAIR)
+2025-06-23 21:48:14,790 - web_scraper - INFO - Scraping website: Berkeley AI Research (BAIR)
+2025-06-23 21:48:15,076 - web_scraper - INFO - Extracted 10 articles from Berkeley AI Research (BAIR)
+2025-06-23 21:48:17,082 - __main__ - INFO - Scraping website: TLDR AI Newsletter
+2025-06-23 21:48:17,083 - web_scraper - INFO - Scraping website: TLDR AI Newsletter
+2025-06-23 21:48:17,511 - web_scraper - INFO - Extracted 0 articles from TLDR AI Newsletter
+2025-06-23 21:48:19,516 - __main__ - INFO - Scraping website: Import AI Newsletter
+2025-06-23 21:48:19,517 - web_scraper - INFO - Scraping website: Import AI Newsletter
+2025-06-23 21:48:19,903 - web_scraper - INFO - Extracted 0 articles from Import AI Newsletter
+2025-06-23 21:48:21,908 - __main__ - INFO - Scraping website: AI Business
+2025-06-23 21:48:21,909 - web_scraper - INFO - Scraping website: AI Business
+2025-06-23 21:48:22,193 - web_scraper - INFO - Extracted 0 articles from AI Business
+2025-06-23 21:48:24,198 - __main__ - INFO - Processing 399 total articles
+2025-06-23 21:48:24,278 - __main__ - INFO - Extraction completed successfully
+2025-06-23 21:48:24,279 - __main__ - INFO - 
+=== Extraction Summary ===
+2025-06-23 21:48:24,279 - __main__ - INFO - Total articles extracted: 399
+2025-06-23 21:48:24,279 - __main__ - INFO - New articles stored: 0
+2025-06-23 21:48:24,279 - __main__ - INFO - Duplicate articles: 399
+2025-06-23 21:48:24,279 - __main__ - INFO - Successful sources: 40
+2025-06-23 21:48:24,279 - __main__ - INFO - Failed sources: 0
+2025-06-24 13:26:20,119 - config_loader - INFO - Loaded 40 sources from /Users/jaredteerlink/repos/newsletter-generator/config/sources.yaml
+2025-06-24 13:26:20,128 - __main__ - INFO - Starting extraction from all sources
+2025-06-24 13:26:20,128 - __main__ - INFO - Processing 40 sources
+2025-06-24 13:26:20,128 - __main__ - INFO - Processing 33 RSS sources
+2025-06-24 13:26:20,128 - __main__ - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 13:26:20,128 - rss_extractor - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 13:26:21,623 - rss_extractor - WARNING - RSS parsing warning for Google DeepMind: <unknown>:3:0: syntax error
+2025-06-24 13:26:21,624 - rss_extractor - INFO - Extracted 0 articles from Google DeepMind
+2025-06-24 13:26:22,629 - __main__ - INFO - Extracting from RSS: Meta AI
+2025-06-24 13:26:22,629 - rss_extractor - INFO - Extracting from RSS: Meta AI
+2025-06-24 13:26:23,574 - rss_extractor - WARNING - RSS parsing warning for Meta AI: <unknown>:4:1451: not well-formed (invalid token)
+2025-06-24 13:26:23,574 - rss_extractor - INFO - Extracted 0 articles from Meta AI
+2025-06-24 13:26:24,579 - __main__ - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-24 13:26:24,579 - rss_extractor - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-24 13:26:26,125 - rss_extractor - INFO - Extracted 18 articles from NVIDIA Blog
+2025-06-24 13:26:27,130 - __main__ - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-24 13:26:27,130 - rss_extractor - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-24 13:26:27,456 - rss_extractor - INFO - Extracted 10 articles from Microsoft AI Blog
+2025-06-24 13:26:28,461 - __main__ - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-24 13:26:28,461 - rss_extractor - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-24 13:26:30,597 - rss_extractor - WARNING - RSS parsing warning for IBM Research AI Blog: text/html; charset=utf-8 is not an XML media type
+2025-06-24 13:26:30,598 - rss_extractor - INFO - Extracted 0 articles from IBM Research AI Blog
+2025-06-24 13:26:31,406 - __main__ - INFO - Extraction interrupted by user
+2025-06-24 13:26:34,424 - config_loader - INFO - Loaded 2 sources from /Users/jaredteerlink/repos/newsletter-generator/config/sources.yaml
+2025-06-24 13:26:34,431 - __main__ - INFO - Starting extraction from all sources
+2025-06-24 13:26:34,431 - __main__ - INFO - Processing 2 sources
+2025-06-24 13:26:34,431 - __main__ - INFO - Processing 1 RSS sources
+2025-06-24 13:26:34,432 - __main__ - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 13:26:34,432 - rss_extractor - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 13:26:35,844 - rss_extractor - WARNING - RSS parsing warning for Google DeepMind: <unknown>:3:0: syntax error
+2025-06-24 13:26:35,844 - rss_extractor - INFO - Extracted 0 articles from Google DeepMind
+2025-06-24 13:26:36,849 - __main__ - INFO - Processing 1 website sources
+2025-06-24 13:26:36,849 - __main__ - INFO - Scraping website: OpenAI
+2025-06-24 13:26:36,849 - web_scraper - INFO - Scraping website: OpenAI
+2025-06-24 13:26:37,505 - web_scraper - INFO - Extracted 0 articles from OpenAI
+2025-06-24 13:26:39,510 - __main__ - INFO - Processing 0 total articles
+2025-06-24 13:26:39,510 - __main__ - INFO - Extraction completed successfully
+2025-06-24 13:26:39,510 - __main__ - INFO - 
+=== Extraction Summary ===
+2025-06-24 13:26:39,510 - __main__ - INFO - Total articles extracted: 0
+2025-06-24 13:26:39,510 - __main__ - INFO - New articles stored: 0
+2025-06-24 13:26:39,511 - __main__ - INFO - Duplicate articles: 0
+2025-06-24 13:26:39,511 - __main__ - INFO - Successful sources: 2
+2025-06-24 13:26:39,511 - __main__ - INFO - Failed sources: 0
+2025-06-24 14:34:40,857 - config_loader - INFO - Loaded 40 sources from /Users/jaredteerlink/repos/newsletter-generator/config/sources.yaml
+2025-06-24 14:34:40,865 - __main__ - INFO - Starting extraction from all sources
+2025-06-24 14:34:40,865 - __main__ - INFO - Processing 40 sources
+2025-06-24 14:34:40,865 - __main__ - INFO - Processing 33 RSS sources
+2025-06-24 14:34:40,865 - __main__ - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 14:34:40,865 - rss_extractor - INFO - Extracting from RSS: Google DeepMind
+2025-06-24 14:34:41,924 - rss_extractor - WARNING - RSS parsing warning for Google DeepMind: <unknown>:3:0: syntax error
+2025-06-24 14:34:41,924 - rss_extractor - INFO - Extracted 0 articles from Google DeepMind
+2025-06-24 14:34:42,930 - __main__ - INFO - Extracting from RSS: Meta AI
+2025-06-24 14:34:42,930 - rss_extractor - INFO - Extracting from RSS: Meta AI
+2025-06-24 14:34:43,688 - rss_extractor - WARNING - RSS parsing warning for Meta AI: <unknown>:4:1451: not well-formed (invalid token)
+2025-06-24 14:34:43,688 - rss_extractor - INFO - Extracted 0 articles from Meta AI
+2025-06-24 14:34:44,689 - __main__ - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-24 14:34:44,689 - rss_extractor - INFO - Extracting from RSS: NVIDIA Blog
+2025-06-24 14:34:46,147 - rss_extractor - INFO - Extracted 18 articles from NVIDIA Blog
+2025-06-24 14:34:47,148 - __main__ - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-24 14:34:47,148 - rss_extractor - INFO - Extracting from RSS: Microsoft AI Blog
+2025-06-24 14:34:47,397 - rss_extractor - INFO - Extracted 10 articles from Microsoft AI Blog
+2025-06-24 14:34:48,402 - __main__ - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-24 14:34:48,403 - rss_extractor - INFO - Extracting from RSS: IBM Research AI Blog
+2025-06-24 14:34:50,866 - rss_extractor - WARNING - RSS parsing warning for IBM Research AI Blog: text/html; charset=utf-8 is not an XML media type
+2025-06-24 14:34:50,866 - rss_extractor - INFO - Extracted 0 articles from IBM Research AI Blog
+2025-06-24 14:34:51,871 - __main__ - INFO - Extracting from RSS: Amazon Science - ML
+2025-06-24 14:34:51,871 - rss_extractor - INFO - Extracting from RSS: Amazon Science - ML
+2025-06-24 14:34:52,569 - rss_extractor - WARNING - RSS parsing warning for Amazon Science - ML: <unknown>:49:133: not well-formed (invalid token)
+2025-06-24 14:34:52,569 - rss_extractor - INFO - Extracted 0 articles from Amazon Science - ML
+2025-06-24 14:34:53,574 - __main__ - INFO - Extracting from RSS: Salesforce AI Blog
+2025-06-24 14:34:53,574 - rss_extractor - INFO - Extracting from RSS: Salesforce AI Blog
+2025-06-24 14:34:54,919 - rss_extractor - INFO - Extracted 10 articles from Salesforce AI Blog
+2025-06-24 14:34:55,924 - __main__ - INFO - Extracting from RSS: Hugging Face Blog
+2025-06-24 14:34:55,924 - rss_extractor - INFO - Extracting from RSS: Hugging Face Blog
+2025-06-24 14:34:56,456 - rss_extractor - INFO - Extracted 589 articles from Hugging Face Blog
+2025-06-24 14:34:56,456 - __main__ - INFO - Limited to 50 articles from Hugging Face Blog
+2025-06-24 14:34:57,461 - __main__ - INFO - Extracting from RSS: Stanford AI Lab (SAIL)
+2025-06-24 14:34:57,461 - rss_extractor - INFO - Extracting from RSS: Stanford AI Lab (SAIL)
+2025-06-24 14:34:58,470 - rss_extractor - WARNING - RSS parsing warning for Stanford AI Lab (SAIL): document declared as us-ascii, but parsed as utf-8
+2025-06-24 14:34:58,545 - rss_extractor - INFO - Extracted 15 articles from Stanford AI Lab (SAIL)
+2025-06-24 14:34:59,550 - __main__ - INFO - Extracting from RSS: MIT News - AI
+2025-06-24 14:34:59,551 - rss_extractor - INFO - Extracting from RSS: MIT News - AI
+2025-06-24 14:34:59,856 - rss_extractor - INFO - Extracted 50 articles from MIT News - AI
+2025-06-24 14:35:00,861 - __main__ - INFO - Extracting from RSS: Allen Institute for AI (AI2)
+2025-06-24 14:35:00,861 - rss_extractor - INFO - Extracting from RSS: Allen Institute for AI (AI2)
+2025-06-24 14:35:01,625 - rss_extractor - WARNING - RSS parsing warning for Allen Institute for AI (AI2): text/html; charset=utf-8 is not an XML media type
+2025-06-24 14:35:01,625 - rss_extractor - INFO - Extracted 0 articles from Allen Institute for AI (AI2)
+2025-06-24 14:35:02,630 - __main__ - INFO - Extracting from RSS: ArXiv CS.AI
+2025-06-24 14:35:02,631 - rss_extractor - INFO - Extracting from RSS: ArXiv CS.AI
+2025-06-24 14:35:03,455 - rss_extractor - INFO - Extracted 453 articles from ArXiv CS.AI
+2025-06-24 14:35:03,457 - __main__ - INFO - Limited to 50 articles from ArXiv CS.AI
+2025-06-24 14:35:04,462 - __main__ - INFO - Extracting from RSS: Papers with Code
+2025-06-24 14:35:04,462 - rss_extractor - INFO - Extracting from RSS: Papers with Code
+2025-06-24 14:35:04,786 - rss_extractor - WARNING - RSS parsing warning for Papers with Code: <unknown>:29:112: not well-formed (invalid token)
+2025-06-24 14:35:04,786 - rss_extractor - INFO - Extracted 0 articles from Papers with Code
+2025-06-24 14:35:05,789 - __main__ - INFO - Extracting from RSS: MIT Technology Review - AI
+2025-06-24 14:35:05,790 - rss_extractor - INFO - Extracting from RSS: MIT Technology Review - AI
+2025-06-24 14:35:06,699 - rss_extractor - INFO - Extracted 10 articles from MIT Technology Review - AI
+2025-06-24 14:35:07,705 - __main__ - INFO - Extracting from RSS: WIRED - Artificial Intelligence
+2025-06-24 14:35:07,705 - rss_extractor - INFO - Extracting from RSS: WIRED - Artificial Intelligence
+2025-06-24 14:35:08,034 - rss_extractor - WARNING - RSS parsing warning for WIRED - Artificial Intelligence: <unknown>:2:0: not well-formed (invalid token)
+2025-06-24 14:35:08,035 - rss_extractor - INFO - Extracted 0 articles from WIRED - Artificial Intelligence
+2025-06-24 14:35:09,042 - __main__ - INFO - Extracting from RSS: TechCrunch - AI
+2025-06-24 14:35:09,042 - rss_extractor - INFO - Extracting from RSS: TechCrunch - AI
+2025-06-24 14:35:09,254 - rss_extractor - INFO - Extracted 20 articles from TechCrunch - AI
+2025-06-24 14:35:10,259 - __main__ - INFO - Extracting from RSS: VentureBeat - The AI Effect
+2025-06-24 14:35:10,260 - rss_extractor - INFO - Extracting from RSS: VentureBeat - The AI Effect
+2025-06-24 14:35:10,428 - rss_extractor - INFO - Extracted 26 articles from VentureBeat - The AI Effect
+2025-06-24 14:35:11,433 - __main__ - INFO - Extracting from RSS: The Verge - AI
+2025-06-24 14:35:11,434 - rss_extractor - INFO - Extracting from RSS: The Verge - AI
+2025-06-24 14:35:11,677 - rss_extractor - INFO - Extracted 10 articles from The Verge - AI
+2025-06-24 14:35:12,679 - __main__ - INFO - Extracting from RSS: Ars Technica - AI
+2025-06-24 14:35:12,679 - rss_extractor - INFO - Extracting from RSS: Ars Technica - AI
+2025-06-24 14:35:13,019 - rss_extractor - INFO - Extracted 0 articles from Ars Technica - AI
+2025-06-24 14:35:14,023 - __main__ - INFO - Extracting from RSS: IEEE Spectrum - AI
+2025-06-24 14:35:14,024 - rss_extractor - INFO - Extracting from RSS: IEEE Spectrum - AI
+2025-06-24 14:35:14,503 - rss_extractor - WARNING - RSS parsing warning for IEEE Spectrum - AI: <unknown>:17:39: not well-formed (invalid token)
+2025-06-24 14:35:14,503 - rss_extractor - INFO - Extracted 0 articles from IEEE Spectrum - AI
+2025-06-24 14:35:15,508 - __main__ - INFO - Extracting from RSS: KDnuggets
+2025-06-24 14:35:15,509 - rss_extractor - INFO - Extracting from RSS: KDnuggets
+2025-06-24 14:35:15,676 - rss_extractor - INFO - Extracted 10 articles from KDnuggets
+2025-06-24 14:35:16,681 - __main__ - INFO - Extracting from RSS: Machine Learning Mastery
+2025-06-24 14:35:16,681 - rss_extractor - INFO - Extracting from RSS: Machine Learning Mastery
+2025-06-24 14:35:16,894 - rss_extractor - INFO - Extracted 10 articles from Machine Learning Mastery
+2025-06-24 14:35:17,899 - __main__ - INFO - Extracting from RSS: Towards Data Science
+2025-06-24 14:35:17,899 - rss_extractor - INFO - Extracting from RSS: Towards Data Science
+2025-06-24 14:35:18,402 - rss_extractor - INFO - Extracted 20 articles from Towards Data Science
+2025-06-24 14:35:19,408 - __main__ - INFO - Extracting from RSS: Analytics Vidhya
+2025-06-24 14:35:19,408 - rss_extractor - INFO - Extracting from RSS: Analytics Vidhya
+2025-06-24 14:35:19,660 - rss_extractor - INFO - Extracted 10 articles from Analytics Vidhya
+2025-06-24 14:35:20,665 - __main__ - INFO - Extracting from RSS: The Gradient
+2025-06-24 14:35:20,665 - rss_extractor - INFO - Extracting from RSS: The Gradient
+2025-06-24 14:35:21,724 - rss_extractor - INFO - Extracted 15 articles from The Gradient
+2025-06-24 14:35:22,729 - __main__ - INFO - Extracting from RSS: O'Reilly AI Radar
+2025-06-24 14:35:22,729 - rss_extractor - INFO - Extracting from RSS: O'Reilly AI Radar
+2025-06-24 14:35:23,199 - rss_extractor - INFO - Extracted 15 articles from O'Reilly AI Radar
+2025-06-24 14:35:24,201 - __main__ - INFO - Extracting from RSS: Ben's Bites
+2025-06-24 14:35:24,201 - rss_extractor - INFO - Extracting from RSS: Ben's Bites
+2025-06-24 14:35:24,796 - rss_extractor - WARNING - RSS parsing warning for Ben's Bites: <unknown>:94:33: not well-formed (invalid token)
+2025-06-24 14:35:24,796 - rss_extractor - INFO - Extracted 0 articles from Ben's Bites
+2025-06-24 14:35:25,801 - __main__ - INFO - Extracting from RSS: The Neuron
+2025-06-24 14:35:25,801 - rss_extractor - INFO - Extracting from RSS: The Neuron
+2025-06-24 14:35:26,678 - rss_extractor - WARNING - RSS parsing warning for The Neuron: <unknown>:94:337: not well-formed (invalid token)
+2025-06-24 14:35:26,678 - rss_extractor - INFO - Extracted 0 articles from The Neuron
+2025-06-24 14:35:27,683 - __main__ - INFO - Extracting from RSS: SyncedReview
+2025-06-24 14:35:27,683 - rss_extractor - INFO - Extracting from RSS: SyncedReview
+2025-06-24 14:35:27,915 - rss_extractor - INFO - Extracted 10 articles from SyncedReview
+2025-06-24 14:35:28,920 - __main__ - INFO - Extracting from RSS: AI Trends
+2025-06-24 14:35:28,921 - rss_extractor - INFO - Extracting from RSS: AI Trends
+2025-06-24 14:35:29,864 - rss_extractor - INFO - Extracted 10 articles from AI Trends
+2025-06-24 14:35:30,869 - __main__ - INFO - Extracting from RSS: Unite.AI
+2025-06-24 14:35:30,869 - rss_extractor - INFO - Extracting from RSS: Unite.AI
+2025-06-24 14:35:31,320 - rss_extractor - WARNING - RSS parsing warning for Unite.AI: <unknown>:2:0: syntax error
+2025-06-24 14:35:31,320 - rss_extractor - INFO - Extracted 0 articles from Unite.AI
+2025-06-24 14:35:32,325 - __main__ - INFO - Extracting from RSS: MarkTechPost
+2025-06-24 14:35:32,325 - rss_extractor - INFO - Extracting from RSS: MarkTechPost
+2025-06-24 14:35:32,854 - rss_extractor - INFO - Extracted 10 articles from MarkTechPost
+2025-06-24 14:35:33,859 - __main__ - INFO - Extracting from RSS: Topbots
+2025-06-24 14:35:33,859 - rss_extractor - INFO - Extracting from RSS: Topbots
+2025-06-24 14:35:34,577 - rss_extractor - INFO - Extracted 10 articles from Topbots
+2025-06-24 14:35:35,583 - __main__ - INFO - Processing 7 website sources
+2025-06-24 14:35:35,583 - __main__ - INFO - Scraping website: OpenAI
+2025-06-24 14:35:35,583 - web_scraper - INFO - Scraping website: OpenAI
+2025-06-24 14:35:36,406 - web_scraper - INFO - Extracted 0 articles from OpenAI
+2025-06-24 14:35:38,411 - __main__ - INFO - Scraping website: Anthropic
+2025-06-24 14:35:38,412 - web_scraper - INFO - Scraping website: Anthropic
+2025-06-24 14:35:38,842 - web_scraper - INFO - Extracted 0 articles from Anthropic
+2025-06-24 14:35:40,847 - __main__ - INFO - Scraping website: Apple Machine Learning Research
+2025-06-24 14:35:40,847 - web_scraper - INFO - Scraping website: Apple Machine Learning Research
+2025-06-24 14:35:41,381 - web_scraper - INFO - Extracted 0 articles from Apple Machine Learning Research
+2025-06-24 14:35:43,386 - __main__ - INFO - Scraping website: Berkeley AI Research (BAIR)
+2025-06-24 14:35:43,386 - web_scraper - INFO - Scraping website: Berkeley AI Research (BAIR)
+2025-06-24 14:35:43,829 - web_scraper - INFO - Extracted 10 articles from Berkeley AI Research (BAIR)
+2025-06-24 14:35:45,834 - __main__ - INFO - Scraping website: TLDR AI Newsletter
+2025-06-24 14:35:45,834 - web_scraper - INFO - Scraping website: TLDR AI Newsletter
+2025-06-24 14:35:46,239 - web_scraper - INFO - Extracted 0 articles from TLDR AI Newsletter
+2025-06-24 14:35:48,241 - __main__ - INFO - Scraping website: Import AI Newsletter
+2025-06-24 14:35:48,242 - web_scraper - INFO - Scraping website: Import AI Newsletter
+2025-06-24 14:35:48,690 - web_scraper - INFO - Extracted 0 articles from Import AI Newsletter
+2025-06-24 14:35:50,693 - __main__ - INFO - Scraping website: AI Business
+2025-06-24 14:35:50,694 - web_scraper - INFO - Scraping website: AI Business
+2025-06-24 14:35:50,947 - web_scraper - INFO - Extracted 0 articles from AI Business
+2025-06-24 14:35:52,953 - __main__ - INFO - Processing 399 total articles
+2025-06-24 14:35:52,955 - data_processor - ERROR - Error processing article 'HPE and NVIDIA Debut AI Factory Stack to Power Next Industrial Shift': table articles has no column named raw_content
+2025-06-24 14:35:52,956 - data_processor - ERROR - Error processing article 'NVIDIA and Partners Highlight Next-Generation Robotics, Automation and AI Technologies at Automatica': table articles has no column named raw_content
+2025-06-24 14:35:52,964 - data_processor - ERROR - Error processing article 'PepsiCo Leverages Salesforce’s Agentforce to Advance AI Agenda': table articles has no column named raw_content
+2025-06-24 14:35:52,964 - data_processor - ERROR - Error processing article 'Salesforce Collaborates with UChicago Medicine to Enhance Patient Support': table articles has no column named raw_content
+2025-06-24 14:35:52,964 - data_processor - ERROR - Error processing article 'Salesforce Launches Agentforce for Net Zero Cloud with Unified Data to Help Teams Meet Sustainability Compliance, Cut Costs, and Drive Efficiency': table articles has no column named raw_content
+2025-06-24 14:35:52,980 - data_processor - ERROR - Error processing article 'Evaluating Generalization and Representation Stability in Small LMs via Prompting': table articles has no column named raw_content
+2025-06-24 14:35:52,980 - data_processor - ERROR - Error processing article 'Individual Causal Inference with Structural Causal Model': table articles has no column named raw_content
+2025-06-24 14:35:52,980 - data_processor - ERROR - Error processing article 'Resource Rational Contractualism Should Guide AI Alignment': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'Keeping Medical AI Healthy: A Review of Detection and Correction Methods for System Degradation': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'OmniReflect: Discovering Transferable Constitutions for LLM agents via Neuro-Symbolic Reflections': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'From Unstructured Communication to Intelligent RAG: Multi-Agent Automation for Supply Chain Knowledge Bases': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'Kaleidoscopic Teaming in Multi Agent Simulations': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'Cite Pretrain: Retrieval-Free Knowledge Attribution for Large Language Models': table articles has no column named raw_content
+2025-06-24 14:35:52,981 - data_processor - ERROR - Error processing article 'Taming the Untamed: Graph-Based Knowledge Retrieval and Reasoning for MLLMs to Conquer the Unknown': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'Measuring and Augmenting Large Language Models for Solving Capture-the-Flag Challenges': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'PhysUniBench: An Undergraduate-Level Physics Reasoning Benchmark for Multimodal Models': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'Beyond Syntax: Action Semantics Learning for App Agents': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'AnyMAC: Cascading Flexible Multi-Agent Collaboration via Next-Agent Prediction': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'Bayesian Social Deduction with Graph-Informed Language Models': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'Efficient Strategy Synthesis for MDPs via Hierarchical Block Decomposition': table articles has no column named raw_content
+2025-06-24 14:35:52,982 - data_processor - ERROR - Error processing article 'Reflective Verbal Reward Design for Pluralistic Alignment': table articles has no column named raw_content
+2025-06-24 14:35:52,983 - data_processor - ERROR - Error processing article 'Out of Control -- Why Alignment Needs Formal Control Theory (and an Alignment Control Stack)': table articles has no column named raw_content
+2025-06-24 14:35:52,983 - data_processor - ERROR - Error processing article 'Towards Robust Fact-Checking: A Multi-Agent System with Advanced Evidence Retrieval': table articles has no column named raw_content
+2025-06-24 14:35:52,983 - data_processor - ERROR - Error processing article 'Leveraging Large Language Model for Intelligent Log Processing and Autonomous Debugging in Cloud AI Platforms': table articles has no column named raw_content
+2025-06-24 14:35:52,983 - data_processor - ERROR - Error processing article 'Learning, Reasoning, Refinement: A Framework for Kahneman's Dual-System Intelligence in GUI Agents': table articles has no column named raw_content
+2025-06-24 14:35:52,983 - data_processor - ERROR - Error processing article 'Evolving Prompts In-Context: An Open-ended, Self-replicating Perspective': table articles has no column named raw_content
+2025-06-24 14:35:52,984 - data_processor - ERROR - Error processing article 'medicX-KG: A Knowledge Graph for Pharmacists' Drug Information Needs': table articles has no column named raw_content
+2025-06-24 14:35:52,984 - data_processor - ERROR - Error processing article 'Graphs Meet AI Agents: Taxonomy, Progress, and Future Opportunities': table articles has no column named raw_content
+2025-06-24 14:35:52,984 - data_processor - ERROR - Error processing article 'Action Language BC+': table articles has no column named raw_content
+2025-06-24 14:35:52,984 - data_processor - ERROR - Error processing article 'Weighted Assumption Based Argumentation to reason about ethical principles and actions': table articles has no column named raw_content
+2025-06-24 14:35:52,985 - data_processor - ERROR - Error processing article 'Deep Research Agents: A Systematic Examination And Roadmap': table articles has no column named raw_content
+2025-06-24 14:35:52,985 - data_processor - ERROR - Error processing article 'Decentralized Consensus Inference-based Hierarchical Reinforcement Learning for Multi-Constrained UAV Pursuit-Evasion Game': table articles has no column named raw_content
+2025-06-24 14:35:52,985 - data_processor - ERROR - Error processing article 'SE-Merging: A Self-Enhanced Approach for Dynamic Model Merging': table articles has no column named raw_content
+2025-06-24 14:35:52,985 - data_processor - ERROR - Error processing article 'CoachGPT: A Scaffolding-based Academic Writing Assistant': table articles has no column named raw_content
+2025-06-24 14:35:52,985 - data_processor - ERROR - Error processing article 'AI Through the Human Lens: Investigating Cognitive Theories in Machine Psychology': table articles has no column named raw_content
+2025-06-24 14:35:52,986 - data_processor - ERROR - Error processing article 'Chain-of-Memory: Enhancing GUI Agents for Cross-Application Navigation': table articles has no column named raw_content
+2025-06-24 14:35:52,986 - data_processor - ERROR - Error processing article 'Reasoning about Uncertainty: Do Reasoning Models Know When They Don't Know?': table articles has no column named raw_content
+2025-06-24 14:35:52,986 - data_processor - ERROR - Error processing article 'The Impact of Medication Non-adherence on Adverse Outcomes: Evidence from Schizophrenia Patients via Survival Analysis': table articles has no column named raw_content
+2025-06-24 14:35:52,986 - data_processor - ERROR - Error processing article 'A Conceptual Framework for AI Capability Evaluations': table articles has no column named raw_content
+2025-06-24 14:35:52,986 - data_processor - ERROR - Error processing article 'The 4th Dimension for Scaling Model Size': table articles has no column named raw_content
+2025-06-24 14:35:52,987 - data_processor - ERROR - Error processing article 'Advanced For-Loop for QML algorithm search': table articles has no column named raw_content
+2025-06-24 14:35:52,987 - data_processor - ERROR - Error processing article 'Dynamic Knowledge Exchange and Dual-diversity Review: Concisely Unleashing the Potential of a Multi-Agent Research Team': table articles has no column named raw_content
+2025-06-24 14:35:52,987 - data_processor - ERROR - Error processing article 'A Large Language Model-based Multi-Agent Framework for Analog Circuits' Sizing Relationships Extraction': table articles has no column named raw_content
+2025-06-24 14:35:52,987 - data_processor - ERROR - Error processing article 'How Robust is Model Editing after Fine-Tuning? An Empirical Study on Text-to-Image Diffusion Models': table articles has no column named raw_content
+2025-06-24 14:35:52,988 - data_processor - ERROR - Error processing article 'Standard Applicability Judgment and Cross-jurisdictional Reasoning: A RAG-based Framework for Medical Device Compliance': table articles has no column named raw_content
+2025-06-24 14:35:52,989 - data_processor - ERROR - Error processing article 'A Question Bank to Assess AI Inclusivity: Mapping out the Journey from Diversity Errors to Inclusion Excellence': table articles has no column named raw_content
+2025-06-24 14:35:52,989 - data_processor - ERROR - Error processing article 'T-CPDL: A Temporal Causal Probabilistic Description Logic for Developing Logic-RAG Agent': table articles has no column named raw_content
+2025-06-24 14:35:52,989 - data_processor - ERROR - Error processing article 'Airalogy: AI-empowered universal data digitization for research automation': table articles has no column named raw_content
+2025-06-24 14:35:52,990 - data_processor - ERROR - Error processing article 'AggTruth: Contextual Hallucination Detection using Aggregated Attention Scores in LLMs': table articles has no column named raw_content
+2025-06-24 14:35:52,990 - data_processor - ERROR - Error processing article 'Dual-level Behavioral Consistency for Inter-group and Intra-group Coordination in Multi-Agent Systems': table articles has no column named raw_content
+2025-06-24 14:35:52,990 - data_processor - ERROR - Error processing article 'Programming by Backprop: LLMs Acquire Reusable Algorithmic Abstractions During Code Training': table articles has no column named raw_content
+2025-06-24 14:35:52,990 - data_processor - ERROR - Error processing article 'TRIZ Agents: A Multi-Agent LLM Approach for TRIZ-Based Innovation': table articles has no column named raw_content
+2025-06-24 14:35:52,991 - data_processor - ERROR - Error processing article 'ConciseHint: Boosting Efficient Reasoning via Continuous Concise Hints during Generation': table articles has no column named raw_content
+2025-06-24 14:35:52,991 - data_processor - ERROR - Error processing article 'Steering Conceptual Bias via Transformer Latent-Subspace Activation': table articles has no column named raw_content
+2025-06-24 14:35:52,991 - data_processor - ERROR - Error processing article 'jina-embeddings-v4: Universal Embeddings for Multimodal Multilingual Retrieval': table articles has no column named raw_content
+2025-06-24 14:35:52,992 - data_processor - ERROR - Error processing article 'Wispr Flow raises $30M from Menlo Ventures for its AI-powered dictation app': table articles has no column named raw_content
+2025-06-24 14:35:52,992 - data_processor - ERROR - Error processing article 'A federal judge sides with Anthropic in lawsuit over training AI on books without authors’ permission': table articles has no column named raw_content
+2025-06-24 14:35:52,993 - data_processor - ERROR - Error processing article 'Google rolls out new Gemini model that can run on robots locally': table articles has no column named raw_content
+2025-06-24 14:35:52,993 - data_processor - ERROR - Error processing article 'How a data-processing problem at Lyft became the basis for Eventual': table articles has no column named raw_content
+2025-06-24 14:35:52,993 - data_processor - ERROR - Error processing article 'Google introduces AI mode to users in India': table articles has no column named raw_content
+2025-06-24 14:35:52,998 - data_processor - ERROR - Error processing article 'How CISOs became the gatekeepers of $309B AI infrastructure spending': table articles has no column named raw_content
+2025-06-24 14:35:52,998 - data_processor - ERROR - Error processing article 'Emergence AI’s CRAFT arrives to make it easy for enterprises to automate their entire data pipeline': table articles has no column named raw_content
+2025-06-24 14:35:52,998 - data_processor - ERROR - Error processing article 'How Walmart built an AI platform that makes it beholden to no one (and that 1.5M associates actually want to use)': table articles has no column named raw_content
+2025-06-24 14:35:52,999 - data_processor - ERROR - Error processing article '75 million deepfakes blocked: Persona leads the corporate fight against hiring fraud': table articles has no column named raw_content
+2025-06-24 14:35:53,002 - data_processor - ERROR - Error processing article 'Apple Wallet notifications for an F1 movie promotion ticked off iPhone owners': table articles has no column named raw_content
+2025-06-24 14:35:53,003 - data_processor - ERROR - Error processing article 'Paramount Plus with Showtime is getting a rebrand': table articles has no column named raw_content
+2025-06-24 14:35:53,003 - data_processor - ERROR - Error processing article 'Netflix is letting go of some of its best indie games': table articles has no column named raw_content
+2025-06-24 14:35:53,003 - data_processor - ERROR - Error processing article 'Hideo Kojima sees Death Stranding 2 as a cautionary tale': table articles has no column named raw_content
+2025-06-24 14:35:53,003 - data_processor - ERROR - Error processing article 'Samsung&#8217;s offering a $50 credit if you commit to preordering its upcoming Galaxy foldable': table articles has no column named raw_content
+2025-06-24 14:35:53,004 - data_processor - ERROR - Error processing article 'Tesla’s robotaxis are operating in a regulatory vacuum': table articles has no column named raw_content
+2025-06-24 14:35:53,004 - data_processor - ERROR - Error processing article 'Google finally lets Android users put Chrome’s address bar on the bottom': table articles has no column named raw_content
+2025-06-24 14:35:53,004 - data_processor - ERROR - Error processing article 'Microsoft makes Windows 10 extended security updates free, but there’s a catch': table articles has no column named raw_content
+2025-06-24 14:35:53,004 - data_processor - ERROR - Error processing article 'Philips Hue is raising prices in the US ‘as a direct result of tariffs’': table articles has no column named raw_content
+2025-06-24 14:35:53,004 - data_processor - ERROR - Error processing article 'The latest Fire TV Stick 4K is half off ahead of Prime Day': table articles has no column named raw_content
+2025-06-24 14:35:53,005 - data_processor - ERROR - Error processing article 'Make Sense of a 10K+ Line GitHub Repos Without Reading the Code': table articles has no column named raw_content
+2025-06-24 14:35:53,005 - data_processor - ERROR - Error processing article 'Build a Data Cleaning & Validation Pipeline in Under 50 Lines of Python': table articles has no column named raw_content
+2025-06-24 14:35:53,005 - data_processor - ERROR - Error processing article 'Building AI Agents with llama.cpp': table articles has no column named raw_content
+2025-06-24 14:35:53,006 - data_processor - ERROR - Error processing article 'Combining XGBoost and Embeddings: Hybrid Semantic Boosted Trees?': table articles has no column named raw_content
+2025-06-24 14:35:53,007 - data_processor - ERROR - Error processing article 'Why Your Next LLM Might Not Have A Tokenizer': table articles has no column named raw_content
+2025-06-24 14:35:53,007 - data_processor - ERROR - Error processing article 'Build Multi-Agent Apps with OpenAI’s Agent SDK': table articles has no column named raw_content
+2025-06-24 14:35:53,010 - data_processor - ERROR - Error processing article 'Is ChatGPT Making Us Dumber? A New MIT Study Has Answers': table articles has no column named raw_content
+2025-06-24 14:35:53,011 - data_processor - ERROR - Error processing article 'Cracking the Machine Learning Case Study Round': table articles has no column named raw_content
+2025-06-24 14:35:53,012 - data_processor - ERROR - Error processing article 'GenAI Playground at DataHack Summit 2025': table articles has no column named raw_content
+2025-06-24 14:35:53,016 - data_processor - ERROR - Error processing article 'ByteDance Introduces Astra: A Dual-Model Architecture for Autonomous Robot Navigation': table articles has no column named raw_content
+2025-06-24 14:35:53,020 - data_processor - ERROR - Error processing article 'Getting Started with Microsoft’s Presidio: A Step-by-Step Guide to Detecting and Anonymizing Personally Identifiable Information PII in Text': table articles has no column named raw_content
+2025-06-24 14:35:53,020 - data_processor - ERROR - Error processing article 'Build a Groundedness Verification Tool Using Upstage API and LangChain': table articles has no column named raw_content
+2025-06-24 14:35:53,020 - data_processor - ERROR - Error processing article 'Moonshot AI Unveils Kimi-Researcher: An Reinforcement Learning RL-Trained Agent for Complex Reasoning and Web-Scale Search': table articles has no column named raw_content
+2025-06-24 14:35:53,021 - data_processor - ERROR - Error processing article 'CMU Researchers Introduce Go-Browse: A Graph-Based Framework for Scalable Web Agent Training': table articles has no column named raw_content
+2025-06-24 14:35:53,024 - __main__ - INFO - Extraction completed successfully
+2025-06-24 14:35:53,024 - __main__ - INFO - 
+=== Extraction Summary ===
+2025-06-24 14:35:53,024 - __main__ - INFO - Total articles extracted: 399
+2025-06-24 14:35:53,024 - __main__ - INFO - New articles stored: 0
+2025-06-24 14:35:53,024 - __main__ - INFO - Duplicate articles: 311
+2025-06-24 14:35:53,024 - __main__ - INFO - Successful sources: 40
+2025-06-24 14:35:53,024 - __main__ - INFO - Failed sources: 0

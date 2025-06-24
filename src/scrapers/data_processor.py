@@ -23,8 +23,10 @@ class DataProcessor:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
         
-        # Database setup
-        self.db_path = self.output_dir / "articles.db"
+        # Database setup - use the existing database location
+        self.db_path = Path("src/data/raw/articles.db")
+        # Ensure the directory exists
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_database()
     
     def init_database(self):
@@ -44,7 +46,18 @@ class DataProcessor:
                     tags TEXT,
                     extracted_at TIMESTAMP NOT NULL,
                     content_hash TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    raw_content TEXT,
+                    author TEXT,
+                    language TEXT,
+                    fetch_status TEXT,
+                    error_message TEXT,
+                    source_type TEXT,
+                    media_urls TEXT,
+                    word_count INTEGER,
+                    canonical_url TEXT,
+                    updated_at TIMESTAMP,
+                    processed INTEGER DEFAULT 0
                 )
             ''')
             
@@ -117,8 +130,8 @@ class DataProcessor:
             cursor.execute('''
                 INSERT INTO articles (
                     url_hash, title, url, description, published, source, 
-                    category, tags, extracted_at, content_hash
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    category, tags, extracted_at, content_hash, raw_content, author, language, fetch_status, error_message, source_type, media_urls, word_count, canonical_url, updated_at, processed
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 url_hash,
                 article.title,
@@ -127,9 +140,20 @@ class DataProcessor:
                 article.published,
                 article.source,
                 article.category,
-                json.dumps(article.tags),
+                json.dumps(getattr(article, 'tags', [])),
                 article.extracted_at,
-                content_hash
+                content_hash,
+                getattr(article, 'raw_content', None),
+                getattr(article, 'author', None),
+                getattr(article, 'language', None),
+                getattr(article, 'fetch_status', None),
+                getattr(article, 'error_message', None),
+                getattr(article, 'source_type', None),
+                json.dumps(getattr(article, 'media_urls', [])),
+                getattr(article, 'word_count', None),
+                getattr(article, 'canonical_url', None),
+                getattr(article, 'updated_at', None),
+                0  # processed flag default
             ))
             
             conn.commit()
