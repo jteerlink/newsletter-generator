@@ -5,6 +5,8 @@ from .embedding_manager import EmbeddingManager
 from .document_store import DocumentStore
 from typing import List, Dict, Any, Optional
 import random
+import numpy as np
+from sklearn.cluster import KMeans
 
 class VectorStore:
     """
@@ -18,6 +20,8 @@ class VectorStore:
         )
         self.embedding_manager = EmbeddingManager()
         self.document_store = DocumentStore()
+        # Ensure the 'documents' collection exists and is ready for use
+        self.collection = self.client.get_or_create_collection("documents")
         # TODO: Initialize ChromaDB collections, etc.
 
     def chunk_document(self, document: str, chunk_size: int = 512) -> List[str]:
@@ -159,8 +163,13 @@ class VectorStore:
     def cluster_topics(self, embeddings: List[Any], n_clusters: int = 5) -> List[int]:
         """
         Cluster document chunks by topic using their embeddings.
-        Returns cluster labels for each chunk.
+        Returns cluster labels for each chunk using KMeans.
         """
-        # TODO: Implement proper clustering (e.g., K-means with scikit-learn)
-        # For now, return random cluster labels
-        return [random.randint(0, n_clusters-1) for _ in embeddings]
+        if not embeddings or len(embeddings) < n_clusters:
+            # Not enough data to cluster, assign all to one cluster
+            return [0 for _ in embeddings]
+        # Convert embeddings to numpy array if needed
+        X = np.array(embeddings)
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+        labels = kmeans.fit_predict(X)
+        return labels.tolist()

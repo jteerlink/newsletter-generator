@@ -2,6 +2,7 @@
 import pytest
 from datetime import datetime, timezone
 from src.storage.vector_store import VectorStore
+from src.storage.retrieval_system import RetrievalSystem
 
 class TestVectorStore:
     @pytest.fixture
@@ -104,3 +105,16 @@ class TestVectorStore:
         # Delete it
         vector_store.delete_document("test_delete_id")
         # Note: This is a basic test; actual verification would require querying 
+
+    def test_retrieval_system_search(self, vector_store):
+        """Test RetrievalSystem search functionality."""
+        # Add a document to the vector store
+        document = "AI and machine learning are related fields."
+        metadata = {"source": "test", "topic": "AI"}
+        vector_store.add_document(document, metadata)
+
+        # Use RetrievalSystem to search
+        retrieval_system = RetrievalSystem()
+        results = retrieval_system.search("machine learning", top_k=5)
+        assert isinstance(results, list)
+        # Results may be empty if embeddings are random, but should not error 

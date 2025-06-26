@@ -4,6 +4,10 @@ import tempfile
 import shutil
 from datetime import datetime, timezone
 from src.storage.vector_store import VectorStore
+from src.storage.retrieval_system import RetrievalSystem
+from src.scrapers.data_processor import DataProcessor
+from src.scrapers.rss_extractor import Article
+import sqlite3
 
 class TestVectorPipeline:
     @pytest.fixture
@@ -118,4 +122,47 @@ class TestVectorPipeline:
         
         # Query the document
         results = vector_store.query("paragraph", top_k=10)
-        assert isinstance(results, list) 
+        assert isinstance(results, list)
+
+    def test_retrieval_system_integration(self, temp_db_path):
+        """Test RetrievalSystem integration with the full pipeline."""
+        # Set up vector store and retrieval system
+        vector_store = VectorStore(db_path=temp_db_path)
+        retrieval_system = RetrievalSystem()
+        # Add a document
+        document = "Deep learning enables powerful AI applications."
+        metadata = {"source": "integration_test", "topic": "AI"}
+        vector_store.add_document(document, metadata)
+        # Search via RetrievalSystem
+        results = retrieval_system.search("deep learning", top_k=3)
+        assert isinstance(results, list)
+        # Results may be empty if embeddings are random, but should not error 
+
+    def test_dual_storage_pipeline(self, temp_db_path):
+        """Test that DataProcessor stores articles in both SQLite and ChromaDB."""
+        # Set up DataProcessor with temp DB
+        processor = DataProcessor()
+        processor.db_path = temp_db_path  # Override DB path for test isolation
+        processor.init_database()
+        # Create a sample article
+        article = Article(
+            title="Test Article for Dual Storage",
+            url="https://example.com/dual-storage",
+            description="This article should be stored in both SQLite and ChromaDB.",
+            published=datetime.now(timezone.utc),
+            source="IntegrationTest",
+            category="Test"
+        )
+        # Process the article
+        processor.process_articles([article])
+        # Check SQLite
+        with sqlite3.connect(temp_db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM articles WHERE url = ?', (article.url,))
+            row = cursor.fetchone()
+            assert row is not None, "Article not found in SQLite DB"
+        # Check ChromaDB (VectorStore)
+        # Instead of semantic search, check that at least one chunk exists in ChromaDB
+        collection = processor.vector_store.client.get_or_create_collection("documents")
+        all_docs = collection.get()
+        assert all_docs["documents"], "No chunks found in ChromaDB after article insertion" 

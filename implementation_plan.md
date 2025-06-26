@@ -35,6 +35,7 @@
 - [ ] Implement embedding model integration (sentence-transformers)
 - [ ] Add document metadata management
 - [ ] Create retrieval system with semantic search
+- [ ] **[NEW] Store processed articles (or chunks) in ChromaDB after processing in SQLite for semantic search, clustering, and RAG workflows**
 
 **Files to Create/Modify**:
 ```
@@ -57,6 +58,7 @@ src/storage/
   - Metadata enrichment
 - [ ] Add content categorization and tagging
 - [ ] Implement temporal relevance filtering
+- [ ] **[NEW] After processing and storing each article in SQLite, generate embeddings and store the article (or its chunks) in ChromaDB with relevant metadata for downstream semantic retrieval and RAG**
 
 **Files to Modify**:
 ```

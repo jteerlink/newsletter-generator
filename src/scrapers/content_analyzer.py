@@ -88,6 +88,8 @@ class ContentAnalyzer:
         
         # Metadata enrichment
         analysis['enriched_metadata'] = self._enrich_metadata(metadata, analysis)
+        # Ensure analyzed_at is present at the top level
+        analysis['analyzed_at'] = analysis['enriched_metadata'].get('analyzed_at')
         
         return analysis
     

@@ -9,7 +9,7 @@ import logging
 from urllib.parse import urljoin, urlparse
 import time
 from fake_useragent import UserAgent
-from config_loader import SourceConfig
+from src.scrapers.config_loader import SourceConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

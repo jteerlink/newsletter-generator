@@ -11,8 +11,9 @@ from pathlib import Path
 import sqlite3
 from urllib.parse import urlparse
 import hashlib
-from rss_extractor import Article
-from content_analyzer import ContentAnalyzer
+from src.scrapers.rss_extractor import Article
+from src.scrapers.content_analyzer import ContentAnalyzer
+from src.storage.vector_store import VectorStore
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +27,9 @@ class DataProcessor:
         
         # Initialize content analyzer for Phase 1.2 enhancements
         self.content_analyzer = ContentAnalyzer()
+        
+        # VectorStore for ChromaDB storage
+        self.vector_store = VectorStore()
         
         # Database setup - use the existing database location
         self.db_path = Path("src/data/raw/articles.db")
@@ -255,7 +259,19 @@ class DataProcessor:
             ))
             
             conn.commit()
-            return True, analysis
+        # [NEW] Store article in ChromaDB (VectorStore)
+        chroma_metadata = {
+            'url': article.url,
+            'title': article.title,
+            'source': article.source,
+            'category': analysis['category'],
+            'tags': json.dumps(analysis['tags']),  # Serialize tags as JSON string
+            'published': str(article.published) if article.published else None,
+            'quality_score': analysis['quality_score'],
+            'content_hash': analysis['content_hash']
+        }
+        self.vector_store.add_document(content, chroma_metadata)
+        return True, analysis
     
     def _get_existing_content_hashes(self) -> List[str]:
         """Get existing content hashes for duplicate detection"""
@@ -688,7 +704,7 @@ class ReportGenerator:
 
 def main():
     """Test the data processor"""
-    from rss_extractor import Article
+    from src.scrapers.rss_extractor import Article
     from datetime import datetime, timezone
     
     # Create sample articles

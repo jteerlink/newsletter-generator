@@ -1,0 +1,78 @@
+[
+  {
+    "name": "web_search",
+    "description": "Search the web for current information on AI topics",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query for AI-related content"
+        },
+        "max_results": {
+          "type": "integer",
+          "default": 10,
+          "description": "Maximum number of results to return"
+        },
+        "date_range": {
+          "type": "string",
+          "enum": ["day", "week", "month", "year"],
+          "default": "week",
+          "description": "Time range for search results"
+        },
+        "content_type": {
+          "type": "string",
+          "enum": ["news", "research", "blog", "all"],
+          "default": "all",
+          "description": "Type of content to search for"
+        }
+      },
+      "required": ["query"]
+    },
+    "run": {
+      "type": "python",
+      "entrypoint": "src/mcp/tools/web_search_tool.py",
+      "function": "WebSearchTool.run"
+    }
+  },
+  {
+    "name": "vector_search",
+    "description": "Search the local vector database for relevant content",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": { "type": "string", "description": "Semantic search query" },
+        "max_results": { "type": "integer", "default": 20, "description": "Maximum number of results to return" },
+        "similarity_threshold": { "type": "number", "default": 0.7, "description": "Minimum similarity score (0.0-1.0)" },
+        "filters": {
+          "type": "object",
+          "properties": {
+            "date_range": {
+              "type": "object",
+              "properties": {
+                "start_date": { "type": "string", "format": "date" },
+                "end_date": { "type": "string", "format": "date" }
+              }
+            },
+            "source_types": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Filter by source types (rss, web, api)"
+            },
+            "topics": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Filter by content topics"
+            }
+          }
+        }
+      },
+      "required": ["query"]
+    },
+    "run": {
+      "type": "python",
+      "entrypoint": "src/mcp/tools/vector_search_tool.py",
+      "function": "VectorSearchTool.run"
+    }
+  }
+] 

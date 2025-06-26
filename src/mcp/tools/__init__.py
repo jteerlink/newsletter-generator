@@ -1,0 +1,1 @@
+from .cursor_mcp_adapter import CursorMCPAdapter
