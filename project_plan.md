@@ -4,6 +4,40 @@
 
 A multi-agent AI system designed to autonomously research, plan, write, and review newsletters on cutting-edge AI topics with human oversight.
 
+---
+
+## Agentic RAG Approach (New)
+
+The system will adopt an **Agentic Retrieval-Augmented Generation (RAG)** architecture, where autonomous agents collaborate to iteratively refine queries, retrieve and synthesize information from multiple sources, critique and improve responses, and maintain state/memory across interactions. This approach enables more robust, accurate, and context-aware content generation.
+
+### Key Agentic RAG Features
+- **Agent State & Memory:** Each agent maintains memory of past queries, responses, and context.
+- **Self-Critique & Feedback Loops:** Agents evaluate and improve their own outputs.
+- **Multi-Source & Multi-Hop Retrieval:** Agents can retrieve and merge information from vector DB, web, and other sources.
+- **Dynamic Tool Selection & Chaining:** Agents select and chain retrieval tools based on query needs.
+- **Uncertainty Estimation & Escalation:** Agents estimate confidence and escalate to humans if needed.
+- **Agent Collaboration & Specialization:** Specialized agents can delegate or collaborate on tasks.
+- **Logging, Monitoring, and Analytics:** All agent actions and decisions are logged for transparency and improvement.
+- **User Feedback Integration:** User feedback is collected and used to improve agent performance.
+- **Iteration Control:** The system limits iterations and gracefully exits or escalates when needed.
+- **Extensibility:** Modular, plugin-based agent and tool framework for future growth.
+
+### Open Source, Local-First Tools & Frameworks
+- **LLMs:** Ollama (Llama 2, Mistral, DeepSeek, etc.)
+- **Vector DB:** ChromaDB, FAISS (optional)
+- **Embeddings:** Sentence-Transformers
+- **Agent Framework:** Custom Python, FastAPI, asyncio
+- **Web Search:** DuckDuckGo Search (duckduckgo-search)
+- **NLP:** NLTK, spaCy
+- **Scraping:** Scrapy
+- **Logging/Monitoring:** Python logging, Prometheus, Grafana (optional)
+- **State/Storage:** SQLite, Redis (optional)
+- **Testing:** Pytest
+
+All tools are open source, free, and can run locally.
+
+---
+
 ## Core Components
 
 ### 1. Data Collection & Storage Layer
@@ -129,3 +163,57 @@ A multi-agent AI system designed to autonomously research, plan, write, and revi
     - **Structure**: Logical flow, proper sections, 1-3 page length
     - **Source Usage**: Proper attribution and diverse source validation
     - **Writing Quality**: Grammar, style, readability
+
+---
+
+## Agentic RAG Workflow (New)
+
+1. **Query Rewriting:** QueryWriterAgent refines the user query.
+2. **Context Assessment:** ContextAssessmentAgent decides if more context is needed.
+3. **Source Selection:** SourceSelectorAgent chooses and queries the best sources (vector DB, web, etc.).
+4. **Prompt Construction:** PromptBuilder assembles the final prompt for the LLM.
+5. **LLM Generation:** LLM generates a response.
+6. **Response Evaluation:** ResponseEvaluatorAgent critiques the response for relevance and quality.
+7. **Iteration & Control:** If the answer is insufficient, the process iterates with updated queries/context, up to a set limit.
+8. **Escalation:** If confidence remains low, escalate to a human or return a fallback message.
+9. **User Feedback:** Collect and store user feedback for future improvement.
+
+---
+
+## Project Phases (Updated)
+
+### Phase 1: Foundation & Agentic Infrastructure
+- Implement agent memory/state
+- Enhance agent communication and orchestration
+
+### Phase 2: Agentic RAG Pipeline
+- Develop QueryWriterAgent, ContextAssessmentAgent, SourceSelectorAgent, PromptBuilder, ResponseEvaluatorAgent
+- Integrate multi-source retrieval and dynamic tool selection
+- Implement iteration control and escalation
+
+### Phase 3: Advanced Agentic Features
+- Add self-critique, agent collaboration, logging, monitoring, and user feedback integration
+
+### Phase 4: Extensibility & Testing
+- Refactor for extensibility (plugin/registration system)
+- Develop comprehensive tests for agentic workflows
+
+---
+
+## Success Criteria (Updated)
+- Agents maintain and utilize state/memory
+- Self-critique and feedback loops improve answer quality
+- Multi-source and multi-hop retrieval supported
+- Dynamic tool selection and chaining operational
+- Uncertainty estimation and escalation in place
+- Agent collaboration and delegation functional
+- Centralized logging and analytics available
+- User feedback loop integrated
+- System is extensible and well-tested
+
+---
+
+## Next Steps
+1. Review and approve the updated plan
+2. Assign tasks and begin Phase 1 implementation
+3. Schedule regular reviews to track progress and adjust as needed
