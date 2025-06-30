@@ -1,5 +1,28 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
+*.py[cod]
+*.so
+
+# Environments
+.venv/
+venv/
+.env
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs & runtime files
+logs/
+*.log
+output/
+*.sqlite3
+data/
+
+# Mac
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
 *.py[cod]
 *$py.class
 
@@ -117,15 +140,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -162,10 +176,6 @@ cython_debug/
 *.iml
 *.ipr
 *.iws
-
-# VS Code
-.vscode/
-*.code-workspace
 
 # Sublime Text
 *.sublime-project
