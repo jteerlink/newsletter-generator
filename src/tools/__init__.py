@@ -1,1 +1,1 @@
-"""Collections of tool functions and classes exposed to CrewAI agents.""" 
+"""Collections of tool functions and classes exposed to CrewAI agents."""

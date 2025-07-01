@@ -1,9 +1,10 @@
 """Entry-point stub that will eventually orchestrate multi-agent workflows."""
+
 from __future__ import annotations
 
-from agents.agents import BaseAgent
-from core.prompts import get_research_topic_prompt
-from core.core import query_llm
+from src.agents.agents import BaseAgent
+from src.core.prompts import get_research_topic_prompt
+from src.core.core import query_llm
 
 
 def demo() -> None:  # noqa: D401
@@ -13,4 +14,4 @@ def demo() -> None:  # noqa: D401
 
 
 if __name__ == "__main__":
-    demo() 
+    demo()

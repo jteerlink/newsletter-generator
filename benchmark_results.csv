@@ -1,0 +1,16 @@
+model,prompt_id,prompt_text,response_time,output_length,error,anomaly,response_snippet
+llama3,1,What is the capital of France?,9.98,31,,,The capital of France is Paris.
+llama3,2,Summarize the theory of relativity in one paragraph.,17.54,963,,,Here's a summary of the theory of relativity:  According to Albert Einstein's th
+llama3,3,Write a haiku about the ocean.,2.81,113,,,Here is a haiku about the ocean:  Deep blue waves crash strong Salty scent fills
+llama3,4,List three benefits of regular exercise.,14.29,827,,,Here are three benefits of regular exercise:  1. **Improved Physical Health**: R
+llama3,5,Explain quantum computing in simple terms.,55.06,2855,,very long,"Quantum computing! It's a fascinating topic that can seem complex at first, but "
+gemma3n,1,What is the capital of France?,7.85,37,,,The capital of France is **Paris**.  
+gemma3n,2,Summarize the theory of relativity in one paragraph.,15.58,939,,,"Einstein's theory of relativity, encompassing both special and general relativit"
+gemma3n,3,Write a haiku about the ocean.,2.26,79,,,"Blue waves crash and roar, Salty mist hangs in the air, Deep peace washes in.  "
+gemma3n,4,List three benefits of regular exercise.,9.35,586,,,Here are three benefits of regular exercise:  1. **Improved Cardiovascular Healt
+gemma3n,5,Explain quantum computing in simple terms.,66.82,3736,,very long,"Okay, let's break down quantum computing without getting *too* bogged down in th"
+deepseek-r1,1,What is the capital of France?,33.77,1267,,very long,"<think> Okay, the user asked ""What is the capital of France?"" Let me start by re"
+deepseek-r1,2,Summarize the theory of relativity in one paragraph.,57.20,2986,,very long,"<think> Okay, user wants a summary of the theory of relativity in just one parag"
+deepseek-r1,3,Write a haiku about the ocean.,40.07,1690,,very long,"<think> Okay, user wants a haiku about the ocean. Simple request but always fun "
+deepseek-r1,4,List three benefits of regular exercise.,85.68,4068,,very long,"<think> Okay, the user asked for three benefits of regular exercise. Let me star"
+deepseek-r1,5,Explain quantum computing in simple terms.,140.20,6292,,very long,"<think> Okay, the user is asking me to explain quantum computing in simple terms"
