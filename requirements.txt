@@ -5,5 +5,6 @@ chromadb==1.0.13
 sentence-transformers==4.1.0
 langchain_text_splitters==0.3.8
 duckduckgo-search==6.2.13 
-crawl4ai==0.5.0.post8
+crawl4ai==0.6.3
+playwright==1.53.0
 python-dateutil==2.8.2 

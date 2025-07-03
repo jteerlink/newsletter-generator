@@ -16,8 +16,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from src.scrapers.config_loader import SourceConfig
-from src.scrapers.rss_extractor import Article
+# Handle imports for both direct execution and module import
+try:
+    from .config_loader import SourceConfig
+    from .rss_extractor import Article
+except ImportError:
+    from config_loader import SourceConfig
+    from rss_extractor import Article
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -382,7 +387,10 @@ class SmartWebScraper(WebScraper):
 
 def main():
     """Test the web scraper"""
-    from src.scrapers.config_loader import ConfigLoader
+    try:
+        from .config_loader import ConfigLoader
+    except ImportError:
+        from config_loader import ConfigLoader
 
     # Load configuration
     config = ConfigLoader()

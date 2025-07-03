@@ -1,6 +1,7 @@
 """
 Crawl4AI-based web scraper for websites without RSS feeds
 Enhanced with AI-powered content extraction and better JavaScript handling
+Updated for crawl4ai 0.6.3+ with improved extraction strategies
 """
 
 import asyncio
@@ -11,6 +12,7 @@ import time
 from urllib.parse import urljoin, urlparse
 import json
 import re
+from dateutil import parser as date_parser
 
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig
 from crawl4ai.extraction_strategy import JsonCssExtractionStrategy, LLMExtractionStrategy
@@ -18,15 +20,20 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import PruningContentFilter
 from crawl4ai.cache_context import CacheMode
 
-from src.scrapers.config_loader import SourceConfig
-from src.scrapers.rss_extractor import Article
+# Handle imports for both direct execution and module import
+try:
+    from .config_loader import SourceConfig
+    from .rss_extractor import Article
+except ImportError:
+    from config_loader import SourceConfig
+    from rss_extractor import Article
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class Crawl4AiWebScraper:
-    """AI-powered web scraper using crawl4ai"""
+    """AI-powered web scraper using crawl4ai 0.6.3+"""
 
     def __init__(
         self, 
@@ -35,7 +42,8 @@ class Crawl4AiWebScraper:
         headless: bool = True,
         use_llm_extraction: bool = False,
         llm_provider: str = "ollama/llama3",
-        max_concurrent: int = 5
+        max_concurrent: int = 3,
+        browser_type: str = "chromium"
     ):
         self.timeout = timeout
         self.max_retries = max_retries
@@ -43,11 +51,14 @@ class Crawl4AiWebScraper:
         self.use_llm_extraction = use_llm_extraction
         self.llm_provider = llm_provider
         self.max_concurrent = max_concurrent
+        self.browser_type = browser_type
         
-        # Browser configuration
+        # Browser configuration for crawl4ai 0.6.3+
         self.browser_config = BrowserConfig(
             headless=self.headless,
-            # Add additional browser configurations as needed
+            browser_type=self.browser_type,  # chromium, firefox, webkit
+            # Additional optimizations
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
         )
         
         # Initialize crawler (will be done in async context)
@@ -59,7 +70,12 @@ class Crawl4AiWebScraper:
             self.crawler = AsyncWebCrawler(
                 config=self.browser_config
             )
-            await self.crawler.astart()
+            try:
+                await self.crawler.start()
+                logger.info("Crawl4AI crawler initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize crawler: {e}")
+                raise
 
     async def extract_from_source(self, source: SourceConfig) -> List[Article]:
         """Extract articles from a single website source"""
@@ -133,54 +149,66 @@ class Crawl4AiWebScraper:
             extraction_strategy=extraction_strategy,
             cache_mode=CacheMode.BYPASS,  # Always get fresh content
             wait_for="body",  # Wait for page to load
+            page_timeout=self.timeout * 1000,  # Page timeout in milliseconds
+            delay_before_return_html=2.0,  # Wait for dynamic content
         )
 
     def _create_css_extraction_strategy(self, source: SourceConfig) -> JsonCssExtractionStrategy:
-        """Create CSS-based extraction strategy"""
-        # Enhanced selectors based on source configuration
-        article_selectors = [
+        """Create enhanced CSS-based extraction strategy"""
+        # Enhanced selectors for better article detection
+        title_selectors = [
             source.selector if source.selector else "h1 a, h2 a, h3 a",
-            "article h2 a, article h3 a",
-            ".post-title a, .article-title a",
-            ".entry-title a, .news-title a",
-            ".headline a, .story-headline a",
-            ".card-title a, .item-title a"
+            "article h1 a, article h2 a, article h3 a",
+            ".post-title a, .article-title a, .entry-title a",
+            ".news-title a, .headline a, .story-headline a",
+            ".card-title a, .item-title a, .content-title a",
+            "[data-testid*='headline'] a, [data-testid*='title'] a",
+            ".title a, .heading a, .header a",
+            # News-specific selectors
+            ".news-item h2 a, .news-item h3 a",
+            ".story h2 a, .story h3 a",
+            ".article-item h2 a, .article-item h3 a",
         ]
         
-        # Schema for extracting article data
+        # Schema for extracting comprehensive article data
+        # Use baseSelector to define the container elements for articles
         schema = {
+            "baseSelector": "article, .post, .news-item, .story, .article-item, .card, .item, .entry",
             "articles": [
                 {
-                    "title": {"selector": "text", "attr": "text"},
-                    "url": {"selector": "attr", "attr": "href"},
-                    "description": {
-                        "selector": "parent::*",
-                        "nested": {
-                            "description": {"selector": "p, .excerpt, .summary", "attr": "text"}
-                        }
+                    "title": title_selectors,
+                    "url": {
+                        "selector": title_selectors,
+                        "attr": "href"
                     },
-                    "date": {
-                        "selector": "parent::*",
-                        "nested": {
-                            "date": {"selector": "time, .date, .published", "attr": "text"}
-                        }
-                    },
-                    "author": {
-                        "selector": "parent::*",
-                        "nested": {
-                            "author": {"selector": ".author, .byline", "attr": "text"}
-                        }
-                    }
+                    "description": [
+                        "p:contains-text, .excerpt, .summary, .description",
+                        ".lead, .intro, .snippet, .abstract",
+                        ".article-excerpt, .post-excerpt",
+                        "[data-testid*='excerpt'], [data-testid*='summary']"
+                    ],
+                    "date": [
+                        "time, .date, .published, .timestamp",
+                        ".article-date, .post-date, .news-date",
+                        "[datetime], [data-date], [data-published]",
+                        ".meta-date, .publish-date, .creation-date"
+                    ],
+                    "author": [
+                        ".author, .byline, .writer, .journalist",
+                        ".article-author, .post-author",
+                        "[data-author], [data-byline]",
+                        ".meta-author, .attribution"
+                    ],
+                    "image": [
+                        "img[src], .featured-image img",
+                        ".article-image img, .post-image img",
+                        "[data-testid*='image'] img"
+                    ]
                 }
             ]
         }
         
-        # Create selector string combining all possibilities
-        combined_selector = ", ".join(article_selectors)
-        
-        return JsonCssExtractionStrategy(schema={
-            "articles": combined_selector
-        })
+        return JsonCssExtractionStrategy(schema=schema)
 
     def _create_llm_extraction_strategy(self) -> LLMExtractionStrategy:
         """Create LLM-based extraction strategy for intelligent content extraction"""
@@ -190,94 +218,140 @@ class Crawl4AiWebScraper:
             llm_config = LLMConfig(
                 provider=self.llm_provider,
                 # api_token can be set via environment variables if needed
+                # model_kwargs for additional configuration
             )
             
             instruction = """
             Extract all news articles, blog posts, or content items from this webpage.
             For each item, provide:
-            - title: The article title
-            - url: The link to the full article (make absolute URLs)
-            - description: Brief description or excerpt if available
-            - published_date: Publication date if found
-            - author: Author name if available
+            - title: The article title (required)
+            - url: The link to the full article (make absolute URLs if relative)
+            - description: Brief description, excerpt, or summary if available
+            - author: Author name if mentioned
+            - published_date: Publication date in ISO format if available
+            - category: Content category if identifiable
+            - tags: Relevant tags or keywords if available
             
-            Return the results as a JSON array of objects.
-            Only include substantial content items, not navigation links or ads.
+            Focus on actual content articles, not navigation links or advertisements.
+            Return the data as a JSON array of articles.
             """
             
             return LLMExtractionStrategy(
                 llm_config=llm_config,
-                instruction=instruction
+                instruction=instruction,
+                schema={
+                    "type": "object",
+                    "properties": {
+                        "articles": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "title": {"type": "string"},
+                                    "url": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "author": {"type": "string"},
+                                    "published_date": {"type": "string"},
+                                    "category": {"type": "string"},
+                                    "tags": {"type": "array", "items": {"type": "string"}}
+                                },
+                                "required": ["title", "url"]
+                            }
+                        }
+                    }
+                }
             )
             
         except ImportError:
             logger.warning("LLM extraction not available, falling back to CSS extraction")
             return None
+        except Exception as e:
+            logger.error(f"Error creating LLM extraction strategy: {e}")
+            return None
 
     async def _extract_articles_from_result(self, result, source: SourceConfig) -> List[Article]:
-        """Extract articles from crawl4ai result"""
+        """Extract articles from crawl result"""
         articles = []
         
-        # First try structured extraction if available
-        if result.extracted_content:
-            try:
+        try:
+            # Try extraction strategy first (if available)
+            if result.extracted_content:
+                logger.info("Using extraction strategy results")
                 extracted_data = json.loads(result.extracted_content)
                 articles.extend(self._parse_extracted_data(extracted_data, source))
-            except (json.JSONDecodeError, Exception) as e:
-                logger.warning(f"Failed to parse extracted content: {e}")
-        
-        # Fallback to link extraction from markdown/html
-        if not articles:
-            articles = await self._extract_from_links(result, source)
-        
-        # Enhance articles with full content if needed
-        articles = await self._enhance_articles_with_content(articles)
+            
+            # Fallback to link extraction from markdown/HTML
+            if not articles:
+                logger.info("Falling back to link extraction")
+                articles.extend(await self._extract_from_links(result, source))
+                
+        except Exception as e:
+            logger.error(f"Error extracting articles from result: {e}")
+            # Final fallback
+            articles.extend(await self._extract_from_links(result, source))
         
         return articles
 
-    def _parse_extracted_data(self, data: Dict, source: SourceConfig) -> List[Article]:
-        """Parse structured data extracted by crawl4ai"""
+    def _parse_extracted_data(self, data, source: SourceConfig) -> List[Article]:
+        """Parse extracted data from JSON into Article objects"""
         articles = []
         
         # Handle different data structures
-        article_list = []
         if isinstance(data, list):
-            article_list = data
+            # Data is directly a list of articles
+            article_data = data
         elif isinstance(data, dict):
-            if "articles" in data:
-                article_list = data["articles"]
-            else:
-                article_list = [data]
+            # Data is a dict with articles key
+            article_data = data.get('articles', [])
+        else:
+            logger.warning(f"Unexpected data type: {type(data)}")
+            return articles
         
-        for item in article_list:
-            article = self._create_article_from_data(item, source)
-            if article:
-                articles.append(article)
+        for item in article_data:
+            if isinstance(item, dict):
+                article = self._create_article_from_data(item, source)
+                if article:
+                    articles.append(article)
         
         return articles
 
     def _create_article_from_data(self, data: Dict, source: SourceConfig) -> Optional[Article]:
         """Create Article object from extracted data"""
         try:
-            title = data.get("title", "").strip()
-            if not title or len(title) < 10:
+            title = data.get('title', '').strip()
+            if not title or len(title) < 10:  # Skip very short titles
                 return None
             
-            url = data.get("url", "").strip()
+            url = data.get('url', '').strip()
             if not url:
                 return None
-            
+                
             # Make URL absolute
-            if not url.startswith(("http://", "https://")):
+            if not url.startswith(('http://', 'https://')):
                 url = urljoin(source.url, url)
             
-            description = data.get("description", "").strip()
+            # Parse description
+            description = data.get('description', '').strip()
             
             # Parse date
-            published = self._parse_date_string(data.get("published_date", ""))
+            published = None
+            date_str = data.get('published_date') or data.get('date')
+            if date_str:
+                published = self._parse_date_string(date_str)
             
             # Extract other metadata
-            author = data.get("author", "").strip() or None
+            author = data.get('author', '').strip() or None
+            tags = data.get('tags', []) or []
+            if isinstance(tags, str):
+                tags = [tag.strip() for tag in tags.split(',')]
+            
+            # Extract media URLs
+            media_urls = []
+            if 'image' in data and data['image']:
+                image_url = data['image']
+                if not image_url.startswith(('http://', 'https://')):
+                    image_url = urljoin(source.url, image_url)
+                media_urls.append(image_url)
             
             return Article(
                 title=title,
@@ -286,82 +360,134 @@ class Crawl4AiWebScraper:
                 published=published,
                 source=source.name,
                 category=source.category,
+                tags=tags,
                 author=author,
+                language=None,
+                fetch_status="success",
                 source_type="website",
-                fetch_status="success"
+                media_urls=media_urls,
+                word_count=len(description.split()) if description else None
             )
             
         except Exception as e:
-            logger.warning(f"Failed to create article from data: {e}")
+            logger.error(f"Error creating article from data: {e}")
             return None
 
     async def _extract_from_links(self, result, source: SourceConfig) -> List[Article]:
-        """Extract articles from links found in the page"""
+        """Extract articles from links in the crawl result"""
         articles = []
         
-        # Use the links extracted by crawl4ai
-        internal_links = result.links.internal if hasattr(result, 'links') else []
-        
-        for link in internal_links:
-            if self._is_likely_article_link(link, source):
-                article = Article(
-                    title=link.text.strip() if link.text else "No Title",
-                    url=link.href,
-                    description="",
-                    published=None,
-                    source=source.name,
-                    category=source.category,
-                    source_type="website",
-                    fetch_status="partial"
-                )
-                articles.append(article)
+        try:
+            # Use links from the result if available
+            if hasattr(result, 'links') and result.links:
+                # Handle both dict and object-style links
+                if isinstance(result.links, dict):
+                    all_links = result.links.get('internal', []) + result.links.get('external', [])
+                else:
+                    all_links = result.links.internal + result.links.external
+                
+                for link in all_links:
+                    if self._is_likely_article_link(link, source):
+                        # Handle both dict and object-style link data
+                        if isinstance(link, dict):
+                            title = link.get('text') or link.get('title') or "Untitled"
+                            url = link.get('href') or link.get('url')
+                        else:
+                            title = link.text or link.title or "Untitled"
+                            url = link.href
+                        
+                        if url:
+                            article = Article(
+                                title=title,
+                                url=url,
+                            description="",
+                            source=source.name,
+                            category=source.category,
+                            fetch_status="success",
+                            source_type="website"
+                        )
+                        articles.append(article)
+            
+        except Exception as e:
+            logger.error(f"Error extracting from links: {e}")
         
         return articles
 
     def _is_likely_article_link(self, link, source: SourceConfig) -> bool:
         """Determine if a link is likely to be an article"""
-        if not link.text or len(link.text.strip()) < 10:
+        # Handle both dict and object-style links
+        if isinstance(link, dict):
+            href = link.get('href') or link.get('url')
+            text = link.get('text') or link.get('title')
+        else:
+            href = link.href
+            text = link.text
+        
+        if not href or not text:
             return False
         
-        # Skip common navigation links
-        nav_keywords = {
-            "home", "about", "contact", "privacy", "terms", "login", "register",
-            "subscribe", "newsletter", "rss", "feed", "archive", "category",
-            "tag", "search", "more", "next", "previous", "page"
-        }
+        text = text.strip()
+        href = href.lower()
         
-        text_lower = link.text.lower()
-        return not any(keyword in text_lower for keyword in nav_keywords)
-
-    async def _enhance_articles_with_content(self, articles: List[Article]) -> List[Article]:
-        """Optionally enhance articles by fetching their full content"""
-        # For now, return articles as-is
-        # In the future, we could crawl individual article pages for full content
-        return articles
+        # Skip very short text
+        if len(text) < 10:
+            return False
+        
+        # Skip common non-article patterns
+        skip_patterns = [
+            'home', 'about', 'contact', 'privacy', 'terms',
+            'login', 'register', 'subscribe', 'newsletter',
+            'more', 'read more', 'continue reading', 'next',
+            'prev', 'previous', 'comments', 'share'
+        ]
+        
+        if any(pattern in text.lower() for pattern in skip_patterns):
+            return False
+        
+        # Skip common non-article URL patterns
+        if any(pattern in href for pattern in [
+            '/tag/', '/category/', '/author/', '/page/',
+            '/search/', '/archive/', '/feed/', '/rss/',
+            '.css', '.js', '.pdf', '.jpg', '.png', '.gif'
+        ]):
+            return False
+        
+        return True
 
     def _parse_date_string(self, date_str: str) -> Optional[datetime]:
-        """Parse various date string formats"""
+        """Parse various date string formats into datetime object"""
         if not date_str:
             return None
         
-        # Common date patterns
-        date_patterns = [
-            r'\d{4}-\d{2}-\d{2}',  # YYYY-MM-DD
-            r'\d{2}/\d{2}/\d{4}',  # MM/DD/YYYY
-            r'\d{2}-\d{2}-\d{4}',  # MM-DD-YYYY
-            r'\w+ \d{1,2}, \d{4}', # Month DD, YYYY
-        ]
-        
-        for pattern in date_patterns:
-            match = re.search(pattern, date_str)
-            if match:
+        try:
+            # Use dateutil parser for flexible date parsing
+            parsed_date = date_parser.parse(date_str, fuzzy=True)
+            
+            # Ensure timezone awareness
+            if parsed_date.tzinfo is None:
+                parsed_date = parsed_date.replace(tzinfo=timezone.utc)
+            
+            return parsed_date
+            
+        except Exception:
+            # Fallback patterns
+            patterns = [
+                '%Y-%m-%d %H:%M:%S',
+                '%Y-%m-%d',
+                '%d/%m/%Y',
+                '%m/%d/%Y',
+                '%B %d, %Y',
+                '%d %B %Y',
+            ]
+            
+            for pattern in patterns:
                 try:
-                    from dateutil import parser
-                    return parser.parse(match.group()).replace(tzinfo=timezone.utc)
-                except:
+                    return datetime.strptime(date_str, pattern).replace(tzinfo=timezone.utc)
+                except ValueError:
                     continue
-        
-        return None
+            
+            logger.warning(f"Could not parse date string: {date_str}")
+            return None
 
     def _remove_duplicate_articles(self, articles: List[Article]) -> List[Article]:
         """Remove duplicate articles based on URL"""
@@ -376,70 +502,77 @@ class Crawl4AiWebScraper:
         return unique_articles
 
     async def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
-        """Extract articles from multiple sources concurrently"""
+        """Extract articles from multiple sources with concurrent processing"""
+        logger.info(f"Processing {len(sources)} sources concurrently")
+        
         await self._ensure_crawler()
         
-        # Process sources in batches to avoid overwhelming the system
+        # Create semaphore to limit concurrent requests
+        semaphore = asyncio.Semaphore(self.max_concurrent)
+        
+        async def extract_with_semaphore(source):
+            async with semaphore:
+                return await self.extract_from_source(source)
+        
+        # Process sources concurrently
+        tasks = [extract_with_semaphore(source) for source in sources]
+        
+        try:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        except Exception as e:
+            logger.error(f"Error in concurrent processing: {e}")
+            results = []
+        
+        # Flatten results and handle exceptions
         all_articles = []
-        batch_size = min(self.max_concurrent, len(sources))
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"Source {sources[i].name} failed: {result}")
+            elif isinstance(result, list):
+                all_articles.extend(result)
         
-        for i in range(0, len(sources), batch_size):
-            batch = sources[i:i + batch_size]
-            
-            # Create tasks for concurrent processing
-            tasks = [self.extract_from_source(source) for source in batch]
-            
-            try:
-                # Execute batch concurrently
-                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
-                
-                # Process results
-                for source, result in zip(batch, batch_results):
-                    if isinstance(result, Exception):
-                        logger.error(f"Failed to process {source.name}: {result}")
-                    else:
-                        all_articles.extend(result)
-                        
-            except Exception as e:
-                logger.error(f"Batch processing failed: {e}")
-            
-            # Add delay between batches
-            if i + batch_size < len(sources):
-                await asyncio.sleep(1)
-        
+        logger.info(f"Total articles extracted: {len(all_articles)}")
         return all_articles
 
     async def cleanup(self):
-        """Clean up resources"""
+        """Clean up crawler resources"""
         if self.crawler:
-            await self.crawler.aclose()
-            self.crawler = None
+            try:
+                await self.crawler.close()
+                logger.info("Crawler cleanup completed")
+            except Exception as e:
+                logger.error(f"Error during crawler cleanup: {e}")
 
     def __del__(self):
         """Cleanup on deletion"""
-        if self.crawler:
+        if hasattr(self, 'crawler') and self.crawler:
             try:
-                asyncio.create_task(self.cleanup())
-            except:
-                pass
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(self.cleanup())
+                else:
+                    loop.run_until_complete(self.cleanup())
+            except Exception:
+                pass  # Ignore cleanup errors during deletion
 
 
 class SmartCrawl4AiWebScraper(Crawl4AiWebScraper):
-    """Enhanced version with AI-powered smart selectors and content understanding"""
-    
+    """Enhanced scraper with AI capabilities and smart fallbacks"""
+
     def __init__(self, *args, **kwargs):
         # Enable LLM extraction by default for smart scraper
         kwargs.setdefault('use_llm_extraction', True)
         super().__init__(*args, **kwargs)
-    
+
     async def _crawl_and_extract(self, source: SourceConfig) -> List[Article]:
-        """Enhanced crawling with smart content detection"""
+        """Enhanced crawling with smart fallbacks"""
         try:
-            # First, try standard extraction
+            # Try primary extraction method
             articles = await super()._crawl_and_extract(source)
             
-            # If we didn't get good results, try alternative strategies
-            if len(articles) < 3:
+            # If no articles found, try alternative strategies
+            if not articles:
+                logger.info(f"No articles found for {source.name}, trying smart fallback")
                 articles = await self._smart_extraction_fallback(source)
             
             return articles
@@ -447,109 +580,131 @@ class SmartCrawl4AiWebScraper(Crawl4AiWebScraper):
         except Exception as e:
             logger.error(f"Smart extraction failed for {source.name}: {e}")
             return []
-    
+
     async def _smart_extraction_fallback(self, source: SourceConfig) -> List[Article]:
-        """Fallback extraction with different strategies"""
-        logger.info(f"Trying smart extraction fallback for {source.name}")
+        """Smart fallback extraction strategies"""
+        articles = []
         
-        # Try with different wait conditions and JavaScript execution
-        run_config = CrawlerRunConfig(
-            markdown_generator=DefaultMarkdownGenerator(
-                content_filter=PruningContentFilter()
-            ),
-            wait_for="body",
-            js_code=[
-                "window.scrollTo(0, 1000);",  # Scroll to load dynamic content
-                "await new Promise(resolve => setTimeout(resolve, 2000));"  # Wait for content
-            ],
-            cache_mode=CacheMode.BYPASS
-        )
+        try:
+            # Try with different CSS strategies
+            fallback_selectors = [
+                "a[href*='article'], a[href*='post'], a[href*='story']",
+                ".article a, .post a, .story a, .news a",
+                "[class*='title'] a, [class*='headline'] a",
+                "h1 a, h2 a, h3 a, h4 a"
+            ]
+            
+            for selector in fallback_selectors:
+                # Create temporary source config with different selector
+                temp_source = SourceConfig(
+                    name=source.name,
+                    url=source.url,
+                    type=source.type,
+                    category=source.category,
+                    active=source.active,
+                    selector=selector
+                )
+                
+                # Try extraction with this selector
+                run_config = self._create_run_config(temp_source)
+                result = await self.crawler.arun(url=source.url, config=run_config)
+                
+                if result.success:
+                    temp_articles = await self._extract_articles_from_result(result, source)
+                    if temp_articles:
+                        articles.extend(temp_articles)
+                        break  # Stop on first successful extraction
+            
+        except Exception as e:
+            logger.error(f"Smart fallback failed: {e}")
         
-        result = await self.crawler.arun(
-            url=source.url,
-            config=run_config
-        )
-        
-        if result.success:
-            return await self._extract_articles_from_result(result, source)
-        
-        return []
+        return articles
 
 
-# Synchronous wrapper for backward compatibility
 class WebScraperWrapper:
-    """Synchronous wrapper for crawl4ai web scraper to maintain compatibility"""
-    
-    def __init__(self, *args, **kwargs):
-        self.async_scraper = Crawl4AiWebScraper(*args, **kwargs)
+    """Synchronous wrapper for async crawl4ai scraper"""
+
+    def __init__(self, scraper_class=None, *args, **kwargs):
+        # Use the provided scraper class or default to Crawl4AiWebScraper
+        if scraper_class is None:
+            scraper_class = Crawl4AiWebScraper
+        
+        self.async_scraper = scraper_class(*args, **kwargs)
         self._loop = None
-    
+
     def _get_event_loop(self):
         """Get or create event loop for async operations"""
         try:
+            # Try to get existing loop
             loop = asyncio.get_event_loop()
             if loop.is_closed():
                 raise RuntimeError("Event loop is closed")
         except RuntimeError:
+            # Create new loop if none exists or current is closed
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+        
+        self._loop = loop
         return loop
-    
+
     def extract_from_source(self, source: SourceConfig) -> List[Article]:
         """Synchronous wrapper for extract_from_source"""
         loop = self._get_event_loop()
         return loop.run_until_complete(self.async_scraper.extract_from_source(source))
-    
+
     def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
         """Synchronous wrapper for extract_from_multiple_sources"""
         loop = self._get_event_loop()
-        return loop.run_until_complete(self.async_scraper.extract_from_multiple_sources(sources))
-    
+        return loop.run_until_complete(
+            self.async_scraper.extract_from_multiple_sources(sources)
+        )
+
     def __del__(self):
         """Cleanup wrapper"""
-        if self.async_scraper:
+        if hasattr(self, '_loop') and self._loop and not self._loop.is_closed():
             try:
-                loop = self._get_event_loop()
-                loop.run_until_complete(self.async_scraper.cleanup())
-            except:
-                pass
+                if hasattr(self, 'async_scraper'):
+                    self._loop.run_until_complete(self.async_scraper.cleanup())
+                self._loop.close()
+            except Exception:
+                pass  # Ignore cleanup errors
 
 
-# For backward compatibility, alias the wrapper as the main classes
-Crawl4AiWebScraperSync = WebScraperWrapper
+# For backward compatibility
+SmartWebScraper = WebScraperWrapper
 
 
-def main():
-    """Test the crawl4ai web scraper"""
-    import asyncio
-    from src.scrapers.config_loader import ConfigLoader
+async def main():
+    """Test the crawl4ai scraper"""
     
     async def test_scraper():
         # Load configuration
-        config = ConfigLoader("src/sources.yaml")
-        website_sources = config.get_website_sources()[:2]  # Test first 2 sources
+        try:
+            from .config_loader import ConfigLoader
+        except ImportError:
+            from config_loader import ConfigLoader
         
-        # Create scraper
+        config = ConfigLoader("src/sources.yaml")
+        sources = config.get_active_sources()[:2]  # Test with first 2 sources
+        
+        # Test standard scraper
+        logger.info("Testing standard Crawl4AI scraper...")
         scraper = Crawl4AiWebScraper(use_llm_extraction=False)
         
         try:
-            # Test single source
-            if website_sources:
-                articles = await scraper.extract_from_source(website_sources[0])
-                print(f"Extracted {len(articles)} articles from {website_sources[0].name}")
-                
-                for article in articles[:3]:  # Show first 3
-                    print(f"- {article.title}")
-                    print(f"  URL: {article.url}")
-                    print(f"  Description: {article.description[:100]}...")
-                    print()
-        
+            for source in sources:
+                if source.type == "website":
+                    articles = await scraper.extract_from_source(source)
+                    logger.info(f"Extracted {len(articles)} articles from {source.name}")
+                    
+                    for article in articles[:3]:  # Show first 3
+                        logger.info(f"  - {article.title}")
+                        
         finally:
             await scraper.cleanup()
     
-    # Run test
-    asyncio.run(test_scraper())
+    await test_scraper()
 
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

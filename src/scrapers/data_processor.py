@@ -12,9 +12,22 @@ from pathlib import Path
 import sqlite3
 from urllib.parse import urlparse
 import hashlib
-from src.scrapers.rss_extractor import Article
-from src.scrapers.content_analyzer import ContentAnalyzer
-from src.storage.vector_store import VectorStore
+# Handle imports for both direct execution and module import
+try:
+    from .rss_extractor import Article
+    from .content_analyzer import ContentAnalyzer
+except ImportError:
+    from rss_extractor import Article
+    from content_analyzer import ContentAnalyzer
+# Handle storage import
+try:
+    from ..storage.vector_store import VectorStore
+except ImportError:
+    try:
+        from src.storage.vector_store import VectorStore
+    except ImportError:
+        # Optional dependency - VectorStore functionality will be disabled
+        VectorStore = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -790,7 +803,10 @@ class ReportGenerator:
 
 def main():
     """Test the data processor"""
-    from src.scrapers.rss_extractor import Article
+    try:
+        from .rss_extractor import Article
+    except ImportError:
+        from rss_extractor import Article
     from datetime import datetime, timezone
 
     # Create sample articles
