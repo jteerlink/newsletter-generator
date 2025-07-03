@@ -351,6 +351,58 @@ You should write content that:
 Your writing should be substantial, thorough, and engaging - think long-form journalism meets newsletter accessibility."""
         )
 
+    def execute_task(self, task: str, context: str = "") -> str:
+        """Execute WriterAgent task with enhanced long-form content generation."""
+        
+        # First attempt: Try to generate comprehensive content in one pass
+        full_prompt = self._build_prompt(task, context)
+        
+        # Add explicit instruction for very long content
+        enhanced_task = f"{task}\n\nIMPORTANT: This must be a VERY LONG, COMPREHENSIVE piece. Do not stop writing until you have covered all required sections in extreme detail. Write AT LEAST 10,000 words. Continue writing even if you feel you are getting verbose - that is exactly what is needed."
+        
+        result = super().execute_task(enhanced_task, context)
+        
+        # If the result is still too short, try to extend it
+        if len(result) < 20000:  # Less than ~20k characters
+            extension_prompt = f"The content you provided is excellent but needs to be much longer and more detailed. Please continue and expand the newsletter with much more detail, examples, case studies, and in-depth analysis. Current content length: {len(result)} characters. Target: 50,000+ characters.\n\nCurrent content:\n{result}\n\nCONTINUE writing from where you left off, adding much more detail to each section:"
+            
+            extension = super().execute_task("Continue and greatly expand the newsletter content", extension_prompt)
+            result = f"{result}\n\n{extension}"
+        
+        return result
+
+    def _build_prompt(self, task: str, context: str = "") -> str:
+        """Build enhanced prompt emphasizing comprehensive, detailed content creation."""
+        prompt_parts = [
+            f"You are a {self.role}.",
+            f"Your goal: {self.goal}",
+            f"Background: {self.backstory}",
+            "",
+            "CRITICAL CONTENT REQUIREMENTS:",
+            "- Write EXTREMELY DETAILED, COMPREHENSIVE content",
+            "- Each section must be SEVERAL THOUSAND WORDS (not just a few paragraphs)",
+            "- Include specific examples, case studies, data points, and real-world applications", 
+            "- Use storytelling techniques to make complex topics engaging",
+            "- Provide in-depth analysis, not just surface-level coverage",
+            "- Target the word count specified in the task",
+            "",
+            f"Task: {task}",
+            "",
+            "Remember: You are creating publication-ready newsletter content, not an outline or summary.",
+            "Write each section with the depth and detail of a comprehensive magazine article.",
+            "Include multiple examples, specific data points, expert quotes, and detailed explanations."
+        ]
+        
+        if context:
+            prompt_parts.extend([
+                "",
+                f"Context from previous work: {context}",
+                "",
+                "Build upon this context to create comprehensive, detailed content."
+            ])
+        
+        return "\n".join(prompt_parts)
+
 class EditorAgent(SimpleAgent):
     """Agent specialized for comprehensive editorial review and content optimization."""
     
@@ -720,11 +772,28 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         # Phase 2: Content Creation (Sequential, depends on Phase 1)
         writing_stream = {
             "stream_id": "writing",
-            "agent_type": "WriterAgent", 
+            "agent_type": "WriterAgent",
+            # Provide detailed instructions so that the WriterAgent actually produces the full first draft
+            # instead of a high-level outline.
+            "description": (
+                f"Write the complete, comprehensive newsletter about '{topic}'. This must be the full, final newsletter draft, not an outline or content plan.\n\n"
+                "YOUR TASK: Write the actual newsletter content with these sections:\n"
+                "1) Executive Summary (1000+ words)\n"
+                "2) Current Landscape (2000+ words)\n" 
+                "3) Deep-Dive Analysis (3000+ words)\n"
+                "4) Expert Insights (2000+ words)\n"
+                "5) Case Studies & Real-World Examples (2000+ words)\n"
+                "6) Future Outlook (2000+ words)\n"
+                "7) Practical Applications (2000+ words)\n"
+                "8) Resources & Further Reading (1000+ words)\n\n"
+                "Write each section in full with detailed content, not just headings or summaries. "
+                "Target 100,000 characters total (~15-20k words). Use engaging storytelling, include specific examples, "
+                "data points, and comprehensive coverage. This should be publication-ready newsletter content."
+            ),
             "tasks": [
-                "content_creation",
-                "narrative_development",
-                "engagement_optimization"
+                "draft_full_newsletter",
+                "ensure_storytelling_flow",
+                "optimize_engagement"
             ],
             "priority": "medium",
             "estimated_time": 300,
@@ -890,8 +959,15 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         # Build context from previous results
         context_summary = self._build_dependency_context(stream.get("dependencies", []), context_results)
         
+        # Use custom description if provided (especially important for writing tasks which need detailed
+        # instructions). Fallback to a generic description if not specified.
+        task_description = stream.get(
+            "description",
+            f"Complete {stream['stream_id']} workstream with tasks: {', '.join(stream['tasks'])}"
+        )
+
         task = Task(
-            description=f"Complete {stream['stream_id']} workstream with tasks: {', '.join(stream['tasks'])}",
+            description=task_description,
             agent=agent,
             context=context_summary
         )
@@ -921,7 +997,18 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         for dep in dependencies:
             if dep in results:
                 dep_result = results[dep]
-                summary = dep_result.get("result", "")[:500] + "..." if len(dep_result.get("result", "")) > 500 else dep_result.get("result", "")
+                # For writing dependency, provide the full content (or up to a generous limit) so that
+                # the EditorAgent has complete material to review and improve. Other dependencies
+                # can still be summarized to avoid excessive prompt length.
+                if dep == "writing":
+                    # Provide a much larger slice (or full) for the writer output. This avoids the
+                    # situation where only an editorial scorecard is produced because the editor
+                    # never saw the full draft.
+                    MAX_WRITING_CONTEXT_LENGTH = 100000  # allow up to ~100k characters for full draft context
+                    content = dep_result.get("result", "")
+                    summary = content[:MAX_WRITING_CONTEXT_LENGTH]
+                else:
+                    summary = dep_result.get("result", "")[:500] + "..." if len(dep_result.get("result", "")) > 500 else dep_result.get("result", "")
                 context_parts.append(f"From {dep}: {summary}")
         
         return "\n\n".join(context_parts)
@@ -1002,8 +1089,8 @@ class EnhancedCrew(SimpleCrew):
         
         # Updated limits to support comprehensive content
         MAX_TASKS = 15  # Increased from 10
-        MAX_CONTEXT_LENGTH = 5000  # Increased from 2000
-        MAX_INDIVIDUAL_RESULT_LENGTH = 8000  # Increased limit for individual results
+        MAX_CONTEXT_LENGTH = 100000  # Allow extensive context for deep newsletters
+        MAX_INDIVIDUAL_RESULT_LENGTH = 100000  # Allow very long individual agent outputs
         
         # Initialize performance tracking for each agent
         for agent in self.agents:

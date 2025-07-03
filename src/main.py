@@ -374,9 +374,22 @@ def execute_hierarchical_newsletter_generation(topic: str, audience: str = "tech
 
     # Extract final content if available
     stream_results = workflow_result.get("stream_results", {})
+    final_content = ""
     if stream_results and isinstance(stream_results, dict):
+        # Combine writer's content with editor's review for complete newsletter
+        writing_res = stream_results.get("writing")
         editing_res = stream_results.get("editing")
-        if editing_res:
+        
+        if writing_res and editing_res:
+            # Full newsletter = Writer's content + Editor's review
+            writer_content = writing_res.get("result", "")
+            editor_review = editing_res.get("result", "")
+            final_content = f"{writer_content}\n\n---\n\n## Editorial Review\n\n{editor_review}"
+        elif writing_res:
+            # Fallback to just writer content if no editor review
+            final_content = writing_res.get("result", "")
+        elif editing_res:
+            # Fallback to just editor review if no writer content
             final_content = editing_res.get("result", "")
 
     success = workflow_result.get("status") == "completed"
