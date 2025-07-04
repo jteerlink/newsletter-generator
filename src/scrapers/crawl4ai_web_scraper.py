@@ -174,36 +174,38 @@ class Crawl4AiWebScraper:
         # Use baseSelector to define the container elements for articles
         schema = {
             "baseSelector": "article, .post, .news-item, .story, .article-item, .card, .item, .entry",
-            "articles": [
+            "fields": [
                 {
-                    "title": title_selectors,
-                    "url": {
-                        "selector": title_selectors,
-                        "attr": "href"
-                    },
-                    "description": [
-                        "p:contains-text, .excerpt, .summary, .description",
-                        ".lead, .intro, .snippet, .abstract",
-                        ".article-excerpt, .post-excerpt",
-                        "[data-testid*='excerpt'], [data-testid*='summary']"
-                    ],
-                    "date": [
-                        "time, .date, .published, .timestamp",
-                        ".article-date, .post-date, .news-date",
-                        "[datetime], [data-date], [data-published]",
-                        ".meta-date, .publish-date, .creation-date"
-                    ],
-                    "author": [
-                        ".author, .byline, .writer, .journalist",
-                        ".article-author, .post-author",
-                        "[data-author], [data-byline]",
-                        ".meta-author, .attribution"
-                    ],
-                    "image": [
-                        "img[src], .featured-image img",
-                        ".article-image img, .post-image img",
-                        "[data-testid*='image'] img"
-                    ]
+                    "name": "title",
+                    "selector": title_selectors,
+                    "type": "text"
+                },
+                {
+                    "name": "url",
+                    "selector": title_selectors,
+                    "type": "attribute",
+                    "attribute": "href"
+                },
+                {
+                    "name": "description",
+                    "selector": "p:contains-text, .excerpt, .summary, .description, .lead, .intro, .snippet, .abstract, .article-excerpt, .post-excerpt",
+                    "type": "text"
+                },
+                {
+                    "name": "date",
+                    "selector": "time, .date, .published, .timestamp, .article-date, .post-date, .news-date, [datetime], [data-date], [data-published], .meta-date, .publish-date, .creation-date",
+                    "type": "text"
+                },
+                {
+                    "name": "author",
+                    "selector": ".author, .byline, .writer, .journalist, .article-author, .post-author, [data-author], [data-byline], .meta-author, .attribution",
+                    "type": "text"
+                },
+                {
+                    "name": "image",
+                    "selector": "img[src], .featured-image img, .article-image img, .post-image img",
+                    "type": "attribute",
+                    "attribute": "src"
                 }
             ]
         }
@@ -301,8 +303,14 @@ class Crawl4AiWebScraper:
             # Data is directly a list of articles
             article_data = data
         elif isinstance(data, dict):
-            # Data is a dict with articles key
-            article_data = data.get('articles', [])
+            # Data could be in various formats
+            if 'articles' in data:
+                article_data = data.get('articles', [])
+            elif 'items' in data:
+                article_data = data.get('items', [])
+            else:
+                # Treat the dict itself as a single article
+                article_data = [data] if data else []
         else:
             logger.warning(f"Unexpected data type: {type(data)}")
             return articles
@@ -430,15 +438,21 @@ class Crawl4AiWebScraper:
         href = href.lower()
         
         # Skip very short text
-        if len(text) < 10:
+        if len(text) < 15:  # Increased minimum length
             return False
         
-        # Skip common non-article patterns
+        # Skip common non-article patterns (expanded list)
         skip_patterns = [
             'home', 'about', 'contact', 'privacy', 'terms',
             'login', 'register', 'subscribe', 'newsletter',
             'more', 'read more', 'continue reading', 'next',
-            'prev', 'previous', 'comments', 'share'
+            'prev', 'previous', 'comments', 'share',
+            'skip to main content', 'menu', 'navigation',
+            'api platform', 'for business', 'pricing', 'support',
+            'documentation', 'careers', 'research highlights',
+            'publications', 'machine learning research',
+            'back to top', 'footer', 'header', 'sidebar',
+            'sign up', 'sign in', 'log out', 'my account'
         ]
         
         if any(pattern in text.lower() for pattern in skip_patterns):
@@ -539,21 +553,22 @@ class Crawl4AiWebScraper:
         if self.crawler:
             try:
                 await self.crawler.close()
+                self.crawler = None
                 logger.info("Crawler cleanup completed")
             except Exception as e:
                 logger.error(f"Error during crawler cleanup: {e}")
+                # Still set to None even if close fails
+                self.crawler = None
 
     def __del__(self):
-        """Cleanup on deletion"""
-        if hasattr(self, 'crawler') and self.crawler:
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    loop.create_task(self.cleanup())
-                else:
-                    loop.run_until_complete(self.cleanup())
-            except Exception:
-                pass  # Ignore cleanup errors during deletion
+        """Cleanup on deletion - simplified to avoid hanging"""
+        # During garbage collection, don't try to run async cleanup
+        # as it can cause hanging. Just mark crawler as None.
+        try:
+            if hasattr(self, 'crawler'):
+                self.crawler = None
+        except Exception:
+            pass  # Ignore cleanup errors during deletion
 
 
 class SmartCrawl4AiWebScraper(Crawl4AiWebScraper):
@@ -649,25 +664,107 @@ class WebScraperWrapper:
 
     def extract_from_source(self, source: SourceConfig) -> List[Article]:
         """Synchronous wrapper for extract_from_source"""
-        loop = self._get_event_loop()
-        return loop.run_until_complete(self.async_scraper.extract_from_source(source))
+        try:
+            # Check if there's already a running event loop
+            loop = asyncio.get_running_loop()
+            # If we reach here, there's already a running loop - use threading
+            import concurrent.futures
+            import threading
+            
+            result = []
+            exception = None
+            
+            def run_in_thread():
+                nonlocal result, exception
+                try:
+                    # Create a new event loop for this thread
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        result = new_loop.run_until_complete(self.async_scraper.extract_from_source(source))
+                    finally:
+                        new_loop.close()
+                except Exception as e:
+                    exception = e
+            
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+            
+            if exception:
+                raise exception
+            return result
+            
+        except RuntimeError:
+            # No running loop, we can use run_until_complete
+            loop = self._get_event_loop()
+            return loop.run_until_complete(self.async_scraper.extract_from_source(source))
 
     def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
         """Synchronous wrapper for extract_from_multiple_sources"""
-        loop = self._get_event_loop()
-        return loop.run_until_complete(
-            self.async_scraper.extract_from_multiple_sources(sources)
-        )
+        try:
+            # Check if there's already a running event loop
+            loop = asyncio.get_running_loop()
+            # If we reach here, there's already a running loop - use threading
+            import concurrent.futures
+            import threading
+            
+            result = []
+            exception = None
+            
+            def run_in_thread():
+                nonlocal result, exception
+                try:
+                    # Create a new event loop for this thread
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        result = new_loop.run_until_complete(self.async_scraper.extract_from_multiple_sources(sources))
+                    finally:
+                        new_loop.close()
+                except Exception as e:
+                    exception = e
+            
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+            
+            if exception:
+                raise exception
+            return result
+            
+        except RuntimeError:
+            # No running loop, we can use run_until_complete
+            loop = self._get_event_loop()
+            return loop.run_until_complete(
+                self.async_scraper.extract_from_multiple_sources(sources)
+            )
+
+    def cleanup(self):
+        """Manual cleanup method - simplified to avoid hanging"""
+        try:
+            # Just set the async scraper to None to release resources
+            # Don't try to run async cleanup as it can cause hanging
+            if hasattr(self, 'async_scraper'):
+                self.async_scraper = None
+            if hasattr(self, '_loop') and self._loop and not self._loop.is_closed():
+                self._loop.close()
+                self._loop = None
+            logger.debug("Cleanup completed")
+        except Exception:
+            # If anything goes wrong, just continue - cleanup is best effort
+            logger.debug("Cleanup skipped due to error")
+            pass
 
     def __del__(self):
-        """Cleanup wrapper"""
-        if hasattr(self, '_loop') and self._loop and not self._loop.is_closed():
-            try:
-                if hasattr(self, 'async_scraper'):
-                    self._loop.run_until_complete(self.async_scraper.cleanup())
+        """Cleanup wrapper - simplified to avoid hanging"""
+        # During garbage collection, just close the loop if it exists
+        # Don't try to run async cleanup as it can hang
+        try:
+            if hasattr(self, '_loop') and self._loop and not self._loop.is_closed():
                 self._loop.close()
-            except Exception:
-                pass  # Ignore cleanup errors
+        except Exception:
+            pass  # Ignore cleanup errors during deletion
 
 
 # For backward compatibility

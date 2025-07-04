@@ -362,11 +362,16 @@ class NewsExtractor:
     def generate_report(self, format: str = "json") -> str:
         """Generate a report of extracted data"""
         if format == "json":
-            return self.report_generator.generate_json_report()
-        elif format == "html":
-            return self.report_generator.generate_html_report()
+            # Generate daily report and save it
+            daily_report = self.report_generator.generate_daily_report()
+            return self.report_generator.save_report(daily_report)
         elif format == "csv":
-            return self.report_generator.generate_csv_report()
+            # Use DataProcessor's export functionality
+            return self.data_processor.export_to_csv()
+        elif format == "html":
+            # For HTML, export as JSON for now (could be enhanced later)
+            daily_report = self.report_generator.generate_daily_report()
+            return self.report_generator.save_report(daily_report, "daily_report.json")
         else:
             raise ValueError(f"Unsupported format: {format}")
 
@@ -388,12 +393,14 @@ class NewsExtractor:
         )
 
     def __del__(self):
-        """Cleanup on deletion"""
-        if hasattr(self.web_scraper, 'cleanup') and callable(self.web_scraper.cleanup):
-            try:
-                self.web_scraper.cleanup()
-            except Exception:
-                pass  # Ignore cleanup errors during deletion
+        """Cleanup on deletion - simplified to avoid hanging"""
+        # During garbage collection, just release references
+        # Don't try to run cleanup methods as they can cause hanging
+        try:
+            if hasattr(self, 'web_scraper'):
+                self.web_scraper = None
+        except Exception:
+            pass  # Ignore cleanup errors during deletion
 
 
 def main():
@@ -490,8 +497,9 @@ def main():
         print(*a, **k)
         logger.info(" ".join(str(x) for x in a))
 
+    # Initialize extractor with CLI arguments
+    extractor = None
     try:
-        # Initialize extractor with CLI arguments
         extractor = NewsExtractor(
             config_path=args.config,
             output_dir=args.output_dir,
@@ -504,6 +512,12 @@ def main():
             max_concurrent=args.max_concurrent,
             timeout=args.timeout,
         )
+    except Exception as e:
+        logprint(f"Error initializing extractor: {e}")
+        logger.exception("Failed to initialize extractor:")
+        sys.exit(1)
+
+    try:
 
         logprint(f"Initialized extractor with {extractor.extraction_stats['scraper_type']} scraper")
         logprint(f"Scraper configuration: {extractor.extraction_stats['scraper_config']}")
@@ -544,6 +558,14 @@ def main():
         logprint(f"Error during extraction: {e}")
         logger.exception("Detailed error information:")
         sys.exit(1)
+    finally:
+        # Manual cleanup to avoid hanging during garbage collection
+        try:
+            if extractor and hasattr(extractor, 'web_scraper') and extractor.web_scraper:
+                if hasattr(extractor.web_scraper, 'cleanup'):
+                    extractor.web_scraper.cleanup()
+        except Exception:
+            pass  # Ignore cleanup errors
 
 
 if __name__ == "__main__":

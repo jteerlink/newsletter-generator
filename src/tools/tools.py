@@ -267,13 +267,17 @@ def search_knowledge_base(query: str, n_results: int = 5) -> str:
 
 # ---------------------------------------------------------------------------
 
+# Note: CrewAI tools integration removed - relying solely on superior crawl4ai implementation
+# The crawl4ai system provides structured article extraction which is ideal for newsletters
+
 # Tool registry for agent access
 AVAILABLE_TOOLS = {
+    # Legacy DuckDuckGo tools (for fallback)
     'search_web': search_web,
     'search_web_with_alternatives': search_web_with_alternatives,
     'agentic_search': AgenticSearchTool,
     'async_search_web': async_search_web,
-    'search_knowledge_base': search_knowledge_base
+    'search_knowledge_base': search_knowledge_base,
 }
 
 # TODO: Convert DDGS call to aiohttp for true async; markers here for future async_execution

@@ -106,34 +106,81 @@ class SimpleAgent:
         return any(indicator in response_lower for indicator in tool_indicators)
     
     def _execute_tools(self, task: str) -> str:
-        """Execute available tools based on the task."""
+        """Execute available tools based on the task, preferring CrewAI tools when available."""
         tool_outputs = []
         
         # Simple logic to determine what to search for
         search_query = self._extract_search_query(task)
         
         for tool_name in self.tools:
-            if tool_name in self.available_tools:
+            effective_tool_name = self._get_effective_tool_name(tool_name)
+            
+            if effective_tool_name in self.available_tools:
                 try:
-                    if tool_name == 'search_web':
-                        output = self.available_tools[tool_name](search_query, max_results=3)
+                    # Execute tools based on their type and interface
+                    if effective_tool_name == 'search_web' or effective_tool_name == 'crewai_search_web':
+                        output = self.available_tools[effective_tool_name](search_query, max_results=3)
                     elif tool_name == 'search_knowledge_base':
                         output = self.available_tools[tool_name](search_query, n_results=3)
                     elif tool_name == 'agentic_search':
-                        tool_class = self.available_tools[tool_name]
-                        try:
-                            agentic_tool = tool_class()
-                            output = agentic_tool.run(search_query)
-                        except Exception as e:
-                            output = f"Agentic search error: {str(e)}"
+                        # Handle both legacy and CrewAI agentic search
+                        if effective_tool_name == 'crewai_agentic_search':
+                            tool_class = self.available_tools[effective_tool_name]
+                            try:
+                                agentic_tool = tool_class()
+                                output = agentic_tool.run(search_query, f"Research information about {search_query}")
+                            except Exception as e:
+                                output = f"CrewAI agentic search error: {str(e)}"
+                        else:
+                            # Legacy agentic search
+                            tool_class = self.available_tools[effective_tool_name]
+                            try:
+                                agentic_tool = tool_class()
+                                output = agentic_tool.run(search_query)
+                            except Exception as e:
+                                output = f"Agentic search error: {str(e)}"
+                    elif tool_name == 'search_web_with_alternatives':
+                        if effective_tool_name == 'crewai_search_web_with_alternatives':
+                            output = self.available_tools[effective_tool_name](search_query)
+                        else:
+                            output = self.available_tools[effective_tool_name](search_query)
+                    elif effective_tool_name == 'hybrid_search_web':
+                        # Use hybrid search for maximum reliability
+                        output = self.available_tools[effective_tool_name](search_query, max_results=3)
                     else:
-                        output = self.available_tools[tool_name](search_query)
+                        # Generic tool execution
+                        output = self.available_tools[effective_tool_name](search_query)
                     
-                    tool_outputs.append(f"=== {tool_name.upper()} RESULTS ===\n{output}\n")
+                    # Format output with tool identification
+                    tool_display_name = f"{tool_name.upper()}" + (
+                        " (CrewAI)" if effective_tool_name.startswith('crewai_') else ""
+                    )
+                    tool_outputs.append(f"=== {tool_display_name} RESULTS ===\n{output}\n")
+                    
                 except Exception as e:
+                    logger.error(f"Tool execution error for {effective_tool_name}: {e}")
                     tool_outputs.append(f"=== {tool_name.upper()} ERROR ===\n{str(e)}\n")
         
         return "\n".join(tool_outputs)
+    
+    def _get_effective_tool_name(self, requested_tool: str) -> str:
+        """Get the effective tool name, preferring CrewAI versions when available."""
+        # Check if CrewAI tools are available
+        from src.tools.tools import CREWAI_AVAILABLE, RECOMMENDED_TOOLS
+        
+        if CREWAI_AVAILABLE and requested_tool in RECOMMENDED_TOOLS:
+            crewai_tool = RECOMMENDED_TOOLS[requested_tool]
+            if crewai_tool in self.available_tools:
+                logger.info(f"Using CrewAI tool {crewai_tool} instead of {requested_tool}")
+                return crewai_tool
+        
+        # Check if hybrid search is available and preferred for web search
+        if requested_tool == 'search_web' and 'hybrid_search_web' in self.available_tools:
+            logger.info(f"Using hybrid search for enhanced reliability")
+            return 'hybrid_search_web'
+        
+        # Fall back to original tool
+        return requested_tool
     
     def _extract_search_query(self, task: str) -> str:
         """Extract a search query from the task description."""
@@ -233,7 +280,7 @@ Your research should be:
 - Connected to broader trends and implications
 
 You should explore topics thoroughly, ask probing questions, and provide research that serves as a solid foundation for compelling content creation.""",
-            tools=["agentic_search", "search_web_with_alternatives"]
+            tools=["agentic_search", "search_web_with_alternatives", "hybrid_search_web"]
         )
 
 class Task:

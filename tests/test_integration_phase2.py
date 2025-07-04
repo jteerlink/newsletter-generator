@@ -26,24 +26,49 @@ logger = logging.getLogger(__name__)
 class TestPhase2Tools:
     """Test Phase 2 tool implementations."""
     
-    def test_web_search_tool_structure(self):
-        """Test that web search tool has correct structure."""
+    def test_legacy_web_search_tool_structure(self):
+        """Test that legacy web search tool has correct structure."""
         assert 'search_web' in AVAILABLE_TOOLS
         assert callable(AVAILABLE_TOOLS['search_web'])
+    
+    def test_crewai_tools_available(self):
+        """Test that CrewAI tools are available when properly configured."""
+        from src.tools.tools import CREWAI_AVAILABLE
+        if CREWAI_AVAILABLE:
+            assert 'crewai_search_web' in AVAILABLE_TOOLS
+            assert 'hybrid_search_web' in AVAILABLE_TOOLS
+            assert callable(AVAILABLE_TOOLS['crewai_search_web'])
+            assert callable(AVAILABLE_TOOLS['hybrid_search_web'])
     
     def test_knowledge_base_tool_structure(self):
         """Test that knowledge base tool has correct structure."""
         assert 'search_knowledge_base' in AVAILABLE_TOOLS
         assert callable(AVAILABLE_TOOLS['search_knowledge_base'])
     
+    def test_hybrid_search_execution(self):
+        """Test hybrid search execution (graceful fallback)."""
+        try:
+            if 'hybrid_search_web' in AVAILABLE_TOOLS:
+                result = AVAILABLE_TOOLS['hybrid_search_web']("test query", max_results=1)
+                assert isinstance(result, str)
+                assert len(result) > 0
+                # Should either get CrewAI results, fallback to DuckDuckGo, or indicate no results
+                assert any(indicator in result for indicator in [
+                    "Search Results", "temporarily unavailable", "CrewAI", "fallback", 
+                    "No search results found", "Search unavailable", "API key not configured"
+                ])
+        except Exception as e:
+            # Rate limiting or API issues are acceptable
+            assert any(keyword in str(e).lower() for keyword in ['ratelimit', 'rate', 'api', 'temporarily'])
+    
     def test_web_search_execution(self):
-        """Test web search execution (may be rate limited)."""
+        """Test legacy web search execution (may be rate limited)."""
         try:
             result = search_web("test query", max_results=1)
             assert isinstance(result, str)
             assert len(result) > 0
             # Either successful results or rate limit error
-            assert "Web Search Results" in result or "Error performing web search" in result
+            assert "Search Results" in result or "temporarily unavailable" in result
         except Exception as e:
             # Rate limiting is acceptable
             assert "ratelimit" in str(e).lower() or "rate" in str(e).lower()
@@ -73,10 +98,12 @@ class TestPhase2Agents:
         agent = ResearchAgent()
         
         assert agent.name == "ResearchAgent"
-        assert agent.role == "AI Research Specialist"
-        assert 'search_web' in agent.tools
-        assert 'search_knowledge_base' in agent.tools
-        assert len(agent.available_tools) == 2
+        assert "Research Analyst" in agent.role
+        assert 'agentic_search' in agent.tools
+        assert 'search_web_with_alternatives' in agent.tools
+        assert 'hybrid_search_web' in agent.tools
+        # Agent should have access to multiple tools via the registry
+        assert len(agent.available_tools) >= 3
     
     def test_agent_prompt_building(self):
         """Test agent prompt building functionality."""

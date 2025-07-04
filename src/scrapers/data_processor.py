@@ -20,14 +20,20 @@ except ImportError:
     from rss_extractor import Article
     from content_analyzer import ContentAnalyzer
 # Handle storage import
+VectorStore = None
+# Try adding repo root to path and importing
+import sys
+from pathlib import Path
+# Navigate to repo root (from scrapers/data_processor.py -> repo_root)
+repo_root = Path(__file__).resolve().parent.parent.parent
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
 try:
-    from ..storage.vector_store import VectorStore
+    from src.storage.vector_store import VectorStore
 except ImportError:
-    try:
-        from src.storage.vector_store import VectorStore
-    except ImportError:
-        # Optional dependency - VectorStore functionality will be disabled
-        VectorStore = None
+    # Optional dependency - VectorStore functionality will be disabled
+    VectorStore = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,8 +49,17 @@ class DataProcessor:
         # Initialize content analyzer for Phase 1.2 enhancements
         self.content_analyzer = ContentAnalyzer()
 
-        # VectorStore for ChromaDB storage
-        self.vector_store = VectorStore()
+        # VectorStore for ChromaDB storage (optional dependency)
+        if VectorStore is not None:
+            try:
+                self.vector_store = VectorStore()
+                logger.info("VectorStore initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize VectorStore: {e}")
+                self.vector_store = None
+        else:
+            logger.warning("VectorStore not available - ChromaDB functionality disabled")
+            self.vector_store = None
 
         # Database setup - use the existing database location
         self.db_path = Path("src/data/raw/articles.db")
@@ -314,19 +329,25 @@ class DataProcessor:
             )
 
             conn.commit()
-        # [NEW] Store article in ChromaDB (VectorStore)
-        chroma_metadata = {
-            "url": article.url,
-            "title": article.title,
-            "source": article.source,
-            "category": analysis["category"],
-            "tags": json.dumps(analysis["tags"]),  # Serialize tags as JSON string
-            "published": str(article.published) if article.published else None,
-            "quality_score": analysis["quality_score"],
-            "content_hash": analysis["content_hash"],
-        }
-        logger.debug(f"Calling add_document with content length: {len(content)}, metadata: {chroma_metadata}")
-        self.vector_store.add_document(content, chroma_metadata)
+        # [NEW] Store article in ChromaDB (VectorStore) - if available
+        if self.vector_store is not None:
+            chroma_metadata = {
+                "url": article.url,
+                "title": article.title,
+                "source": article.source,
+                "category": analysis["category"],
+                "tags": json.dumps(analysis["tags"]),  # Serialize tags as JSON string
+                "published": str(article.published) if article.published else None,
+                "quality_score": analysis["quality_score"],
+                "content_hash": analysis["content_hash"],
+            }
+            logger.debug(f"Calling add_document with content length: {len(content)}, metadata: {chroma_metadata}")
+            try:
+                self.vector_store.add_document(content, chroma_metadata)
+            except Exception as e:
+                logger.warning(f"Failed to add document to VectorStore: {e}")
+        else:
+            logger.debug("VectorStore not available - skipping ChromaDB storage")
         return True, analysis
 
     def _get_existing_content_hashes(self) -> List[str]:
@@ -850,3 +871,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
