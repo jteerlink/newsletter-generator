@@ -303,8 +303,24 @@ def generate_newsletter_with_progress(config: Dict[str, Any], advanced_config: D
             create_progress_tracker("✅ Generation Complete!", 100)
             time.sleep(1)
             
-            # Store results
+            # Store results with better handling
             st.session_state.newsletter_output = result
+            
+            # Extract content properly from different workflow results
+            content = ""
+            if result.get('success'):
+                if 'content' in result:
+                    content = result['content']
+                elif 'workflow_result' in result:
+                    # Handle hierarchical workflow results
+                    workflow_result = result['workflow_result']
+                    if 'stream_results' in workflow_result:
+                        stream_results = workflow_result['stream_results']
+                        if 'writing' in stream_results:
+                            content = stream_results['writing'].get('result', '')
+                        elif 'editing' in stream_results:
+                            content = stream_results['editing'].get('result', '')
+            
             st.session_state.generation_stats = {
                 'execution_time': result.get('execution_time', 0),
                 'success': result.get('success', False),
@@ -313,7 +329,9 @@ def generate_newsletter_with_progress(config: Dict[str, Any], advanced_config: D
                 'audience': config['audience'],
                 'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 'config': config,
-                'advanced_config': advanced_config
+                'advanced_config': advanced_config,
+                'content_length': len(content) if content else 0,
+                'word_count': len(content.split()) if content else 0
             }
             
             # Clear progress
@@ -321,7 +339,11 @@ def generate_newsletter_with_progress(config: Dict[str, Any], advanced_config: D
             
             if result.get('success'):
                 st.success("✅ Newsletter generated successfully!")
+                if content:
+                    st.info(f"📊 Generated {len(content):,} characters ({len(content.split()):,} words)")
                 st.balloons()
+                # Force a rerun to show the output
+                st.rerun()
             else:
                 st.error(f"❌ Generation failed: {result.get('error', 'Unknown error')}")
                 
@@ -417,21 +439,96 @@ def main():
     
     st.markdown("</div>", unsafe_allow_html=True)
     
-    # Output section
+    # Output section with enhanced content extraction
     if st.session_state.newsletter_output:
         st.markdown("---")
-        st.markdown("## 📰 Generated Newsletter")
+        
+        # Output header
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin: 2rem 0 1rem 0;
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border: 2px solid rgba(255,255,255,0.1);
+        ">
+            <h2 style="margin: 0; font-size: 1.8rem; font-weight: 700;">
+                📰 Generated Newsletter
+            </h2>
+        </div>
+        """, unsafe_allow_html=True)
         
         result = st.session_state.newsletter_output
         
+        # Debug information (can be removed later)
+        with st.expander("🔍 Debug Info", expanded=False):
+            st.write("Result keys:", list(result.keys()) if result else "No result")
+            if result:
+                st.write("Success:", result.get('success'))
+                st.write("Has content:", 'content' in result)
+                st.write("Has workflow_result:", 'workflow_result' in result)
+        
         if result.get('success'):
-            content = result.get('content', '')
+            # Enhanced content extraction
+            content = ""
+            
+            # Try different content extraction methods
+            if 'content' in result and result['content']:
+                content = result['content']
+                st.info("📋 Content extracted from direct result")
+            elif 'workflow_result' in result:
+                workflow_result = result['workflow_result']
+                st.info("📋 Extracting content from workflow result...")
+                
+                if 'stream_results' in workflow_result:
+                    stream_results = workflow_result['stream_results']
+                    
+                    # Try to get content from writing stream
+                    if 'writing' in stream_results and stream_results['writing'].get('result'):
+                        writing_content = stream_results['writing']['result']
+                        
+                        # Try to get content from editing stream
+                        if 'editing' in stream_results and stream_results['editing'].get('result'):
+                            editing_content = stream_results['editing']['result']
+                            # Combine both if available
+                            content = f"{writing_content}\n\n---\n\n## Editorial Review\n\n{editing_content}"
+                        else:
+                            content = writing_content
+                    elif 'editing' in stream_results and stream_results['editing'].get('result'):
+                        content = stream_results['editing']['result']
+                
+                # If still no content, try to extract from other parts
+                if not content and isinstance(workflow_result, dict):
+                    for key, value in workflow_result.items():
+                        if isinstance(value, str) and len(value) > 100:  # Likely content
+                            content = value
+                            break
+            
             if content:
+                # Show content statistics
+                word_count = len(content.split())
+                char_count = len(content)
+                
+                st.success(f"✅ Newsletter generated successfully! ({char_count:,} characters, {word_count:,} words)")
+                
+                # Display the content using the enhanced tabs
                 create_content_display_tabs(content)
             else:
-                st.warning("⚠️ No content generated")
+                st.warning("⚠️ Newsletter generation completed but no content was extracted. Please check the debug info above.")
+                
+                # Show raw result for debugging
+                with st.expander("🔧 Raw Result", expanded=False):
+                    st.json(result)
         else:
-            st.error(f"❌ Generation failed: {result.get('error', 'Unknown error')}")
+            error_msg = result.get('error', 'Unknown error')
+            st.error(f"❌ Generation failed: {error_msg}")
+            
+            # Show raw result for debugging failures
+            with st.expander("🔧 Raw Error Result", expanded=False):
+                st.json(result)
     
     # Performance metrics
     if st.session_state.generation_stats:
