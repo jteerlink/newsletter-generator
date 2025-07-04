@@ -44,6 +44,10 @@ def check_dependencies():
 def setup_environment():
     """Setup the environment for the newsletter generator"""
     
+    # Change to parent directory to access project files
+    parent_dir = Path(__file__).parent.parent
+    os.chdir(parent_dir)
+    
     # Create necessary directories
     dirs_to_create = [
         'logs',
@@ -73,9 +77,9 @@ def launch_streamlit(interface_type="enhanced", port=8501, host="localhost"):
     
     # Determine which interface to launch
     if interface_type == "enhanced":
-        app_file = "streamlit_app_enhanced.py"
+        app_file = "streamlit/streamlit_app_enhanced.py"
     else:
-        app_file = "streamlit_app.py"
+        app_file = "streamlit/streamlit_app.py"
     
     if not Path(app_file).exists():
         print(f"❌ Interface file {app_file} not found!")

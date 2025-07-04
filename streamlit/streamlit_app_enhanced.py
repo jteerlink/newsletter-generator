@@ -11,8 +11,8 @@ import json
 from datetime import datetime
 from typing import Dict, Any, List
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+# Add src to path for imports (go up one directory to find src)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Import the newsletter generation functions
 from src.main import execute_newsletter_generation, execute_hierarchical_newsletter_generation
@@ -246,7 +246,9 @@ def load_sources_config():
     """Load sources configuration from YAML file"""
     try:
         import yaml
-        with open('src/sources.yaml', 'r') as f:
+        # Look for sources.yaml in the parent directory's src folder
+        sources_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'sources.yaml')
+        with open(sources_path, 'r') as f:
             return yaml.safe_load(f)
     except Exception as e:
         st.error(f"Error loading sources config: {e}")
