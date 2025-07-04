@@ -1,0 +1,17 @@
+ollama==0.5.1
+python-dotenv==1.1.0
+pytest==8.4.1
+chromadb==1.0.13
+sentence-transformers==4.1.0
+langchain_text_splitters==0.3.8
+duckduckgo-search==6.2.13 
+crawl4ai==0.6.3
+playwright==1.53.0
+python-dateutil==2.8.2
+
+# CrewAI Web Search Migration
+crewai>=0.82.0
+crewai[tools]>=0.82.0
+streamlit>=1.28.0
+plotly>=5.15.0
+PyYAML>=6.0 

@@ -61,3 +61,8 @@ fi
 # Display installed packages
 echo -e "${YELLOW}Installed packages:${NC}"
 conda list
+
+# Phase 1.1: Environment Setup
+python -m venv venv
+source venv/bin/activate
+pip install -r ../requirements.txt
