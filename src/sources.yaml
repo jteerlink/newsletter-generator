@@ -319,6 +319,96 @@ sources:
     scrape_frequency: "daily"
     description: "Daily AI business and tech news"
 
+  - name: "The Batch"
+    url: "https://www.deeplearning.ai/the-batch/"
+    rss_url: "https://www.deeplearning.ai/the-batch/feed/"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Weekly AI newsletter by Andrew Ng and DeepLearning.AI"
+
+  - name: "The Rundown"
+    url: "https://rundown.ai/"
+    rss_url: "https://rundown.ai/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI newsletter with 1M+ subscribers"
+
+  - name: "Forward Future"
+    url: "https://www.forwardfuture.ai/"
+    rss_url: "https://www.forwardfuture.ai/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI newsletter by Matthew Berman"
+
+  - name: "Superhuman AI"
+    url: "https://www.superhuman.ai/"
+    rss_url: "https://www.superhuman.ai/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI newsletter by Zain Kahn with 1M+ subscribers"
+
+  - name: "Bot Eat Brain"
+    url: "https://www.boteatbrain.com/"
+    rss_url: "https://www.boteatbrain.com/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Daily AI newsletter with 20k+ subscribers"
+
+  - name: "AI Insights"
+    url: "https://www.joinaiinsights.com/"
+    rss_url: "https://www.joinaiinsights.com/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI newsletter with 25k+ subscribers"
+
+  - name: "NeonPulse Future Blueprint"
+    url: "https://neonpulse.beehiiv.com/"
+    rss_url: "https://neonpulse.beehiiv.com/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "AI news and analysis newsletter"
+
+  - name: "Morning Brew AI"
+    url: "https://www.morningbrew.com/emerging-tech"
+    rss_url: "https://www.morningbrew.com/emerging-tech/rss"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "daily"
+    description: "Morning AI and tech newsletter"
+
+  - name: "AI Tool Report"
+    url: "https://aitoolreport.com/"
+    rss_url: "https://aitoolreport.com/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Newsletter focused on AI tools and applications"
+
+  - name: "Last Week in AI"
+    url: "https://lastweekin.ai/"
+    rss_url: "https://lastweekin.ai/feed"
+    type: "rss"
+    category: "newsletters"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Weekly AI newsletter summarizing key developments"
+
   # Industry and Business Focus
   - name: "SyncedReview"
     url: "https://syncedreview.com/"
@@ -374,3 +464,178 @@ sources:
     active: true
     scrape_frequency: "daily"
     description: "AI business strategy and implementation"
+
+  # Publishing Platforms - Medium, Substack, and Similar
+  - name: "Medium - Artificial Intelligence"
+    url: "https://medium.com/topic/artificial-intelligence"
+    rss_url: "https://medium.com/feed/topic/artificial-intelligence"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Medium articles on artificial intelligence"
+
+  - name: "Medium - Machine Learning"
+    url: "https://medium.com/topic/machine-learning"
+    rss_url: "https://medium.com/feed/topic/machine-learning"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Medium articles on machine learning"
+
+  - name: "Medium - Data Science"
+    url: "https://medium.com/topic/data-science"
+    rss_url: "https://medium.com/feed/topic/data-science"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Medium articles on data science"
+
+  - name: "AI in Plain English"
+    url: "https://ai.plainenglish.io/"
+    rss_url: "https://ai.plainenglish.io/feed"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Medium publication making AI accessible"
+
+  - name: "The Startup - AI"
+    url: "https://medium.com/swlh/tagged/artificial-intelligence"
+    rss_url: "https://medium.com/feed/swlh/tagged/artificial-intelligence"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "The Startup publication AI articles"
+
+  - name: "Better Programming - AI"
+    url: "https://betterprogramming.pub/tagged/artificial-intelligence"
+    rss_url: "https://betterprogramming.pub/feed/tagged/artificial-intelligence"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Better Programming AI development articles"
+
+  - name: "Level Up Coding - AI"
+    url: "https://levelup.gitconnected.com/tagged/artificial-intelligence"
+    rss_url: "https://levelup.gitconnected.com/feed/tagged/artificial-intelligence"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Level Up Coding AI programming articles"
+
+  - name: "Hackernoon - AI"
+    url: "https://hackernoon.com/tagged/artificial-intelligence"
+    rss_url: "https://hackernoon.com/tagged/artificial-intelligence/feed"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "HackerNoon AI technology articles"
+
+  - name: "Dev.to - AI"
+    url: "https://dev.to/t/ai"
+    rss_url: "https://dev.to/feed/tag/ai"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Dev.to AI development community posts"
+
+  - name: "Hashnode - AI"
+    url: "https://hashnode.com/n/ai"
+    rss_url: "https://hashnode.com/n/ai/rss"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Hashnode AI development articles"
+
+  - name: "Substack - AI Newsletters"
+    url: "https://substack.com/category/technology"
+    type: "website"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .post-title a"
+    description: "Substack AI and technology newsletters"
+    feed: null
+
+  - name: "The Batch (Andrew Ng)"
+    url: "https://www.deeplearning.ai/the-batch/"
+    rss_url: "https://www.deeplearning.ai/the-batch/rss/"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Andrew Ng's AI newsletter"
+
+  - name: "Last Week in AI"
+    url: "https://lastweekin.ai/"
+    rss_url: "https://lastweekin.ai/rss/"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Weekly AI news and research roundup"
+
+  - name: "AI Research"
+    url: "https://airesearch.com/"
+    type: "website"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    selector: "article h2 a, .article-title a"
+    description: "AI research articles and insights"
+    feed: null
+
+  - name: "The Information - AI"
+    url: "https://www.theinformation.com/artificial-intelligence"
+    type: "website"
+    category: "publishing-platforms"
+    active: false  # Requires subscription
+    scrape_frequency: "daily"
+    selector: "article h2 a, .headline a"
+    description: "Premium AI business intelligence"
+    feed: null
+
+  - name: "Stratechery - AI"
+    url: "https://stratechery.com/category/artificial-intelligence/"
+    rss_url: "https://stratechery.com/category/artificial-intelligence/feed/"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "daily"
+    description: "Strategic AI business analysis"
+
+  - name: "AI Snake Oil"
+    url: "https://aisnakeoil.substack.com/"
+    rss_url: "https://aisnakeoil.substack.com/feed"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "weekly"
+    description: "Critical AI analysis and debunking"
+
+  - name: "Exponential View"
+    url: "https://www.exponentialview.co/"
+    rss_url: "https://www.exponentialview.co/rss/"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "weekly"
+    description: "AI and technology futures analysis"
+
+  - name: "The Algorithmist"
+    url: "https://thealgorithmist.substack.com/"
+    rss_url: "https://thealgorithmist.substack.com/feed"
+    type: "rss"
+    category: "publishing-platforms"
+    active: true
+    scrape_frequency: "weekly"
+    description: "AI algorithms and research insights"

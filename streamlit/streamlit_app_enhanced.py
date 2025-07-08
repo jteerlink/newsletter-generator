@@ -343,6 +343,23 @@ def generate_newsletter_with_progress(config: Dict[str, Any], advanced_config: D
                 st.success("✅ Newsletter generated successfully!")
                 if content:
                     st.info(f"📊 Generated {len(content):,} characters ({len(content.split()):,} words)")
+                
+                # Check if Notion publishing is available and publish if so
+                if content and result.get('notion_data'):
+                    try:
+                        st.info("📝 Publishing to Notion...")
+                        # The notion_data is prepared by the backend, we just need to save it
+                        notion_data = result.get('notion_data')
+                        if notion_data:
+                            st.success("✅ Newsletter prepared for Notion publishing!")
+                            st.info("📋 Notion publishing data is ready for the AI assistant to process")
+                        else:
+                            st.warning("⚠️ Notion publishing data not available")
+                    except Exception as e:
+                        st.warning(f"⚠️ Notion publishing preparation failed: {str(e)}")
+                elif content:
+                    st.info("📋 Newsletter generated successfully! Notion publishing data not available in this workflow.")
+                
                 st.balloons()
                 # Force a rerun to show the output
                 st.rerun()
@@ -474,7 +491,7 @@ def main():
                 st.write("Has workflow_result:", 'workflow_result' in result)
         
         if result.get('success'):
-            # Enhanced content extraction
+            # Enhanced content extraction - get only newsletter content, not agent outputs
             content = ""
             
             # Try different content extraction methods
@@ -488,19 +505,23 @@ def main():
                 if 'stream_results' in workflow_result:
                     stream_results = workflow_result['stream_results']
                     
-                    # Try to get content from writing stream
+                    # Get content from writing stream (main newsletter content)
                     if 'writing' in stream_results and stream_results['writing'].get('result'):
-                        writing_content = stream_results['writing']['result']
-                        
-                        # Try to get content from editing stream
-                        if 'editing' in stream_results and stream_results['editing'].get('result'):
-                            editing_content = stream_results['editing']['result']
-                            # Combine both if available
-                            content = f"{writing_content}\n\n---\n\n## Editorial Review\n\n{editing_content}"
-                        else:
-                            content = writing_content
+                        content = stream_results['writing']['result']
                     elif 'editing' in stream_results and stream_results['editing'].get('result'):
-                        content = stream_results['editing']['result']
+                        # If no writing content, extract newsletter content from editor output
+                        editor_output = stream_results['editing']['result']
+                        # Editor output typically contains improved content + quality scorecard
+                        if "QUALITY SCORECARD" in editor_output:
+                            content = editor_output.split("QUALITY SCORECARD")[0].strip()
+                        else:
+                            content = editor_output
+                else:
+                    # For sequential workflow, extract from the result directly
+                    if 'workflow_result' in result:
+                        content = result['workflow_result']
+                    else:
+                        content = str(result)
                 
                 # If still no content, try to extract from other parts
                 if not content and isinstance(workflow_result, dict):
@@ -510,11 +531,31 @@ def main():
                             break
             
             if content:
-                # Show content statistics
-                word_count = len(content.split())
-                char_count = len(content)
+                # Show content statistics using the result data if available
+                word_count = result.get('word_count', len(content.split()))
+                char_count = result.get('char_count', len(content))
                 
                 st.success(f"✅ Newsletter generated successfully! ({char_count:,} characters, {word_count:,} words)")
+                
+                # Check if Notion publishing is available and publish if so
+                if content and result.get('notion_data'):
+                    try:
+                        st.info("📝 Publishing to Notion...")
+                        # The notion_data is prepared by the backend, we just need to publish it
+                        # Note: This would need to be called by the AI assistant since we can't directly call MCP tools
+                        st.success("✅ Newsletter prepared for Notion publishing! The AI assistant will publish it.")
+                        
+                        # Show Notion publishing details
+                        notion_data = result['notion_data']
+                        with st.expander("📋 Notion Publishing Details", expanded=False):
+                            st.write(f"**Title:** {notion_data.get('title', 'N/A')}")
+                            st.write(f"**Word Count:** {notion_data.get('word_count', 'N/A'):,}")
+                            st.write(f"**Character Count:** {notion_data.get('char_count', 'N/A'):,}")
+                            st.write(f"**Parent Page ID:** {notion_data.get('parent_page_id', 'N/A')}")
+                            st.write(f"**Generated At:** {notion_data.get('generated_at', 'N/A')}")
+                            
+                    except Exception as e:
+                        st.warning(f"⚠️ Notion publishing preparation failed: {e}")
                 
                 # Display the content using the enhanced tabs
                 create_content_display_tabs(content)

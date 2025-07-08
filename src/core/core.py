@@ -31,7 +31,7 @@ def query_llm(prompt: str) -> str:
     Returns:
         str: The LLM's response as a string, or an error message if the query fails.
     """
-    model = os.getenv("OLLAMA_MODEL", "deepseek")
+    model = os.getenv("OLLAMA_MODEL", "llama3")
     try:
         response = ollama.chat(
             model=model, messages=[{"role": "user", "content": prompt}]

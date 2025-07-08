@@ -12,6 +12,10 @@ import time  # Added proper import for time module
 from typing import Dict, Any, List, Optional
 from src.core.core import query_llm
 from src.tools.tools import search_web, search_knowledge_base, AVAILABLE_TOOLS
+from src.core.content_validator import ContentValidator
+from src.core.template_manager import AIMLTemplateManager, NewsletterType, NewsletterTemplate
+from src.core.quality_gate import NewsletterQualityGate, QualityGateStatus
+from src.core.code_generator import AIMLCodeGenerator, CodeType
 
 logger = logging.getLogger(__name__)
 
@@ -351,8 +355,91 @@ You should:
 - Think about how to make complex topics accessible and engaging
 - Anticipate reader questions and interests
 - Create content that educates, inspires, and entertains
-- Plan for both immediate engagement and long-term value"""
+        - Plan for both immediate engagement and long-term value"""
         )
+        
+        # Initialize template manager for AI/ML focused planning
+        self.template_manager = AIMLTemplateManager()
+        self.default_template_type = NewsletterType.TECHNICAL_DEEP_DIVE
+        
+    def plan_with_template(self, topic: str, template_type: NewsletterType = None) -> Dict[str, Any]:
+        """Plan newsletter content using specialized AI/ML templates."""
+        
+        # Use provided template type or default
+        selected_template = template_type or self.default_template_type
+        template = self.template_manager.get_template(selected_template)
+        
+        if not template:
+            logger.warning(f"Template {selected_template} not found, using default")
+            template = self.template_manager.get_template(self.default_template_type)
+        
+        # Generate template-based prompt
+        template_prompt = self.template_manager.generate_template_prompt(template, topic)
+        
+        # Create planning context
+        planning_context = {
+            "template_used": template.name,
+            "template_type": selected_template.value,
+            "target_audience": template.target_audience,
+            "word_target": template.total_word_target,
+            "sections": len(template.sections),
+            "special_instructions": template.special_instructions
+        }
+        
+        # Execute planning with template context
+        planning_result = self.execute_task(
+            f"Create detailed editorial plan for {template.name} about '{topic}'",
+            template_prompt
+        )
+        
+        return {
+            "planning_result": planning_result,
+            "template": template,
+            "context": planning_context,
+            "structured_prompt": template_prompt
+        }
+    
+    def suggest_template(self, topic: str) -> NewsletterType:
+        """Suggest the most appropriate template type for a given topic."""
+        
+        topic_lower = topic.lower()
+        
+        # Technical patterns
+        if any(keyword in topic_lower for keyword in [
+            "algorithm", "model", "architecture", "implementation", "training",
+            "neural", "deep learning", "machine learning", "optimization",
+            "transformer", "gpu", "python", "pytorch", "tensorflow"
+        ]):
+            return NewsletterType.TECHNICAL_DEEP_DIVE
+        
+        # Product/tool patterns
+        elif any(keyword in topic_lower for keyword in [
+            "tool", "framework", "library", "platform", "review", "comparison",
+            "evaluation", "benchmark", "performance", "features", "vs", "versus"
+        ]):
+            return NewsletterType.PRODUCT_REVIEW
+        
+        # Trend patterns
+        elif any(keyword in topic_lower for keyword in [
+            "trend", "future", "emerging", "market", "adoption", "growth",
+            "investment", "startup", "industry", "forecast", "prediction"
+        ]):
+            return NewsletterType.TREND_ANALYSIS
+        
+        # Research patterns
+        elif any(keyword in topic_lower for keyword in [
+            "research", "study", "paper", "findings", "experiment", "analysis",
+            "survey", "report", "academic", "university", "journal"
+        ]):
+            return NewsletterType.RESEARCH_SUMMARY
+        
+        # Default to technical deep-dive for AI/ML topics
+        return NewsletterType.TECHNICAL_DEEP_DIVE
+        
+    def get_available_templates(self) -> List[str]:
+        """Get list of available template names."""
+        templates = self.template_manager.get_available_templates()
+        return [template.name for template in templates]
 
 class WriterAgent(SimpleAgent):
     """Agent specialized for comprehensive content creation and storytelling."""
@@ -378,7 +465,7 @@ Your unique strengths include:
 - Creating compelling openings that hook readers immediately
 - Using analogies, metaphors, and examples to clarify complex concepts
 - Varying sentence structure and pacing for maximum engagement
-- Incorporating multiple perspectives and expert insights
+        - Incorporating multiple perspectives and research-based insights
 - Building logical narrative arcs that satisfy readers
 - Adding personality and voice while maintaining professionalism
 - Creating actionable takeaways and practical applications
@@ -401,20 +488,58 @@ Your writing should be substantial, thorough, and engaging - think long-form jou
     def execute_task(self, task: str, context: str = "") -> str:
         """Execute WriterAgent task with enhanced long-form content generation."""
         
-        # First attempt: Try to generate comprehensive content in one pass
+        # Build comprehensive prompt with emphasis on length and depth
         full_prompt = self._build_prompt(task, context)
         
-        # Add explicit instruction for very long content
-        enhanced_task = f"{task}\n\nIMPORTANT: This must be a VERY LONG, COMPREHENSIVE piece. Do not stop writing until you have covered all required sections in extreme detail. Write AT LEAST 10,000 words. Continue writing even if you feel you are getting verbose - that is exactly what is needed."
+        # Add explicit instruction for very long content with specific requirements
+        enhanced_task = f"""{task}
+
+MANDATORY CONTENT REQUIREMENTS:
+- MINIMUM 8,000 words (50,000+ characters)
+- Write in flowing narrative prose - NO bullet points or lists
+- Each section must be 1,000+ words of detailed analysis
+- Include specific examples, data points, case studies throughout
+- Use storytelling techniques to make content engaging
+- Provide comprehensive coverage with magazine-quality depth
+
+CRITICAL: Do not stop writing until you have covered ALL required sections in extreme detail. 
+Continue writing even if you feel you are being verbose - comprehensive detail is exactly what is needed.
+Think of this as writing a feature article for a prestigious technology magazine."""
         
         result = super().execute_task(enhanced_task, context)
         
-        # If the result is still too short, try to extend it
-        if len(result) < 20000:  # Less than ~20k characters
-            extension_prompt = f"The content you provided is excellent but needs to be much longer and more detailed. Please continue and expand the newsletter with much more detail, examples, case studies, and in-depth analysis. Current content length: {len(result)} characters. Target: 50,000+ characters.\n\nCurrent content:\n{result}\n\nCONTINUE writing from where you left off, adding much more detail to each section:"
+        # Check content length and quality indicators
+        word_count = len(result.split())
+        char_count = len(result)
+        
+        # Content quality validation (removed word count requirements)
+        # Focus on content quality rather than arbitrary length targets
+        logger.info(f"Content generated: {word_count:,} words, {char_count:,} characters")
+        
+        # Only enhance if content appears insufficient (very short)
+        if char_count < 5000:  # Only for truly minimal content
+            enhancement_prompt = f"""The content you provided is a good start but needs more depth and detail. 
+            Current content has {word_count:,} words, {char_count:,} characters.
+
+            Current content:
+            {result}
+
+            ENHANCE THE CONTENT by adding:
+            - More specific examples and case studies
+            - Supporting data and analysis where relevant
+            - Deeper insights and connections
+            - Practical applications and implications
+            - Additional context where it adds value
+
+            Focus on quality and depth rather than length. Write in flowing narrative prose (no bullet points). 
+            Make each section more valuable and insightful. Stop when the content is comprehensive and valuable."""
             
-            extension = super().execute_task("Continue and greatly expand the newsletter content", extension_prompt)
-            result = f"{result}\n\n{extension}"
+            enhancement = super().execute_task("Enhance content quality and depth", enhancement_prompt)
+            result = f"{result}\n\n{enhancement}"
+            
+            # Update counts
+            word_count = len(result.split())
+            char_count = len(result)
         
         return result
 
@@ -426,18 +551,28 @@ Your writing should be substantial, thorough, and engaging - think long-form jou
             f"Background: {self.backstory}",
             "",
             "CRITICAL CONTENT REQUIREMENTS:",
-            "- Write EXTREMELY DETAILED, COMPREHENSIVE content",
-            "- Each section must be SEVERAL THOUSAND WORDS (not just a few paragraphs)",
+            "- Write detailed, comprehensive content focused on quality",
+            "- Use FLOWING NARRATIVE PROSE throughout - avoid bullet points and lists",
+            "- Each section should provide substantial analysis and storytelling",
             "- Include specific examples, case studies, data points, and real-world applications", 
             "- Use storytelling techniques to make complex topics engaging",
             "- Provide in-depth analysis, not just surface-level coverage",
-            "- Target the word count specified in the task",
+            "- Focus on magazine-quality investigative journalism",
+            "",
+            "WRITING STYLE REQUIREMENTS:",
+            "- Write in cohesive paragraphs that build complex arguments",
+            "- Use vivid descriptions and concrete imagery",
+            "- Include surprising insights and counterintuitive findings",
+            "- Create smooth transitions between sections and ideas",
+            "- Incorporate analogies and metaphors to clarify complex concepts",
+            "- Maintain consistent voice and authoritative tone throughout",
             "",
             f"Task: {task}",
             "",
-            "Remember: You are creating publication-ready newsletter content, not an outline or summary.",
-            "Write each section with the depth and detail of a comprehensive magazine article.",
-            "Include multiple examples, specific data points, expert quotes, and detailed explanations."
+            "Remember: You are creating publication-ready newsletter content for a prestigious technology magazine.",
+            "Write each section with the depth and detail of a comprehensive feature article.",
+            "Every paragraph should provide substantial value and advance the narrative.",
+            "Include multiple examples, specific data points, verified insights, and detailed explanations."
         ]
         
         if context:
@@ -445,7 +580,7 @@ Your writing should be substantial, thorough, and engaging - think long-form jou
                 "",
                 f"Context from previous work: {context}",
                 "",
-                "Build upon this context to create comprehensive, detailed content."
+                "Build upon this context to create comprehensive, detailed content that flows naturally from the research and planning."
             ])
         
         return "\n".join(prompt_parts)
@@ -519,6 +654,49 @@ You should provide detailed, constructive feedback that helps create exceptional
             'engagement': {'weight': 0.25, 'criteria': ['headline_quality', 'narrative_flow', 'actionability']},
             'completeness': {'weight': 0.20, 'criteria': ['coverage', 'balance', 'conclusion']}
         }
+        self.content_validator = ContentValidator()
+    
+    def execute_task(self, task: str, context: str = "") -> str:
+        """Execute editorial task with integrated content validation."""
+        try:
+            logger.info(f"EditorAgent executing task: {task}")
+            
+            # First, run content validation if context contains content to review
+            validation_results = None
+            if context and len(context) > 1000:  # Only validate substantial content
+                validation_results = self.validate_content_quality(context)
+                logger.info(f"Content validation score: {validation_results['overall_score']:.2f}")
+            
+            # Build the prompt with validation results
+            if validation_results:
+                enhanced_context = f"{context}\n\n=== CONTENT VALIDATION RESULTS ===\n"
+                enhanced_context += f"Overall Quality Score: {validation_results['overall_score']:.2f}\n"
+                enhanced_context += f"Issues Found: {len(validation_results['issues_found'])}\n"
+                
+                if validation_results['issues_found']:
+                    enhanced_context += "Issues to Address:\n"
+                    for issue in validation_results['issues_found']:
+                        enhanced_context += f"- {issue}\n"
+                
+                if validation_results['recommendations']:
+                    enhanced_context += "\nRecommendations:\n"
+                    for rec in validation_results['recommendations']:
+                        enhanced_context += f"- {rec}\n"
+                
+                enhanced_context += "\n=== END VALIDATION RESULTS ===\n"
+            else:
+                enhanced_context = context
+            
+            # Execute the main editorial task
+            result = super().execute_task(task, enhanced_context)
+            
+            logger.info("EditorAgent completed task successfully")
+            return result
+            
+        except Exception as e:
+            error_msg = f"Error in EditorAgent: {str(e)}"
+            logger.error(error_msg)
+            return error_msg
     
     def _build_prompt(self, task: str, context: str = "") -> str:
         """Build enhanced prompt with quality assessment guidelines."""
@@ -735,6 +913,71 @@ You should provide detailed, constructive feedback that helps create exceptional
         
         return min(10.0, example_score)
 
+    def validate_content_quality(self, content: str) -> Dict[str, Any]:
+        """Perform comprehensive content validation using the ContentValidator."""
+        logger.info("Performing comprehensive content quality validation")
+        
+        # Run all validation checks
+        validation_results = {
+            'repetition_analysis': self.content_validator.detect_repetition(content),
+            'expert_quotes_analysis': self.content_validator.validate_expert_quotes(content),
+            'fact_checking': self.content_validator.basic_fact_check(content),
+            'content_quality': self.content_validator.assess_content_quality(content),
+            'overall_score': 0.0,
+            'issues_found': [],
+            'recommendations': []
+        }
+        
+        # Analyze repetition issues
+        repetition_score = validation_results['repetition_analysis']['repetition_score']
+        if repetition_score > 0.4:  # High repetition threshold
+            validation_results['issues_found'].append(
+                f"High repetition detected (score: {repetition_score:.2f})"
+            )
+            validation_results['recommendations'].append(
+                "Remove or rephrase repetitive content to improve readability"
+            )
+        
+        # Analyze expert quotes
+        expert_analysis = validation_results['expert_quotes_analysis']
+        if expert_analysis['suspicious_quotes']:
+            validation_results['issues_found'].append(
+                f"Found {len(expert_analysis['suspicious_quotes'])} suspicious expert quotes"
+            )
+            validation_results['recommendations'].append(
+                "Verify or remove unverifiable expert quotes and attributions"
+            )
+        
+        # Analyze fact-checking issues
+        fact_check = validation_results['fact_checking']
+        if fact_check['unverifiable_claims']:
+            validation_results['issues_found'].append(
+                f"Found {len(fact_check['unverifiable_claims'])} unverifiable claims"
+            )
+            validation_results['recommendations'].append(
+                "Verify statistical claims and add proper sources"
+            )
+        
+        # Calculate overall quality score
+        quality_factors = {
+            'repetition': max(0, 1 - repetition_score),  # Lower repetition = higher score
+            'expert_credibility': max(0, 1 - len(expert_analysis['suspicious_quotes']) / 10),
+            'fact_accuracy': max(0, 1 - len(fact_check['unverifiable_claims']) / 10),
+            'content_quality': validation_results['content_quality']['overall_score']
+        }
+        
+        validation_results['overall_score'] = sum(quality_factors.values()) / len(quality_factors)
+        
+        # Add quality-specific recommendations
+        if quality_factors['content_quality'] < 0.7:
+            validation_results['recommendations'].append(
+                "Improve content structure and engagement elements"
+            )
+        
+        logger.info(f"Content validation completed. Overall score: {validation_results['overall_score']:.2f}")
+        
+        return validation_results
+
 class ManagerAgent(SimpleAgent):
     """Coordinates and delegates tasks to specialized agents with intelligent workflow management."""
     
@@ -777,18 +1020,29 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         self.current_workstreams = {}  # Track parallel workstreams
         self.quality_gates = []  # Quality checkpoints
         
+        # Phase 2: AI/ML Focus Components
+        self.template_manager = AIMLTemplateManager()
+        self.quality_gate_system = NewsletterQualityGate()
+        self.code_generator = AIMLCodeGenerator()
+        self.default_template_type = NewsletterType.TECHNICAL_DEEP_DIVE
+        
     def create_hierarchical_workflow(self, topic: str, complexity: str = "standard") -> Dict[str, Any]:
         """
         Create a hierarchical workflow plan with parallel processing and quality gates.
         """
+        # Phase 2: Select appropriate template for AI/ML content
+        suggested_template = self._select_template_for_topic(topic)
+        
         workflow_plan = {
             "topic": topic,
             "complexity": complexity,
+            "template_type": suggested_template,
             "total_phases": 4,
             "parallel_streams": [],
             "quality_gates": [],
             "estimated_duration": 0,
-            "resource_allocation": {}
+            "resource_allocation": {},
+            "code_examples_required": self._determine_code_requirements(topic)
         }
         
         # Phase 1: Strategic Planning & Research (Can run in parallel)
@@ -801,7 +1055,9 @@ Your management style is collaborative yet decisive, supportive yet demanding of
                 "editorial_framework"
             ],
             "priority": "high",
-            "estimated_time": 180
+            "estimated_time": 180,
+            "template_type": suggested_template,
+            "use_template": True
         }
         
         research_stream = {
@@ -823,19 +1079,24 @@ Your management style is collaborative yet decisive, supportive yet demanding of
             # Provide detailed instructions so that the WriterAgent actually produces the full first draft
             # instead of a high-level outline.
             "description": (
-                f"Write the complete, comprehensive newsletter about '{topic}'. This must be the full, final newsletter draft, not an outline or content plan.\n\n"
+                f"Write the complete, comprehensive newsletter about '{topic}' using the {suggested_template.value} template. This must be the full, final newsletter draft, not an outline or content plan.\n\n"
                 "YOUR TASK: Write the actual newsletter content with these sections:\n"
-                "1) Executive Summary (1000+ words)\n"
-                "2) Current Landscape (2000+ words)\n" 
-                "3) Deep-Dive Analysis (3000+ words)\n"
-                "4) Expert Insights (2000+ words)\n"
-                "5) Case Studies & Real-World Examples (2000+ words)\n"
-                "6) Future Outlook (2000+ words)\n"
-                "7) Practical Applications (2000+ words)\n"
-                "8) Resources & Further Reading (1000+ words)\n\n"
-                "Write each section in full with detailed content, not just headings or summaries. "
-                "Target 100,000 characters total (~15-20k words). Use engaging storytelling, include specific examples, "
-                "data points, and comprehensive coverage. This should be publication-ready newsletter content."
+                "1) Executive Summary & Key Insights\n"
+                "2) Current Landscape Analysis\n" 
+                "3) Deep Technical Analysis\n"
+                "4) Real-World Applications & Case Studies\n"
+                "5) Future Outlook & Emerging Trends\n"
+                "6) Practical Implementation Guide\n"
+                "7) Resources & Further Learning\n\n"
+                "CRITICAL REQUIREMENTS:\n"
+                "- Write in flowing narrative prose - NO bullet points or lists\n"
+                "- Each section should be detailed with comprehensive coverage\n"
+                "- Include specific examples, data points, case studies throughout\n"
+                "- Use storytelling techniques to make content engaging\n"
+                "- Focus on magazine-quality investigative journalism\n"
+                f"- Follow the {suggested_template.value} template structure for AI/ML content\n"
+                + ("- Include relevant Python code examples and technical implementations\n" if workflow_plan["code_examples_required"]["required"] else "")
+                + "\nThis should be publication-ready newsletter content with magazine-quality depth and analysis."
             ),
             "tasks": [
                 "draft_full_newsletter",
@@ -843,8 +1104,10 @@ Your management style is collaborative yet decisive, supportive yet demanding of
                 "optimize_engagement"
             ],
             "priority": "medium",
-            "estimated_time": 300,
-            "dependencies": ["planning", "research"]
+            "estimated_time": 600,  # Increased time for comprehensive content
+            "dependencies": ["planning", "research"],
+            "template_type": suggested_template,
+            "code_requirements": workflow_plan["code_examples_required"]
         }
         
         # Phase 3: Quality Assurance (Sequential, depends on Phase 2)
@@ -896,11 +1159,83 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         
         return workflow_plan
     
+    def _select_template_for_topic(self, topic: str) -> NewsletterType:
+        """Select the most appropriate template for the given topic"""
+        topic_lower = topic.lower()
+        
+        # AI/ML pattern matching for template selection
+        if any(keyword in topic_lower for keyword in [
+            "deep learning", "neural network", "machine learning", "ai architecture",
+            "transformer", "model training", "technical analysis"
+        ]):
+            return NewsletterType.TECHNICAL_DEEP_DIVE
+        
+        elif any(keyword in topic_lower for keyword in [
+            "trend", "future", "emerging", "prediction", "market", "industry"
+        ]):
+            return NewsletterType.TREND_ANALYSIS
+        
+        elif any(keyword in topic_lower for keyword in [
+            "tool", "framework", "library", "review", "comparison", "evaluation"
+        ]):
+            return NewsletterType.PRODUCT_REVIEW
+        
+        elif any(keyword in topic_lower for keyword in [
+            "research", "study", "paper", "academic", "findings", "breakthrough"
+        ]):
+            return NewsletterType.RESEARCH_SUMMARY
+        
+        elif any(keyword in topic_lower for keyword in [
+            "tutorial", "guide", "how-to", "implementation", "step-by-step"
+        ]):
+            return NewsletterType.TUTORIAL_GUIDE
+        
+        # Default to technical deep dive for AI/ML topics
+        return self.default_template_type
+    
+    def _determine_code_requirements(self, topic: str) -> Dict[str, Any]:
+        """Determine what code examples are needed for the topic"""
+        topic_lower = topic.lower()
+        
+        code_requirements = {
+            "required": False,
+            "frameworks": [],
+            "complexity": "beginner",
+            "examples_count": 0
+        }
+        
+        # Check if code examples are needed
+        if any(keyword in topic_lower for keyword in [
+            "implementation", "code", "programming", "development", "tutorial",
+            "api", "library", "framework", "python", "tensorflow", "pytorch"
+        ]):
+            code_requirements["required"] = True
+            code_requirements["examples_count"] = 2
+            
+            # Suggest appropriate frameworks
+            if "pytorch" in topic_lower:
+                code_requirements["frameworks"].append("pytorch")
+            elif "tensorflow" in topic_lower:
+                code_requirements["frameworks"].append("tensorflow")
+            elif any(keyword in topic_lower for keyword in ["nlp", "text", "language"]):
+                code_requirements["frameworks"].append("huggingface")
+            elif any(keyword in topic_lower for keyword in ["data", "analysis"]):
+                code_requirements["frameworks"].append("pandas")
+            else:
+                # Use code generator's suggestion
+                suggested_framework = self.code_generator.suggest_framework(topic)
+                code_requirements["frameworks"].append(suggested_framework)
+        
+        return code_requirements
+    
     def execute_hierarchical_workflow(self, workflow_plan: Dict[str, Any], available_agents: List[SimpleAgent]) -> Dict[str, Any]:
         """
         Execute hierarchical workflow with parallel processing and quality gates.
         """
         logger.info(f"Executing hierarchical workflow for: {workflow_plan['topic']}")
+        
+        # Phase 2: Set current template type for quality gate evaluation
+        self.current_template_type = workflow_plan.get("template_type", self.default_template_type)
         
         execution_results = {
             "workflow_id": f"workflow_{int(time.time())}",
@@ -909,7 +1244,9 @@ Your management style is collaborative yet decisive, supportive yet demanding of
             "stream_results": {},       # mapping stream_id -> result dict
             "quality_gates_passed": [],
             "execution_timeline": [],
-            "performance_metrics": {}
+            "performance_metrics": {},
+            "template_type": self.current_template_type,
+            "code_requirements": workflow_plan.get("code_examples_required", {})
         }
         
         start_time = time.time()
@@ -1061,8 +1398,7 @@ Your management style is collaborative yet decisive, supportive yet demanding of
         return "\n\n".join(context_parts)
     
     def _evaluate_quality_gate(self, gate_id: str, results: Dict[str, Any]) -> bool:
-        """Evaluate whether a quality gate has been passed."""
-        # Simplified quality gate evaluation
+        """Evaluate whether a quality gate has been passed using Phase 2 quality system."""
         if not results:
             return False
         
@@ -1071,7 +1407,42 @@ Your management style is collaborative yet decisive, supportive yet demanding of
             if result.get("status") != "completed":
                 return False
             
-            # Check minimum content length as quality indicator
+            # Phase 2: Use comprehensive quality gate evaluation for final content
+            if gate_id == "quality_assured" and "editing" in results:
+                content = results["editing"].get("result", "")
+                if len(content) > 500:  # Only run on substantial content
+                    try:
+                        # Run comprehensive quality gate evaluation
+                        gate_result = self.quality_gate_system.evaluate_content(
+                            content, 
+                            template_type=getattr(self, 'current_template_type', None)
+                        )
+                        
+                        # Log quality gate results
+                        logger.info(f"Quality gate {gate_id}: {gate_result.status.value}")
+                        logger.info(f"Overall score: {gate_result.overall_score:.2f}")
+                        
+                        # Generate quality report
+                        quality_report = self.quality_gate_system.create_quality_report(gate_result)
+                        logger.info(f"Quality report:\n{quality_report}")
+                        
+                        # Store results for later use
+                        results[stream_id]["quality_gate_result"] = gate_result
+                        results[stream_id]["quality_report"] = quality_report
+                        
+                        # Pass if not failed
+                        if gate_result.status == QualityGateStatus.FAILED:
+                            logger.error(f"Quality gate FAILED: {gate_result.blocking_issues}")
+                            return False
+                        
+                        # Track quality gate metrics
+                        self.workflow_analytics["quality_gates_passed"] += 1
+                        
+                    except Exception as e:
+                        logger.error(f"Quality gate evaluation failed: {e}")
+                        return False
+            
+            # Check minimum content length as basic quality indicator
             content = result.get("result", "")
             if len(content) < 100:  # Minimum content threshold
                 logger.warning(f"Quality gate {gate_id}: {stream_id} content too short ({len(content)} chars)")
@@ -1242,23 +1613,45 @@ class EnhancedCrew(SimpleCrew):
         return " | ".join(insights[:3]) if insights else result[:200] + "..."
     
     def _compile_final_result(self, results: List[str]) -> str:
-        """Compile results with performance metadata and workflow summary."""
-        final_parts = []
+        """Extract and return only the newsletter content from the final task."""
+        # Find the last WriterAgent or EditorAgent output as the final newsletter content
+        final_newsletter_content = ""
         
-        # Add workflow header
-        final_parts.append("# NEWSLETTER GENERATION WORKFLOW RESULTS")
-        final_parts.append(f"Workflow Type: {self.workflow_type}")
-        final_parts.append(f"Tasks Completed: {len(self.task_results)}")
-        final_parts.append("")
+        # Check task results in reverse order to find the final newsletter content
+        for task_key in reversed(sorted(self.task_results.keys())):
+            task_info = self.task_results[task_key]
+            agent_name = task_info.get("agent", "")
+            
+            if agent_name in ["WriterAgent", "EditorAgent"]:
+                content = task_info.get("result", "")
+                
+                # If it's EditorAgent output, try to extract just the newsletter content
+                if agent_name == "EditorAgent":
+                    # EditorAgent output typically contains improved content + quality scorecard
+                    if "QUALITY SCORECARD" in content:
+                        # Extract everything before the quality scorecard
+                        final_newsletter_content = content.split("QUALITY SCORECARD")[0].strip()
+                    else:
+                        final_newsletter_content = content
+                else:
+                    # WriterAgent output is typically just the newsletter content
+                    final_newsletter_content = content
+                break
         
-        # Add main content
-        final_parts.extend(results)
+        # If no WriterAgent or EditorAgent output found, use the last task result
+        if not final_newsletter_content and results:
+            # Extract content from the last result, removing task headers
+            last_result = results[-1]
+            # Remove the task header line (starts with "=== TASK")
+            lines = last_result.split('\n')
+            content_lines = []
+            skip_header = True
+            for line in lines:
+                if skip_header and line.startswith("=== TASK"):
+                    skip_header = False
+                    continue
+                elif not skip_header:
+                    content_lines.append(line)
+            final_newsletter_content = '\n'.join(content_lines).strip()
         
-        # Add performance summary
-        final_parts.append("=== WORKFLOW PERFORMANCE SUMMARY ===")
-        for agent_name, performance in self.agent_performance.items():
-            if performance["tasks_completed"] > 0:
-                avg_time = performance["total_execution_time"] / performance["tasks_completed"]
-                final_parts.append(f"{agent_name}: {performance['tasks_completed']} tasks, avg {avg_time:.1f}s per task")
-        
-        return "\n".join(final_parts)
+        return final_newsletter_content if final_newsletter_content else "No newsletter content generated."

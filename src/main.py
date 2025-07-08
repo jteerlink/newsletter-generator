@@ -26,6 +26,7 @@ from src.agents.agents import (
 )
 from src.core.core import query_llm
 from src.core.feedback_system import FeedbackLearningSystem
+from src.tools.notion_integration import NotionNewsletterPublisher
 
 # Configure logging
 logging.basicConfig(
@@ -85,7 +86,7 @@ def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology 
 
         🔍 CONTENT EXPLORATION:
         1. **Multi-dimensional Coverage**: Plan coverage of historical context, current state, future implications
-        2. **Stakeholder Perspectives**: Include viewpoints from different industry players, experts, and end-users
+        2. **Stakeholder Perspectives**: Include viewpoints from different industry players and end-users
         3. **Surprising Connections**: Identify unexpected relationships between {topic} and other fields
         4. **Practical Applications**: Plan real-world examples, case studies, and actionable insights
         5. **Emerging Trends**: Anticipate future developments and their implications
@@ -108,7 +109,7 @@ def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology 
 
         🔬 RESEARCH METHODOLOGY:
         1. **Primary Sources**: Find original research, studies, white papers, and expert interviews
-        2. **Industry Intelligence**: Gather insights from key industry players, analysts, and thought leaders
+        2. **Industry Intelligence**: Gather insights from key industry players and documented research
         3. **Trend Analysis**: Identify emerging patterns, market shifts, and future implications
         4. **Cross-Industry Connections**: Explore how {topic} impacts or relates to other sectors
         5. **Historical Context**: Provide background and evolution of the topic
@@ -134,35 +135,98 @@ def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology 
     )
     
     writing_task = Task(
-        description=f"""Create an exceptional, comprehensive newsletter about '{topic}' using the editorial plan and research findings. 
-        This should be substantial, engaging, and thoroughly valuable content:
+        description=f"""Create a comprehensive, in-depth newsletter about '{topic}' for {audience}.
+        This must be a COMPLETE, PUBLICATION-READY newsletter with substantial depth and analysis.
 
-        ✍️ CONTENT CREATION GUIDELINES:
-        1. **Compelling Opening**: Start with a hook that immediately captures attention and establishes value
-        2. **Narrative Structure**: Build a logical, engaging flow that keeps readers invested throughout
-        3. **Depth with Clarity**: Provide comprehensive coverage while maintaining accessibility
-        4. **Multiple Perspectives**: Include diverse viewpoints and stakeholder voices
-        5. **Rich Examples**: Use case studies, scenarios, and real-world applications extensively
+        🎯 CONTENT REQUIREMENTS:
+        - STYLE: Flowing narrative prose, NOT bullet points or lists
+        - DEPTH: Magazine-quality investigative journalism level
+        - STRUCTURE: Cohesive sections that build upon each other
+        - TONE: Authoritative yet accessible, engaging storytelling
 
-        📝 CONTENT SECTIONS (aim for substantial coverage):
-        1. **Executive Summary**: Key insights and takeaways (but place after intro for newsletters)
-        2. **Current Landscape**: Detailed analysis of the present state
-        3. **Deep Dive Analysis**: Thorough exploration of key aspects and implications
-        4. **Expert Insights**: Incorporate research findings and expert perspectives
-        5. **Case Studies/Examples**: Real-world applications and stories
-        6. **Future Outlook**: Predictions, trends, and emerging opportunities
-        7. **Practical Applications**: Actionable insights and next steps for readers
-        8. **Resources & Further Reading**: Additional sources for deeper exploration
+        📚 MANDATORY SECTIONS:
 
-        🎨 WRITING TECHNIQUES:
-        1. **Storytelling**: Use narrative techniques to make complex topics engaging
-        2. **Varied Formats**: Include lists, scenarios, dialogues, data presentations
-        3. **Visual Language**: Create vivid descriptions that help readers visualize concepts
-        4. **Analogies & Metaphors**: Make complex ideas accessible through familiar comparisons
-        5. **Personality & Voice**: Maintain engaging, authoritative voice throughout
+        1. **Executive Summary & Key Insights**
+           - Compelling opening that hooks readers immediately
+           - Overview of the most important developments and their implications
+           - Key takeaways that busy executives need to know
+           - Why this topic matters now and what's at stake
 
-        Target 2000-3000 words for comprehensive coverage. Make every section valuable and engaging. 
-        This should be the type of content readers bookmark and refer back to.""",
+        2. **Current Landscape Analysis**
+           - Comprehensive state-of-the-field analysis
+           - Major players, technologies, and market dynamics
+           - Recent developments and breakthrough moments
+           - Comparative analysis of different approaches and methodologies
+           - Regional variations and global perspectives
+
+        3. **Deep Technical Analysis**
+           - In-depth exploration of core concepts and mechanisms
+           - Technical innovations and their practical implications
+           - Detailed case studies with specific examples
+           - Performance metrics, benchmarks, and comparative analysis
+           - Technical challenges and how they're being addressed
+
+        4. **Real-World Applications & Case Studies**
+           - Detailed examination of successful implementations
+           - Comprehensive case studies from different industries
+           - Lessons learned from failures and challenges
+           - ROI analysis and business impact assessments
+           - Scalability considerations and implementation strategies
+
+        5. **Future Outlook & Emerging Trends**
+           - Predicted developments over the next 1-3 years
+           - Emerging technologies and their potential convergence
+           - Investment trends and market predictions
+           - Regulatory considerations and policy implications
+           - Potential disruptions and paradigm shifts
+
+        6. **Practical Implementation Guide**
+           - Step-by-step guidance for organizations getting started
+           - Resource requirements and budget considerations
+           - Common pitfalls and how to avoid them
+           - Success metrics and measurement frameworks
+           - Recommendations for different organization sizes
+
+        7. **Resources & Further Learning**
+           - Comprehensive resource compilation
+           - Recommended reading: books, research papers, articles
+           - Online courses, certifications, and training programs
+           - Industry conferences, events, and networking opportunities
+           - Tools, platforms, and software recommendations
+
+        ✍️ WRITING STYLE REQUIREMENTS:
+        - Use NARRATIVE PROSE throughout - avoid bullet points except for very specific lists
+        - Write in flowing paragraphs that build complex arguments
+        - Include specific examples, data points, and concrete details
+        - Use storytelling techniques to make technical concepts accessible
+        - Incorporate analogies and metaphors to clarify complex ideas
+        - Maintain consistent voice and tone throughout
+        - Create smooth transitions between sections and ideas
+        - Use subheadings sparingly - let the content flow naturally
+
+        🔍 CONTENT DEPTH REQUIREMENTS:
+        - Every claim must be supported with specific evidence or examples
+        - Include quantitative data wherever possible (percentages, growth rates, adoption metrics)
+        - Provide historical context and evolutionary perspective
+        - Address counterarguments and limitations honestly
+        - Explore unexpected connections and implications
+        - Anticipate reader questions and address them proactively
+
+        📖 RESEARCH INTEGRATION:
+        - Seamlessly integrate research findings throughout the narrative
+        - Reference specific studies, surveys, and industry reports
+        - Include relevant statistics and trend data
+        - Cite published research and documented findings
+        - Balance academic rigor with practical applicability
+
+        🎨 ENGAGEMENT TECHNIQUES:
+        - Open each section with a compelling hook or scenario
+        - Use vivid descriptions and concrete imagery
+        - Include surprising insights or counterintuitive findings
+        - Create "aha moments" that shift reader perspective
+        - End sections with thought-provoking questions or implications
+
+        CRITICAL: This must be a comprehensive, magazine-quality article that readers will want to bookmark and reference. Write in full paragraphs with rich detail, avoiding lists and bullet points. Target 8,000-12,000 words total. Make every section substantial and valuable.""",
         agent=writer_agent,
         context="Build on the planning and research work. Create comprehensive, engaging content that provides exceptional reader value. Be thorough and creative."
     )
@@ -258,34 +322,84 @@ def execute_newsletter_generation(topic: str, collect_feedback: bool = True) -> 
             print("-" * 60) 
             print(result)
         
-        # Enhanced output saving with metadata
+        # Extract only the newsletter content (not workflow metadata)
+        newsletter_content = ""
+        if hasattr(result, 'strip'):
+            raw_content = str(result)
+            
+            # Remove workflow metadata and extract just the newsletter
+            lines = raw_content.split('\n')
+            cleaned_lines = []
+            skip_lines = False
+            
+            for line in lines:
+                # Skip workflow metadata sections
+                if any(phrase in line for phrase in [
+                    "=== TASK", "=== WORKFLOW", "PlannerAgent:", "ResearchAgent:", 
+                    "WriterAgent:", "EditorAgent:", "⚠️ PERFORMANCE WARNING",
+                    "Generation Metadata", "Execution Time:", "Content Length:", 
+                    "Status:", "avg ", "tasks", "WORKFLOW PERFORMANCE SUMMARY"
+                ]):
+                    skip_lines = True
+                    continue
+                elif line.strip().startswith("---") and skip_lines:
+                    skip_lines = False
+                    continue
+                elif not skip_lines:
+                    cleaned_lines.append(line)
+            
+            newsletter_content = '\n'.join(cleaned_lines).strip()
+        else:
+            newsletter_content = str(result)
+        
+        # Calculate word count and character count for the newsletter content only
+        word_count = len(newsletter_content.split())
+        char_count = len(newsletter_content)
+        
+        # Enhanced output saving with clean content
         output_file = f"output/newsletter_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
         os.makedirs("output", exist_ok=True)
         
-        # Create comprehensive output with metadata
-        full_output = f"""# Newsletter: {topic}
+        # Create clean output with just the newsletter content
+        clean_output = f"""# Newsletter: {topic}
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Content Length: {len(result):,} characters
-Execution Time: {execution_time:.1f} seconds
+Word Count: {word_count:,} words
+Character Count: {char_count:,} characters
 
 ---
 
-{result}
-
----
-
-## Generation Metadata
-- Topic: {topic}
-- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-- Execution Time: {execution_time:.1f} seconds
-- Content Length: {len(result):,} characters
-- Status: {'✅ Success' if 'error' not in result.lower() else '⚠️ Contains errors'}
+{newsletter_content}
 """
         
         with open(output_file, 'w') as f:
-            f.write(full_output)
+            f.write(clean_output)
         
         logger.info(f"Newsletter saved to: {output_file}")
+        
+        # Prepare newsletter for Notion publishing
+        notion_data = {
+            "title": f"Newsletter: {topic}",
+            "content": newsletter_content,
+            "generated_at": datetime.now().isoformat(),
+            "word_count": word_count,
+            "char_count": char_count,
+            "parent_page_id": "226b1384-d996-813f-bc9c-c540b498df90"  # Newsletter Archive parent
+        }
+        
+        try:
+            # Save the prepared data for the AI assistant to publish
+            notion_prep_file = output_file.replace('.md', '_notion_prep.json')
+            import json
+            with open(notion_prep_file, 'w') as f:
+                json.dump(notion_data, f, indent=2)
+            
+            logger.info(f"Newsletter prepared for Notion publishing: {notion_prep_file}")
+            print(f"📄 Newsletter prepared for Notion publishing")
+            print(f"📋 Notion data saved to: {notion_prep_file}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to prepare newsletter for Notion: {str(e)}")
+            print(f"⚠️ Failed to prepare newsletter for Notion: {str(e)}")
         
         # Get workflow performance data with safety checks
         workflow_performance = {
@@ -335,10 +449,13 @@ Execution Time: {execution_time:.1f} seconds
         
         return {
             'success': True,
-            'content': result,
+            'content': newsletter_content,
             'output_file': output_file,
+            'notion_data': notion_data,
             'performance': workflow_performance,
-            'feedback_session': session_id
+            'feedback_session': session_id,
+            'word_count': word_count,
+            'char_count': char_count
         }
         
     except Exception as e:
@@ -372,41 +489,74 @@ def execute_hierarchical_newsletter_generation(topic: str, audience: str = "tech
 
     total_time = time.time() - start_time
 
-    # Extract final content if available
+    # Extract final content if available - prioritize newsletter content only
     stream_results = workflow_result.get("stream_results", {})
     final_content = ""
     if stream_results and isinstance(stream_results, dict):
-        # Combine writer's content with editor's review for complete newsletter
         writing_res = stream_results.get("writing")
         editing_res = stream_results.get("editing")
         
-        if writing_res and editing_res:
-            # Full newsletter = Writer's content + Editor's review
-            writer_content = writing_res.get("result", "")
-            editor_review = editing_res.get("result", "")
-            final_content = f"{writer_content}\n\n---\n\n## Editorial Review\n\n{editor_review}"
-        elif writing_res:
-            # Fallback to just writer content if no editor review
+        if writing_res:
+            # Use WriterAgent output as the main newsletter content
             final_content = writing_res.get("result", "")
         elif editing_res:
-            # Fallback to just editor review if no writer content
-            final_content = editing_res.get("result", "")
+            # If no writer content, extract newsletter content from editor output
+            editor_output = editing_res.get("result", "")
+            # Try to extract just the newsletter content from editor output
+            # Editor output typically contains both the improved content and quality scorecard
+            if "QUALITY SCORECARD" in editor_output:
+                final_content = editor_output.split("QUALITY SCORECARD")[0].strip()
+            else:
+                final_content = editor_output
 
     success = workflow_result.get("status") == "completed"
 
     # Save output if present
     output_file = None
+    notion_data = None
     if final_content:
         output_file = f"output/h_newsletter_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
         os.makedirs("output", exist_ok=True)
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(final_content)
+        
+        # Prepare hierarchical newsletter for Notion publishing
+        word_count = len(final_content.split())
+        char_count = len(final_content)
+        
+        notion_data = {
+            "title": f"Newsletter: {topic}",
+            "content": final_content,
+            "generated_at": datetime.now().isoformat(),
+            "word_count": word_count,
+            "char_count": char_count,
+            "parent_page_id": "226b1384-d996-813f-bc9c-c540b498df90"  # Newsletter Archive parent
+        }
+        
+        try:
+            # Save the prepared data for the AI assistant to publish
+            notion_prep_file = output_file.replace('.md', '_notion_prep.json')
+            import json
+            with open(notion_prep_file, 'w') as f:
+                json.dump(notion_data, f, indent=2)
+            
+            logger.info(f"Hierarchical newsletter prepared for Notion publishing: {notion_prep_file}")
+            print(f"📄 Hierarchical newsletter prepared for Notion publishing")
+            print(f"📋 Notion data saved to: {notion_prep_file}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to prepare hierarchical newsletter for Notion: {str(e)}")
+            print(f"⚠️ Failed to prepare hierarchical newsletter for Notion: {str(e)}")
 
     return {
         "success": success,
         "workflow_result": workflow_result,
+        "content": final_content,
         "output_file": output_file,
-        "execution_time": total_time
+        "notion_data": notion_data,
+        "execution_time": total_time,
+        "word_count": word_count if final_content else 0,
+        "char_count": char_count if final_content else 0
     }
 
 def run_quality_analysis_demo():
