@@ -353,7 +353,8 @@ Our **local AI deployment** strategy provides complete control over AI infrastru
 
 Our **modern Streamlit interface** represents a complete reimagining of AI content creation tools, moving beyond basic forms to deliver a sophisticated, production-ready experience that makes advanced AI capabilities accessible to users of all technical backgrounds.
 
-![Hybrid Newsletter System Interface](https://github.com/user-attachments/assets/your-image-url-here)
+![Hybrid Newsletter System Interface](images/hybrid_newsletter_system_ui.png)
+*The production-ready Streamlit interface showcasing the Deep Dive Pipeline configuration with intelligent content routing, real-time quality monitoring, and comprehensive customization options.*
 
 ### **Design Philosophy: Mobile-First Professional Interface**
 
