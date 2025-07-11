@@ -10,12 +10,18 @@ from __future__ import annotations
 import ollama
 import os
 import logging
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
+# Configure logging with proper path handling
+log_dir = Path(__file__).parent.parent.parent / "logs"
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / "interaction.log"
+
 logging.basicConfig(
-    filename="logs/interaction.log",
+    filename=str(log_file),
     level=logging.INFO,
     format="%(asctime)s %(levelname)s:%(message)s",
 )

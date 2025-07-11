@@ -10,10 +10,19 @@ from __future__ import annotations
 import logging
 import time
 import json
+import os
 from typing import List, Dict, Any, Optional
 from functools import lru_cache
-from duckduckgo_search import DDGS
-from src.core.core import query_llm
+
+# Replace DuckDuckGo with Serper API
+try:
+    from crewai_tools import SerperDevTool
+    SERPER_AVAILABLE = True
+except ImportError:
+    SERPER_AVAILABLE = False
+    SerperDevTool = None
+
+from core.core import query_llm
 
 # Use relative imports or handle import errors gracefully
 try:
@@ -28,24 +37,134 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+class SerperSearchTool:
+    """
+    Serper API search tool for reliable Google search results.
+    Replaces DuckDuckGo search with Google via Serper API.
+    """
+    
+    def __init__(self, max_results_per_search: int = 5):
+        self.max_results_per_search = max_results_per_search
+        self.serper_tool = None
+        
+        # Initialize Serper tool
+        if SERPER_AVAILABLE:
+            try:
+                self.serper_tool = SerperDevTool()
+                logger.info("Serper API tool initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize Serper tool: {e}")
+                self.serper_tool = None
+        else:
+            logger.warning("SerperDevTool not available, falling back to knowledge base")
+    
+    def _check_api_key(self) -> bool:
+        """Check if Serper API key is configured"""
+        api_key = os.getenv('SERPER_API_KEY')
+        if not api_key or api_key == 'your-serper-api-key-here':
+            logger.warning("SERPER_API_KEY not configured. Please set up your API key.")
+            return False
+        return True
+    
+    def search(self, query: str) -> List[Dict]:
+        """Perform search using Serper API"""
+        if not self._check_api_key() or not self.serper_tool:
+            return []
+        
+        try:
+            # Use Serper API for search
+            raw_results = self.serper_tool.run(search_query=query)
+            
+            # Parse results
+            if isinstance(raw_results, dict):
+                parsed_results = raw_results
+            elif isinstance(raw_results, str):
+                try:
+                    parsed_results = json.loads(raw_results)
+                except json.JSONDecodeError:
+                    parsed_results = {"organic": [{"title": "Search Result", "snippet": raw_results, "link": ""}]}
+            else:
+                parsed_results = {"organic": [{"title": "Search Result", "snippet": str(raw_results), "link": ""}]}
+            
+            # Format results
+            return self._format_serper_results(parsed_results)
+            
+        except Exception as e:
+            logger.error(f"Serper API search error for query '{query}': {e}")
+            return []
+    
+    def _format_serper_results(self, serper_results: Any) -> List[Dict]:
+        """Format Serper API results to standard format"""
+        formatted_results = []
+        
+        try:
+            # Handle different Serper response formats
+            if isinstance(serper_results, dict):
+                organic_results = serper_results.get('organic', [])
+                if not organic_results:
+                    organic_results = serper_results.get('results', [])
+                    if not organic_results:
+                        organic_results = [serper_results]
+                
+                for result in organic_results:
+                    if isinstance(result, dict):
+                        formatted_result = {
+                            'title': result.get('title', result.get('snippet', 'No title')),
+                            'body': result.get('snippet', result.get('description', 'No description')),
+                            'href': result.get('link', result.get('url', ''))
+                        }
+                        formatted_results.append(formatted_result)
+            
+            elif isinstance(serper_results, list):
+                for result in serper_results:
+                    if isinstance(result, dict):
+                        formatted_result = {
+                            'title': result.get('title', result.get('snippet', 'No title')),
+                            'body': result.get('snippet', result.get('description', result.get('body', 'No description'))),
+                            'href': result.get('link', result.get('url', result.get('href', '')))
+                        }
+                        formatted_results.append(formatted_result)
+            
+            else:
+                formatted_result = {
+                    'title': 'Search Result',
+                    'body': str(serper_results),
+                    'href': ''
+                }
+                formatted_results.append(formatted_result)
+                
+        except Exception as e:
+            logger.error(f"Error formatting Serper results: {e}")
+            formatted_results = [{
+                'title': 'Search Error',
+                'body': f'Error processing search results: {str(e)}',
+                'href': ''
+            }]
+        
+        return formatted_results[:self.max_results_per_search]
+
+# Global Serper tool instance
+_serper_tool = SerperSearchTool()
+
 class AgenticSearchTool:
     """
     Advanced search tool that uses iterative refinement and LLM evaluation
     to find the most relevant information through multiple search iterations.
+    Now uses Serper API instead of DuckDuckGo.
     """
     
     def __init__(self, max_iterations: int = 3, max_results_per_search: int = 5):
         self.max_iterations = max_iterations
         self.max_results_per_search = max_results_per_search
         self.search_history = []
+        self.serper_tool = SerperSearchTool(max_results_per_search)
         
     @lru_cache(maxsize=16)
     def _cached_search(self, query: str) -> str:
-        """Cached search to avoid repeated identical searches."""
+        """Cached search to avoid repeated identical searches using Serper API."""
         try:
-            with DDGS() as ddgs:
-                results = list(ddgs.text(query, max_results=self.max_results_per_search))
-                return json.dumps(results)
+            results = self.serper_tool.search(query)
+            return json.dumps(results)
         except Exception as e:
             logger.error(f"Search error for query '{query}': {e}")
             return json.dumps([])
@@ -96,7 +215,7 @@ class AgenticSearchTool:
     
     def run(self, initial_query: str, target_information: str = "") -> str:
         """
-        Perform agentic search with iterative refinement.
+        Perform agentic search with iterative refinement using Serper API.
         
         Args:
             initial_query: The initial search query
@@ -191,8 +310,8 @@ Summary: {body[:200]}{'...' if len(body) > 200 else ''}
 """)
         
         summary = f"""
-AGENTIC SEARCH RESULTS
-======================
+AGENTIC SEARCH RESULTS (via Serper API)
+========================================
 Search iterations performed: {len(self.search_history)}
 Total unique results found: {len(unique_results)}
 
@@ -204,6 +323,7 @@ SEARCH METHODOLOGY SUMMARY:
 - Used iterative query refinement based on LLM evaluation
 - Collected {len(results)} total results, {len(unique_results)} unique
 - Applied relevance filtering and deduplication
+- Powered by Serper API for reliable Google search results
 """
         
         return summary
@@ -212,14 +332,15 @@ SEARCH METHODOLOGY SUMMARY:
 @lru_cache(maxsize=32)
 def search_web(query: str, max_results: int = 5) -> str:
     """
-    Enhanced web search with caching and improved error handling.
+    Enhanced web search using Serper API with caching and improved error handling.
     """
     logger.info(f"Performing web search for: {query}")
     
     try:
-        with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=max_results))
-            
+        # Use Serper API for search
+        serper_tool = SerperSearchTool(max_results)
+        results = serper_tool.search(query)
+        
         if not results:
             return f"No search results found for query: {query}"
         
@@ -235,20 +356,70 @@ def search_web(query: str, max_results: int = 5) -> str:
    Summary: {body[:150]}{'...' if len(body) > 150 else ''}
 """)
         
-        return f"Search Results for '{query}':\n" + "\n".join(formatted_results)
+        return f"Search Results for '{query}' (via Serper API):\n" + "\n".join(formatted_results)
         
     except Exception as e:
         logger.error(f"Web search error: {e}")
-        return f"Search temporarily unavailable. Using fallback information for query: {query}"
+        # Enhanced fallback with knowledge-based content generation
+        return _generate_fallback_content(query)
+
+def _generate_fallback_content(query: str) -> str:
+    """Generate comprehensive fallback content when search is unavailable."""
+    logger.info(f"Generating fallback content for: {query}")
+    
+    # Check if we have an API key configured
+    api_key = os.getenv('SERPER_API_KEY')
+    if not api_key or api_key == 'your-serper-api-key-here':
+        api_message = """
+⚠️ **API Configuration Required**
+To enable web search, please configure your Serper API key:
+1. Get a free API key at https://serper.dev
+2. Set environment variable: SERPER_API_KEY=your-api-key-here
+"""
+    else:
+        api_message = "Search API temporarily unavailable."
+    
+    # Generate comprehensive content from knowledge base
+    fallback_prompt = f"""
+Generate comprehensive research content about: {query}
+
+Please provide detailed information covering:
+1. Technical overview and key concepts
+2. Current state and recent developments
+3. Practical applications and use cases
+4. Benefits and challenges
+5. Future outlook and trends
+
+Format as a structured research summary with clear sections.
+"""
+    
+    try:
+        if query_llm:
+            knowledge_content = query_llm(fallback_prompt)
+            return f"""
+{api_message}
+
+**Knowledge Base Research Results for '{query}':**
+{knowledge_content}
+
+---
+*Note: This content is generated from the knowledge base. For the most current information, please configure web search.*
+"""
+        else:
+            return f"{api_message}\n\nFallback content generation not available."
+            
+    except Exception as e:
+        logger.error(f"Fallback content generation error: {e}")
+        return f"{api_message}\n\nError generating fallback content: {str(e)}"
 
 async def async_search_web(query: str, max_results: int = 5) -> str:
-    """Async version of web search for improved performance."""
-    # For now, wrapping the sync version - can be enhanced with aiohttp later
+    """Async version of web search using Serper API."""
+    # For now, wrapping the sync version - can be enhanced with async Serper API later
     return search_web(query, max_results)
 
 def search_web_with_alternatives(primary_query: str, fallback_queries: List[str] = None) -> str:
     """
-    Enhanced search with fallback queries using agentic approach.
+    Enhanced search with fallback queries using agentic approach with Serper API.
     """
     # Use agentic search for better results
     agentic_tool = AgenticSearchTool(max_iterations=2)
@@ -270,12 +441,23 @@ def search_knowledge_base(query: str, n_results: int = 5) -> str:
 # Note: CrewAI tools integration removed - relying solely on superior crawl4ai implementation
 # The crawl4ai system provides structured article extraction which is ideal for newsletters
 
+# CrewAI integration status - for compatibility with existing agent code
+CREWAI_AVAILABLE = False  # Set to False since we're using custom implementations
+
+# Recommended tool mappings - for compatibility with existing agent code
+RECOMMENDED_TOOLS = {
+    'search_web': 'search_web',
+    'search_knowledge_base': 'search_knowledge_base',
+    'agentic_search': 'agentic_search'
+}
+
 # Tool registry for agent access
 AVAILABLE_TOOLS = {
-    # Legacy DuckDuckGo tools (for fallback)
+    # Core search tools
     'search_web': search_web,
     'search_web_with_alternatives': search_web_with_alternatives,
-    'agentic_search': AgenticSearchTool,
+    'agentic_search': AgenticSearchTool().run,  # Make callable
+    'hybrid_search_web': search_web_with_alternatives,  # Alias for compatibility
     'async_search_web': async_search_web,
     'search_knowledge_base': search_knowledge_base,
 }

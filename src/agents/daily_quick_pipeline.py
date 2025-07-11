@@ -19,11 +19,12 @@ from datetime import datetime
 from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
-from src.core.core import query_llm
-from src.tools.tools import search_web, search_knowledge_base
-from src.scrapers.crawl4ai_web_scraper import Crawl4AIScraper
-from src.scrapers.rss_extractor import RSSExtractor
+from core.core import query_llm
+from tools.tools import search_web, search_knowledge_base
+from scrapers.crawl4ai_web_scraper import WebScraperWrapper
+from scrapers.rss_extractor import RSSExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +84,13 @@ class NewsAggregatorAgent:
     
     def __init__(self):
         self.sources_config = self._load_sources_config()
-        self.crawl4ai_scraper = Crawl4AIScraper()
+        self.crawl4ai_scraper = WebScraperWrapper()
         self.rss_extractor = RSSExtractor()
         self.relevance_scorer = TechnicalRelevanceScorer()
     
     def _load_sources_config(self) -> Dict:
         """Load sources configuration from sources.yaml"""
-        sources_path = Path("src/sources.yaml")
+        sources_path = Path(__file__).parent.parent / "sources.yaml"
         with open(sources_path, 'r') as f:
             return yaml.safe_load(f)
     
@@ -109,9 +110,55 @@ class NewsAggregatorAgent:
         # 4. Identify trending topics
         trending_topics = self._identify_trending_topics(filtered_articles)
         
-        logger.info(f"Aggregated {len(categorized_articles)} relevant articles")
-        return categorized_articles
+        # 5. Perform web search for trending topics to get latest updates
+        web_search_articles = self._perform_web_search(trending_topics)
+        
+        # Combine and re-filter all articles
+        all_articles = categorized_articles + web_search_articles
+        final_articles = self._filter_for_technical_audience(all_articles)
+        
+        logger.info(f"Aggregated {len(final_articles)} relevant articles after web search")
+        return final_articles
     
+    def _perform_web_search(self, trending_topics: List[str]) -> List[ContentItem]:
+        """Perform web search for trending topics and format into ContentItems."""
+        logger.info(f"Performing web search for trending topics: {trending_topics}")
+        search_articles = []
+        
+        for topic in trending_topics:
+            try:
+                search_results_str = search_web(topic, max_results=3)
+                
+                # Parse the string output from search_web
+                # This is a bit brittle, but works with the current format of search_web
+                results = re.split(r'\n\d+\.\s+\*\*', search_results_str)
+                
+                for result in results:
+                    if "URL:" not in result or "Summary:" not in result:
+                        continue
+                        
+                    title_match = re.search(r'(.*?)\*\*', result)
+                    url_match = re.search(r'URL:\s*(.*?)\n', result)
+                    summary_match = re.search(r'Summary:\s*(.*)', result, re.DOTALL)
+                    
+                    if title_match and url_match and summary_match:
+                        title = title_match.group(1).strip()
+                        url = url_match.group(1).strip()
+                        summary = summary_match.group(1).strip()
+                        
+                        search_articles.append(ContentItem(
+                            title=title,
+                            url=url,
+                            content=summary,
+                            source="Web Search",
+                            category="news_breakthroughs", # Default to news
+                            timestamp=datetime.now()
+                        ))
+            except Exception as e:
+                logger.error(f"Error during web search for topic '{topic}': {e}")
+                
+        return search_articles
+
     def _fetch_from_all_sources(self) -> List[ContentItem]:
         """Fetch content from all active sources"""
         articles = []
@@ -610,16 +657,20 @@ class DailyQuickPipeline:
         self.subject_line = SubjectLineAgent()
         self.assembler = NewsletterAssemblerAgent()
     
-    def generate_daily_newsletter(self) -> Dict[str, Any]:
+    def generate_daily_newsletter(self, aggregated_content: Optional[List[ContentItem]] = None) -> Dict[str, Any]:
         """Generate complete daily newsletter following 5-minute read target"""
         logger.info("Starting daily newsletter generation pipeline")
         
         try:
-            # Step 1: Aggregate news from all sources
-            aggregated_content = self.news_aggregator.aggregate_daily_news()
+            # Step 1: Use provided content or aggregate news from all sources
+            if aggregated_content:
+                logger.info("Using provided aggregated content")
+                content = aggregated_content
+            else:
+                content = self.news_aggregator.aggregate_daily_news()
             
             # Step 2: Curate content for quick consumption
-            curated_content = self.content_curator.curate_for_quick_consumption(aggregated_content)
+            curated_content = self.content_curator.curate_for_quick_consumption(content)
             
             # Step 3: Format content sections
             formatted_news = self.quick_bites.generate_news_breakthroughs(curated_content.news_breakthroughs)
@@ -638,7 +689,7 @@ class DailyQuickPipeline:
             newsletter['metadata'] = {
                 'generation_time': datetime.now().isoformat(),
                 'estimated_read_time': curated_content.estimated_read_time,
-                'content_sources': len(aggregated_content),
+                'content_sources': len(content),
                 'pipeline_version': 'Phase1_Daily_Quick'
             }
             

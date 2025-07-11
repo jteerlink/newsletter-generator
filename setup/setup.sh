@@ -26,9 +26,9 @@ if [ ! -f "requirements.txt" ]; then
     exit 1
 fi
 
-# Create conda environment with Python
-echo -e "${YELLOW}Creating conda environment with Python...${NC}"
-conda create -n "$ENV_NAME" python=3.9 -y
+# Create conda environment with Python 3.10
+echo -e "${YELLOW}Creating conda environment with Python 3.10...${NC}"
+conda create -n "$ENV_NAME" python=3.10 -y
 
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Failed to create conda environment${NC}"
@@ -62,7 +62,7 @@ fi
 echo -e "${YELLOW}Installed packages:${NC}"
 conda list
 
-# Phase 1.1: Environment Setup
+# Phase 1.1: Environment Setup with Python 3.10
 python -m venv venv
 source venv/bin/activate
 pip install -r ../requirements.txt

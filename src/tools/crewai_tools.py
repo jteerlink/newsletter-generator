@@ -14,9 +14,17 @@ import json
 from typing import List, Dict, Any, Optional
 from functools import lru_cache
 
-# CrewAI imports
-from crewai_tools import SerperDevTool
-from crewai import Agent, Task, Crew
+# CrewAI imports - updated for modern versions
+try:
+    from crewai_tools import SerperDevTool
+    from crewai import Agent, Task, Crew
+    CREWAI_AVAILABLE = True
+except ImportError:
+    CREWAI_AVAILABLE = False
+    SerperDevTool = None
+    Agent = None
+    Task = None
+    Crew = None
 
 # Fallback imports for existing functionality
 try:
@@ -38,11 +46,15 @@ class CrewAISearchTool:
         self.search_history = []
         
         # Initialize SerperDev tool
-        try:
-            self.serper_tool = SerperDevTool()
-            logger.info("CrewAI SerperDev tool initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize SerperDev tool: {e}")
+        if CREWAI_AVAILABLE:
+            try:
+                self.serper_tool = SerperDevTool()
+                logger.info("CrewAI SerperDev tool initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize SerperDev tool: {e}")
+                self.serper_tool = None
+        else:
+            logger.warning("CrewAI tools not available. Install with: pip install crewai-tools")
             self.serper_tool = None
     
     def _check_api_key(self) -> bool:

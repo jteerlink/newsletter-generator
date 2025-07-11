@@ -14,11 +14,8 @@ import json
 import re
 from dateutil import parser as date_parser
 
-from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig
-from crawl4ai.extraction_strategy import JsonCssExtractionStrategy, LLMExtractionStrategy
-from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
-from crawl4ai.content_filter_strategy import PruningContentFilter
-from crawl4ai.cache_context import CacheMode
+# Lazy imports for crawl4ai to avoid event loop issues in Streamlit
+# These will be imported only when needed
 
 # Handle imports for both direct execution and module import
 try:
@@ -30,6 +27,96 @@ except ImportError:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+class SimpleSyncScraper:
+    """Simple synchronous scraper that works in any environment"""
+    
+    def __init__(self):
+        self.session = None
+        
+    def _get_session(self):
+        """Get or create a requests session"""
+        if self.session is None:
+            try:
+                import requests
+                self.session = requests.Session()
+                self.session.headers.update({
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+                })
+            except ImportError:
+                logger.error("requests library is required for SimpleSyncScraper")
+                raise
+        return self.session
+    
+    def scrape_url(self, url: str) -> Dict[str, Any]:
+        """Scrape a single URL synchronously"""
+        try:
+            session = self._get_session()
+            response = session.get(url, timeout=30)
+            response.raise_for_status()
+            
+            # Simple extraction - just return the HTML content
+            # This is a very basic implementation
+            return {
+                'articles': [{
+                    'title': f'Content from {url}',
+                    'url': url,
+                    'content': response.text[:1000] + '...' if len(response.text) > 1000 else response.text,
+                    'published_date': datetime.now().isoformat(),
+                    'author': 'Unknown'
+                }],
+                'success': True,
+                'total_articles': 1
+            }
+            
+        except Exception as e:
+            logger.error(f"Error scraping URL {url}: {e}")
+            return {
+                'articles': [],
+                'success': False,
+                'error': str(e)
+            }
+    
+    def extract_from_source(self, source: SourceConfig) -> List[Article]:
+        """Extract from a source configuration"""
+        try:
+            result = self.scrape_url(source.url)
+            if result['success']:
+                return [Article(
+                    title=article['title'],
+                    url=article['url'],
+                    description=article.get('content', '')[:200] + '...',
+                    published=datetime.fromisoformat(article['published_date']) if article.get('published_date') else None,
+                    source=source.name,
+                    category=source.category,
+                    tags=[],
+                    author=article.get('author'),
+                    language=None,
+                    fetch_status="success",
+                    source_type="website",
+                    media_urls=[],
+                    word_count=None
+                ) for article in result['articles']]
+            else:
+                return []
+        except Exception as e:
+            logger.error(f"Error extracting from source {source.name}: {e}")
+            return []
+    
+    def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
+        """Extract from multiple sources"""
+        all_articles = []
+        for source in sources:
+            articles = self.extract_from_source(source)
+            all_articles.extend(articles)
+        return all_articles
+    
+    def cleanup(self):
+        """Clean up resources"""
+        if self.session:
+            self.session.close()
+            self.session = None
 
 
 class Crawl4AiWebScraper:
@@ -53,13 +140,8 @@ class Crawl4AiWebScraper:
         self.max_concurrent = max_concurrent
         self.browser_type = browser_type
         
-        # Browser configuration for crawl4ai 0.6.3+
-        self.browser_config = BrowserConfig(
-            headless=self.headless,
-            browser_type=self.browser_type,  # chromium, firefox, webkit
-            # Additional optimizations
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-        )
+        # Browser configuration will be created lazily
+        self.browser_config = None
         
         # Initialize crawler (will be done in async context)
         self.crawler = None
@@ -67,6 +149,18 @@ class Crawl4AiWebScraper:
     async def _ensure_crawler(self):
         """Ensure crawler is initialized"""
         if self.crawler is None:
+            # Lazy import to avoid event loop issues in Streamlit
+            from crawl4ai import AsyncWebCrawler, BrowserConfig
+            
+            # Create browser configuration lazily
+            if self.browser_config is None:
+                self.browser_config = BrowserConfig(
+                    headless=self.headless,
+                    browser_type=self.browser_type,  # chromium, firefox, webkit
+                    # Additional optimizations
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+                )
+            
             self.crawler = AsyncWebCrawler(
                 config=self.browser_config
             )
@@ -127,8 +221,14 @@ class Crawl4AiWebScraper:
             logger.error(f"Error crawling {source.name}: {e}")
             return []
 
-    def _create_run_config(self, source: SourceConfig) -> CrawlerRunConfig:
+    def _create_run_config(self, source: SourceConfig):
         """Create crawler run configuration based on source"""
+        # Lazy import to avoid event loop issues in Streamlit
+        from crawl4ai import CrawlerRunConfig
+        from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
+        from crawl4ai.content_filter_strategy import PruningContentFilter
+        from crawl4ai.cache_context import CacheMode
+        
         # Create markdown generator with content filtering
         markdown_generator = DefaultMarkdownGenerator(
             content_filter=PruningContentFilter()
@@ -153,8 +253,10 @@ class Crawl4AiWebScraper:
             delay_before_return_html=2.0,  # Wait for dynamic content
         )
 
-    def _create_css_extraction_strategy(self, source: SourceConfig) -> JsonCssExtractionStrategy:
+    def _create_css_extraction_strategy(self, source: SourceConfig):
         """Create enhanced CSS-based extraction strategy"""
+        # Lazy import to avoid event loop issues in Streamlit
+        from crawl4ai.extraction_strategy import JsonCssExtractionStrategy
         # Enhanced selectors for better article detection
         title_selectors = [
             source.selector if source.selector else "h1 a, h2 a, h3 a",
@@ -212,9 +314,11 @@ class Crawl4AiWebScraper:
         
         return JsonCssExtractionStrategy(schema=schema)
 
-    def _create_llm_extraction_strategy(self) -> LLMExtractionStrategy:
+    def _create_llm_extraction_strategy(self):
         """Create LLM-based extraction strategy for intelligent content extraction"""
         try:
+            # Lazy import to avoid event loop issues in Streamlit
+            from crawl4ai.extraction_strategy import LLMExtractionStrategy
             from crawl4ai.models import LLMConfig
             
             llm_config = LLMConfig(
@@ -637,15 +741,30 @@ class SmartCrawl4AiWebScraper(Crawl4AiWebScraper):
 
 
 class WebScraperWrapper:
-    """Synchronous wrapper for async crawl4ai scraper"""
+    """Synchronous wrapper for async crawl4ai scraper with fallback"""
 
     def __init__(self, scraper_class=None, *args, **kwargs):
-        # Use the provided scraper class or default to Crawl4AiWebScraper
-        if scraper_class is None:
-            scraper_class = Crawl4AiWebScraper
+        # Check if we're in a Streamlit environment or if crawl4ai is available
+        self.use_simple_scraper = False
         
-        self.async_scraper = scraper_class(*args, **kwargs)
-        self._loop = None
+        try:
+            # Try to import crawl4ai to see if it's available
+            import crawl4ai
+            # Try to create the scraper
+            if scraper_class is None:
+                scraper_class = Crawl4AiWebScraper
+            self.async_scraper = scraper_class(*args, **kwargs)
+            self._loop = None
+        except ImportError:
+            # Fall back to simple scraper if crawl4ai is not available
+            logger.info("crawl4ai not available, using simple scraper")
+            self.simple_scraper = SimpleSyncScraper()
+            self.use_simple_scraper = True
+        except Exception as e:
+            # If there's any other error (like the event loop issue), use simple scraper
+            logger.info(f"Using simple scraper due to error: {e}")
+            self.simple_scraper = SimpleSyncScraper()
+            self.use_simple_scraper = True
 
     def _get_event_loop(self):
         """Get or create event loop for async operations"""
@@ -664,6 +783,10 @@ class WebScraperWrapper:
 
     def extract_from_source(self, source: SourceConfig) -> List[Article]:
         """Synchronous wrapper for extract_from_source"""
+        # Use simple scraper if needed
+        if self.use_simple_scraper:
+            return self.simple_scraper.extract_from_source(source)
+        
         try:
             # Check if there's already a running event loop
             loop = asyncio.get_running_loop()
@@ -702,6 +825,10 @@ class WebScraperWrapper:
 
     def extract_from_multiple_sources(self, sources: List[SourceConfig]) -> List[Article]:
         """Synchronous wrapper for extract_from_multiple_sources"""
+        # Use simple scraper if needed
+        if self.use_simple_scraper:
+            return self.simple_scraper.extract_from_multiple_sources(sources)
+        
         try:
             # Check if there's already a running event loop
             loop = asyncio.get_running_loop()
@@ -740,9 +867,58 @@ class WebScraperWrapper:
                 self.async_scraper.extract_from_multiple_sources(sources)
             )
 
+    def scrape_url(self, url: str) -> Dict[str, Any]:
+        """Synchronous wrapper for scraping a single URL - returns simplified result"""
+        # Use simple scraper if needed
+        if self.use_simple_scraper:
+            return self.simple_scraper.scrape_url(url)
+        
+        try:
+            # Create a temporary source config for the URL
+            from .config_loader import SourceConfig
+            temp_source = SourceConfig(
+                name="temp_source",
+                url=url,
+                type="website",
+                category="general",
+                active=True
+            )
+            
+            # Extract articles using the wrapper
+            articles = self.extract_from_source(temp_source)
+            
+            # Return in the expected format
+            return {
+                'articles': [
+                    {
+                        'title': article.title,
+                        'url': article.url,
+                        'content': article.content,
+                        'published_date': article.published_date.isoformat() if article.published_date else None,
+                        'author': article.author
+                    }
+                    for article in articles
+                ],
+                'success': True,
+                'total_articles': len(articles)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error scraping URL {url}: {e}")
+            return {
+                'articles': [],
+                'success': False,
+                'error': str(e)
+            }
+
     def cleanup(self):
         """Manual cleanup method - simplified to avoid hanging"""
         try:
+            # Use simple scraper cleanup if needed
+            if self.use_simple_scraper:
+                self.simple_scraper.cleanup()
+                return
+            
             # Just set the async scraper to None to release resources
             # Don't try to run async cleanup as it can cause hanging
             if hasattr(self, 'async_scraper'):

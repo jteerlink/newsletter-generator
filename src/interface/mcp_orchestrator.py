@@ -7,10 +7,12 @@ functionality for newsletter generation, including:
 - Multi-source data integration
 - Automated publishing workflows
 - Analytics and performance tracking
+- Comprehensive tool usage tracking
 """
 
 import asyncio
 import logging
+import uuid
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
@@ -21,6 +23,7 @@ from src.agents.agentic_rag_agent import AgenticRAGAgent, AgenticRAGSession
 from src.storage.enhanced_vector_store import EnhancedVectorStore
 from src.core.feedback_system import FeedbackLearningSystem
 from src.tools.notion_integration import NotionNewsletterPublisher
+from src.core.tool_usage_tracker import get_tool_tracker, track_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +66,10 @@ class MCPOrchestrator:
         self.feedback_system = feedback_system
         self.notion_publisher = notion_publisher
         self.agentic_rag = AgenticRAGAgent(vector_store)
+        
+        # Tool usage tracking
+        self.tool_tracker = get_tool_tracker()
+        self.session_id = str(uuid.uuid4())
         
         # MCP tool registry
         self.mcp_tools = {
@@ -366,16 +373,27 @@ class MCPOrchestrator:
             }
     
     async def _execute_step(self, step: MCPWorkflowStep, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a single workflow step."""
+        """Execute a single workflow step with tool usage tracking."""
         
-        if step.mcp_tool == "internal":
-            return await self._execute_internal_step(step, context)
-        elif step.mcp_tool == "notion":
-            return await self._execute_notion_step(step, context)
-        elif step.mcp_tool == "github":
-            return await self._execute_github_step(step, context)
-        else:
-            raise ValueError(f"Unknown MCP tool: {step.mcp_tool}")
+        # Use the tracking decorator for comprehensive tool monitoring
+        @track_tool_call(
+            tool_name=f"mcp_{step.mcp_tool}_{step.action}",
+            agent_name="MCPOrchestrator",
+            session_id=self.session_id,
+            workflow_id=context.get("workflow_id", "unknown"),
+            input_data=step.parameters
+        )
+        async def _tracked_execution():
+            if step.mcp_tool == "internal":
+                return await self._execute_internal_step(step, context)
+            elif step.mcp_tool == "notion":
+                return await self._execute_notion_step(step, context)
+            elif step.mcp_tool == "github":
+                return await self._execute_github_step(step, context)
+            else:
+                raise ValueError(f"Unknown MCP tool: {step.mcp_tool}")
+        
+        return await _tracked_execution()
     
     async def _execute_internal_step(self, step: MCPWorkflowStep, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute internal system steps."""
@@ -695,6 +713,144 @@ class MCPOrchestrator:
             "name": "Analytics Workflow",
             "description": "Performance tracking and analysis",
             "steps": ["data_collection", "analysis", "reporting", "insights"]
+        }
+    
+    def get_tool_usage_analytics(self, hours_back: int = 24) -> Dict[str, Any]:
+        """Get comprehensive tool usage analytics for MCP orchestrator."""
+        analytics = self.tool_tracker.generate_usage_analytics(hours_back)
+        
+        # Get MCP-specific tool usage
+        mcp_entries = self.tool_tracker.get_tool_usage_history(
+            agent_name="MCPOrchestrator",
+            hours_back=hours_back
+        )
+        
+        # Analyze workflow patterns
+        workflow_analytics = self._analyze_workflow_patterns()
+        
+        return {
+            "session_id": self.session_id,
+            "mcp_orchestrator_analytics": {
+                "total_mcp_tool_calls": len(mcp_entries),
+                "recent_workflows": len([w for w in self.workflow_history if w.created_at >= datetime.now() - timedelta(hours=hours_back)]),
+                "active_workflows": len(self.active_workflows),
+                "mcp_tool_breakdown": self._get_mcp_tool_breakdown(mcp_entries),
+                "average_step_execution_time": self._calculate_average_step_time(mcp_entries),
+                "workflow_success_rate": self._calculate_workflow_success_rate()
+            },
+            "workflow_patterns": workflow_analytics,
+            "system_analytics": analytics,
+            "recent_mcp_usage": [entry.to_dict() for entry in mcp_entries[:20]]  # Last 20 MCP calls
+        }
+    
+    def _analyze_workflow_patterns(self) -> Dict[str, Any]:
+        """Analyze patterns in workflow execution."""
+        if not self.workflow_history:
+            return {"no_data": True}
+        
+        # Analyze workflow types and success rates
+        workflow_types = {}
+        for workflow in self.workflow_history:
+            wf_type = workflow.name.split(":")[0] if ":" in workflow.name else "unknown"
+            if wf_type not in workflow_types:
+                workflow_types[wf_type] = {"count": 0, "success": 0, "total_time": 0}
+            
+            workflow_types[wf_type]["count"] += 1
+            if workflow.status == "completed":
+                workflow_types[wf_type]["success"] += 1
+            
+            if workflow.completed_at and workflow.created_at:
+                workflow_types[wf_type]["total_time"] += (workflow.completed_at - workflow.created_at).total_seconds()
+        
+        # Calculate averages and success rates
+        for wf_type in workflow_types:
+            data = workflow_types[wf_type]
+            data["success_rate"] = data["success"] / data["count"] if data["count"] > 0 else 0
+            data["average_time"] = data["total_time"] / data["count"] if data["count"] > 0 else 0
+        
+        return {
+            "workflow_types": workflow_types,
+            "total_workflows": len(self.workflow_history),
+            "most_common_type": max(workflow_types.keys(), key=lambda k: workflow_types[k]["count"]) if workflow_types else None
+        }
+    
+    def _get_mcp_tool_breakdown(self, entries: List) -> Dict[str, int]:
+        """Get breakdown of MCP tool usage by tool type."""
+        breakdown = {}
+        for entry in entries:
+            tool_name = entry.tool_name
+            if tool_name.startswith("mcp_"):
+                # Extract tool type (e.g., "mcp_notion_search" -> "notion")
+                parts = tool_name.split("_")
+                if len(parts) >= 2:
+                    tool_type = parts[1]
+                    breakdown[tool_type] = breakdown.get(tool_type, 0) + 1
+        return breakdown
+    
+    def _calculate_average_step_time(self, entries: List) -> float:
+        """Calculate average execution time for MCP steps."""
+        if not entries:
+            return 0.0
+        
+        total_time = sum(entry.execution_time for entry in entries if entry.execution_time is not None)
+        valid_entries = len([entry for entry in entries if entry.execution_time is not None])
+        
+        return total_time / valid_entries if valid_entries > 0 else 0.0
+    
+    def _calculate_workflow_success_rate(self) -> float:
+        """Calculate overall workflow success rate."""
+        if not self.workflow_history:
+            return 0.0
+        
+        successful = len([w for w in self.workflow_history if w.status == "completed"])
+        return successful / len(self.workflow_history)
+    
+    def get_workflow_analytics(self, workflow_id: str) -> Dict[str, Any]:
+        """Get detailed analytics for a specific workflow."""
+        # Find workflow in history
+        workflow = None
+        for wf in self.workflow_history:
+            if wf.workflow_id == workflow_id:
+                workflow = wf
+                break
+        
+        if workflow is None and workflow_id in self.active_workflows:
+            workflow = self.active_workflows[workflow_id]
+        
+        if workflow is None:
+            return {"error": f"Workflow {workflow_id} not found"}
+        
+        # Get tool usage for this workflow
+        workflow_entries = self.tool_tracker.get_tool_usage_history(
+            agent_name="MCPOrchestrator",
+            hours_back=24*7  # Look back a week
+        )
+        
+        # Filter for this workflow
+        relevant_entries = [
+            entry for entry in workflow_entries 
+            if entry.workflow_id == workflow_id
+        ]
+        
+        return {
+            "workflow_id": workflow_id,
+            "workflow_name": workflow.name,
+            "status": workflow.status,
+            "execution_time": (workflow.completed_at - workflow.created_at).total_seconds() if workflow.completed_at else None,
+            "steps_count": len(workflow.steps),
+            "tool_calls_count": len(relevant_entries),
+            "step_breakdown": [
+                {
+                    "step_id": step.step_id,
+                    "tool": step.mcp_tool,
+                    "action": step.action,
+                    "status": step.status,
+                    "timestamp": step.timestamp.isoformat() if step.timestamp else None,
+                    "error": step.error
+                }
+                for step in workflow.steps
+            ],
+            "tool_usage_details": [entry.to_dict() for entry in relevant_entries]
         }
 
 # Factory function

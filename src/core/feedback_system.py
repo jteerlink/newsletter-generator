@@ -2,7 +2,7 @@
 Feedback System for Newsletter Generation
 
 This module handles user feedback collection, analysis, and learning to improve
-agent performance over time.
+agent performance over time. Now includes tool usage correlation analysis.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from pathlib import Path
 from dataclasses import dataclass, asdict
@@ -254,11 +254,18 @@ class FeedbackAnalyzer:
         return trends
 
 class FeedbackLearningSystem:
-    """Coordinates the complete feedback learning system."""
+    """Coordinates the complete feedback learning system with tool usage analysis."""
     
     def __init__(self, feedback_file: str = "logs/feedback_history.json"):
         self.logger = FeedbackLogger(feedback_file)
         self.analyzer = FeedbackAnalyzer(self.logger)
+        
+        # Tool usage integration - will be set by system components
+        self.tool_tracker = None
+        
+    def set_tool_tracker(self, tool_tracker):
+        """Set the tool tracker instance for correlation analysis."""
+        self.tool_tracker = tool_tracker
     
     def collect_user_feedback(self, topic: str, content: str, interactive: bool = True) -> str:
         """Collect feedback from user with interactive prompts."""
@@ -333,19 +340,208 @@ class FeedbackLearningSystem:
         recommendations = self.analyzer.generate_improvement_recommendations(rejection_analysis)
         trends = self.analyzer.get_performance_trends()
         
+        # Add tool usage correlation analysis if available
+        tool_correlations = {}
+        if self.tool_tracker:
+            tool_correlations = self.analyze_tool_usage_correlations()
+        
         insights = {
             "rejection_analysis": rejection_analysis,
             "improvement_recommendations": recommendations,
             "performance_trends": trends,
+            "tool_usage_correlations": tool_correlations,
             "summary": {
                 "total_feedback_entries": len(self.logger.get_feedback_history()),
                 "key_focus_areas": recommendations[:3],  # Top 3 recommendations
-                "learning_status": "active" if recommendations else "stable"
+                "learning_status": "active" if recommendations else "stable",
+                "tool_insights_available": bool(self.tool_tracker)
             }
         }
         
         return insights
     
+    def analyze_tool_usage_correlations(self) -> Dict[str, Any]:
+        """Analyze correlations between tool usage patterns and feedback quality."""
+        if not self.tool_tracker:
+            return {"error": "Tool tracker not available"}
+        
+        feedback_history = self.logger.get_feedback_history()
+        if not feedback_history:
+            return {"error": "No feedback history available"}
+        
+        # Analyze correlations between tool usage and quality scores
+        tool_quality_correlations = defaultdict(lambda: {"quality_scores": [], "usage_counts": [], "sessions": []})
+        
+        for feedback in feedback_history[-50:]:  # Analyze last 50 entries
+            session_id = feedback.metadata.get("session_id")
+            if not session_id:
+                continue
+            
+            # Get tool usage for this session timeframe
+            feedback_time = datetime.fromisoformat(feedback.timestamp)
+            tool_entries = self.tool_tracker.get_tool_usage_history(
+                hours_back=24,  # Look within 24 hours of feedback
+                session_id=session_id
+            )
+            
+            if not tool_entries:
+                continue
+                
+            # Count tool usage by type
+            tool_usage_counts = defaultdict(int)
+            for entry in tool_entries:
+                tool_usage_counts[entry.tool_name] += 1
+            
+            # Average quality score for this session
+            avg_quality = sum(feedback.quality_scores.values()) / len(feedback.quality_scores) if feedback.quality_scores else 0
+            
+            # Store correlations
+            for tool_name, count in tool_usage_counts.items():
+                tool_quality_correlations[tool_name]["quality_scores"].append(avg_quality)
+                tool_quality_correlations[tool_name]["usage_counts"].append(count)
+                tool_quality_correlations[tool_name]["sessions"].append(session_id)
+        
+        # Calculate correlation insights
+        correlation_insights = {}
+        for tool_name, data in tool_quality_correlations.items():
+            if len(data["quality_scores"]) < 3:  # Need at least 3 data points
+                continue
+                
+            avg_quality = sum(data["quality_scores"]) / len(data["quality_scores"])
+            avg_usage = sum(data["usage_counts"]) / len(data["usage_counts"])
+            
+            # Simple correlation analysis
+            high_usage_sessions = [i for i, count in enumerate(data["usage_counts"]) if count > avg_usage]
+            high_usage_quality = [data["quality_scores"][i] for i in high_usage_sessions]
+            
+            low_usage_sessions = [i for i, count in enumerate(data["usage_counts"]) if count <= avg_usage]
+            low_usage_quality = [data["quality_scores"][i] for i in low_usage_sessions]
+            
+            high_avg = sum(high_usage_quality) / len(high_usage_quality) if high_usage_quality else 0
+            low_avg = sum(low_usage_quality) / len(low_usage_quality) if low_usage_quality else 0
+            
+            correlation_insights[tool_name] = {
+                "average_quality_with_tool": avg_quality,
+                "average_usage_per_session": avg_usage,
+                "high_usage_avg_quality": high_avg,
+                "low_usage_avg_quality": low_avg,
+                "quality_difference": high_avg - low_avg,
+                "total_sessions": len(data["sessions"]),
+                "recommendation": self._generate_tool_recommendation(tool_name, high_avg, low_avg, avg_usage)
+            }
+        
+        return {
+            "tool_correlations": correlation_insights,
+            "analysis_summary": self._summarize_tool_correlations(correlation_insights),
+            "analysis_metadata": {
+                "feedback_entries_analyzed": len([f for f in feedback_history[-50:] if f.metadata.get("session_id")]),
+                "tools_analyzed": len(correlation_insights)
+            }
+        }
+    
+    def _generate_tool_recommendation(self, tool_name: str, high_usage_quality: float, low_usage_quality: float, avg_usage: float) -> str:
+        """Generate recommendations based on tool usage correlation."""
+        quality_difference = high_usage_quality - low_usage_quality
+        
+        if quality_difference > 1.0:  # Significant positive correlation
+            if avg_usage < 2:
+                return f"Increase usage of {tool_name} - shows strong positive correlation with quality (+{quality_difference:.1f})"
+            else:
+                return f"Continue current usage pattern for {tool_name} - showing positive results"
+        elif quality_difference < -1.0:  # Negative correlation
+            return f"Review usage patterns for {tool_name} - may be overused or ineffective (-{abs(quality_difference):.1f})"
+        else:
+            return f"Neutral impact for {tool_name} - maintain current usage level"
+    
+    def _summarize_tool_correlations(self, correlations: Dict[str, Any]) -> Dict[str, Any]:
+        """Summarize overall tool correlation patterns."""
+        if not correlations:
+            return {"message": "No tool correlations available"}
+        
+        # Find best and worst performing tools
+        best_tools = sorted(
+            correlations.items(), 
+            key=lambda x: x[1]["quality_difference"], 
+            reverse=True
+        )[:3]
+        
+        worst_tools = sorted(
+            correlations.items(), 
+            key=lambda x: x[1]["quality_difference"]
+        )[:3]
+        
+        # Overall insights
+        total_tools = len(correlations)
+        positive_correlations = len([t for t in correlations.values() if t["quality_difference"] > 0.5])
+        
+        return {
+            "total_tools_analyzed": total_tools,
+            "tools_with_positive_correlation": positive_correlations,
+            "positive_correlation_rate": positive_correlations / total_tools if total_tools > 0 else 0,
+            "best_performing_tools": [{"tool": name, "quality_impact": data["quality_difference"]} for name, data in best_tools],
+            "underperforming_tools": [{"tool": name, "quality_impact": data["quality_difference"]} for name, data in worst_tools],
+            "recommendations": self._generate_overall_tool_recommendations(correlations)
+        }
+    
+    def _generate_overall_tool_recommendations(self, correlations: Dict[str, Any]) -> List[str]:
+        """Generate system-wide tool usage recommendations."""
+        recommendations = []
+        
+        if not correlations:
+            return ["No tool correlation data available for recommendations"]
+        
+        # Identify high-impact tools
+        high_impact_tools = [
+            name for name, data in correlations.items() 
+            if data["quality_difference"] > 1.0
+        ]
+        
+        if high_impact_tools:
+            recommendations.append(f"Prioritize usage of high-impact tools: {', '.join(high_impact_tools[:3])}")
+        
+        # Identify problematic tools
+        problematic_tools = [
+            name for name, data in correlations.items() 
+            if data["quality_difference"] < -1.0
+        ]
+        
+        if problematic_tools:
+            recommendations.append(f"Review and optimize usage patterns for: {', '.join(problematic_tools[:3])}")
+        
+        # Usage efficiency recommendations
+        overused_tools = [
+            name for name, data in correlations.items() 
+            if data["average_usage_per_session"] > 5 and data["quality_difference"] < 0
+        ]
+        
+        if overused_tools:
+            recommendations.append(f"Consider reducing usage frequency for: {', '.join(overused_tools[:2])}")
+        
+        return recommendations if recommendations else ["Current tool usage patterns appear optimal"]
+    
+    def get_tool_effectiveness_report(self) -> Dict[str, Any]:
+        """Generate a detailed tool effectiveness report."""
+        if not self.tool_tracker:
+            return {"error": "Tool tracker not available"}
+        
+        # Get overall tool analytics
+        tool_analytics = self.tool_tracker.generate_usage_analytics(hours_back=24*7)  # Last week
+        
+        # Get correlation analysis
+        correlations = self.analyze_tool_usage_correlations()
+        
+        return {
+            "report_timestamp": datetime.now().isoformat(),
+            "tool_usage_analytics": tool_analytics,
+            "quality_correlations": correlations,
+            "effectiveness_insights": {
+                "most_used_tools": tool_analytics.get("most_used_tools", [])[:5],
+                "fastest_tools": tool_analytics.get("fastest_tools", [])[:5],
+                "most_reliable_tools": tool_analytics.get("most_reliable_tools", [])[:5],
+                "quality_correlated_tools": correlations.get("analysis_summary", {}).get("best_performing_tools", [])[:3]
+            }
+        }
+
     def save_learning_report(self, output_file: str = "logs/learning_report.json"):
         """Generate and save a comprehensive learning report."""
         report = {
@@ -356,6 +552,10 @@ class FeedbackLearningSystem:
                 "recent_entries": len(self.logger.get_feedback_history(limit=10))
             }
         }
+        
+        # Add tool effectiveness report if available
+        if self.tool_tracker:
+            report["tool_effectiveness"] = self.get_tool_effectiveness_report()
         
         output_path = Path(output_file)
         output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,20 +1,26 @@
+# Python 3.10+ dependencies
 ollama==0.5.1
 python-dotenv==1.1.0
 pytest==8.4.1
 chromadb==1.0.13
 sentence-transformers==4.1.0
-langchain_text_splitters==0.3.8
+langchain-text-splitters==0.3.8
 duckduckgo-search==6.2.13 
 crawl4ai==0.6.3
 playwright==1.53.0
 python-dateutil==2.8.2
 
-# CrewAI Web Search Migration
-crewai>=0.82.0
-crewai[tools]>=0.82.0
+# CrewAI and tools - Updated for Python 3.10 and modern versions
+crewai>=0.95.0
+crewai-tools>=0.25.8
+langchain>=0.2.0
 streamlit>=1.28.0
 plotly>=5.15.0
 PyYAML>=6.0
+
+# Search capabilities
+google-search-results>=2.4.2
+serper-dev>=0.1.0
 
 # Enhanced capabilities for multi-modal RAG
 Pillow>=10.0.0
@@ -22,5 +28,5 @@ pytesseract>=0.3.10
 PyPDF2>=3.0.1
 
 # Async processing for MCP orchestration
-aiohttp>=3.8.0
-asyncio-throttle>=1.0.0 
+aiohttp>=3.9.0
+asyncio-throttle>=1.0.2 

@@ -9,13 +9,15 @@ from __future__ import annotations
 
 import logging
 import time  # Added proper import for time module
+import uuid
 from typing import Dict, Any, List, Optional
-from src.core.core import query_llm
-from src.tools.tools import search_web, search_knowledge_base, AVAILABLE_TOOLS
-from src.core.content_validator import ContentValidator
-from src.core.template_manager import AIMLTemplateManager, NewsletterType, NewsletterTemplate
-from src.core.quality_gate import NewsletterQualityGate, QualityGateStatus
-from src.core.code_generator import AIMLCodeGenerator, CodeType
+from core.core import query_llm
+from tools.tools import search_web, search_knowledge_base, AVAILABLE_TOOLS
+from core.content_validator import ContentValidator
+from core.template_manager import AIMLTemplateManager, NewsletterType, NewsletterTemplate
+from core.quality_gate import NewsletterQualityGate, QualityGateStatus
+from core.code_generator import AIMLCodeGenerator, CodeType
+from core.tool_usage_tracker import get_tool_tracker, track_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +32,18 @@ class SimpleAgent:
         self.tools = tools or []
         self.available_tools = {name: func for name, func in AVAILABLE_TOOLS.items() if name in self.tools}
         
-    def execute_task(self, task: str, context: str = "") -> str:
+        # Tool usage tracking
+        self.tool_tracker = get_tool_tracker()
+        self.session_id = str(uuid.uuid4())
+        self.workflow_id = None
+        
+    def execute_task(self, task: str, context: str = "", workflow_id: str = None) -> str:
         """Execute a task using available tools and LLM reasoning."""
         try:
+            # Set workflow ID if provided
+            if workflow_id:
+                self.workflow_id = workflow_id
+            
             logger.info(f"Agent {self.name} executing task: {task}")
             
             # Create the prompt for the agent
@@ -55,6 +66,29 @@ class SimpleAgent:
             error_msg = f"Error in agent {self.name}: {str(e)}"
             logger.error(error_msg)
             return error_msg
+    
+    def set_workflow_context(self, workflow_id: str, session_id: str = None):
+        """Set workflow and session context for tool tracking."""
+        self.workflow_id = workflow_id
+        if session_id:
+            self.session_id = session_id
+    
+    def get_tool_usage_analytics(self, hours_back: int = 24) -> Dict[str, Any]:
+        """Get tool usage analytics for this agent."""
+        analytics = self.tool_tracker.generate_usage_analytics(hours_back)
+        agent_specific_entries = self.tool_tracker.get_tool_usage_history(
+            agent_name=self.name, 
+            hours_back=hours_back
+        )
+        
+        return {
+            "agent_name": self.name,
+            "total_tool_calls": len(agent_specific_entries),
+            "session_id": self.session_id,
+            "workflow_id": self.workflow_id,
+            "agent_tool_usage": [entry.to_dict() for entry in agent_specific_entries[:10]],  # Last 10 entries
+            "system_analytics": analytics
+        }
     
     def _build_prompt(self, task: str, context: str = "") -> str:
         """Build the initial prompt for the agent."""
@@ -120,57 +154,64 @@ class SimpleAgent:
             effective_tool_name = self._get_effective_tool_name(tool_name)
             
             if effective_tool_name in self.available_tools:
-                try:
-                    # Execute tools based on their type and interface
-                    if effective_tool_name == 'search_web' or effective_tool_name == 'crewai_search_web':
-                        output = self.available_tools[effective_tool_name](search_query, max_results=3)
-                    elif tool_name == 'search_knowledge_base':
-                        output = self.available_tools[tool_name](search_query, n_results=3)
-                    elif tool_name == 'agentic_search':
-                        # Handle both legacy and CrewAI agentic search
-                        if effective_tool_name == 'crewai_agentic_search':
-                            tool_class = self.available_tools[effective_tool_name]
-                            try:
-                                agentic_tool = tool_class()
-                                output = agentic_tool.run(search_query, f"Research information about {search_query}")
-                            except Exception as e:
-                                output = f"CrewAI agentic search error: {str(e)}"
-                        else:
-                            # Legacy agentic search
-                            tool_class = self.available_tools[effective_tool_name]
-                            try:
-                                agentic_tool = tool_class()
-                                output = agentic_tool.run(search_query)
-                            except Exception as e:
-                                output = f"Agentic search error: {str(e)}"
-                    elif tool_name == 'search_web_with_alternatives':
-                        if effective_tool_name == 'crewai_search_web_with_alternatives':
+                # Prepare input data for tracking
+                input_data = {
+                    "search_query": search_query,
+                    "requested_tool": tool_name,
+                    "effective_tool": effective_tool_name,
+                    "task": task[:200]  # First 200 chars of task for context
+                }
+                
+                # Track tool usage with context manager
+                with track_tool_call(
+                    tool_name=effective_tool_name,
+                    agent_name=self.name,
+                    input_data=input_data,
+                    context={"task_type": "tool_execution", "search_query": search_query},
+                    session_id=self.session_id,
+                    workflow_id=self.workflow_id
+                ):
+                    try:
+                        # Execute tools based on their type and interface
+                        if effective_tool_name == 'search_web' or effective_tool_name == 'crewai_search_web':
+                            output = self.available_tools[effective_tool_name](search_query, max_results=3)
+                        elif tool_name == 'search_knowledge_base':
+                            output = self.available_tools[tool_name](search_query, n_results=3)
+                        elif tool_name == 'agentic_search':
+                            # Handle agentic search - it's now callable directly
+                            output = self.available_tools[effective_tool_name](search_query, f"Research information about {search_query}")
+                        elif tool_name == 'search_web_with_alternatives' or effective_tool_name == 'hybrid_search_web':
+                            # These functions don't take max_results parameter
                             output = self.available_tools[effective_tool_name](search_query)
                         else:
-                            output = self.available_tools[effective_tool_name](search_query)
-                    elif effective_tool_name == 'hybrid_search_web':
-                        # Use hybrid search for maximum reliability
-                        output = self.available_tools[effective_tool_name](search_query, max_results=3)
-                    else:
-                        # Generic tool execution
-                        output = self.available_tools[effective_tool_name](search_query)
-                    
-                    # Format output with tool identification
-                    tool_display_name = f"{tool_name.upper()}" + (
-                        " (CrewAI)" if effective_tool_name.startswith('crewai_') else ""
-                    )
-                    tool_outputs.append(f"=== {tool_display_name} RESULTS ===\n{output}\n")
-                    
-                except Exception as e:
-                    logger.error(f"Tool execution error for {effective_tool_name}: {e}")
-                    tool_outputs.append(f"=== {tool_name.upper()} ERROR ===\n{str(e)}\n")
+                            # Generic tool execution - try with just query first
+                            try:
+                                output = self.available_tools[effective_tool_name](search_query)
+                            except TypeError:
+                                # If that fails, try with max_results
+                                try:
+                                    output = self.available_tools[effective_tool_name](search_query, max_results=3)
+                                except Exception as e:
+                                    output = f"Tool execution error: {str(e)}"
+                        
+                        # Format output with tool identification
+                        tool_display_name = f"{tool_name.upper()}" + (
+                            " (CrewAI)" if effective_tool_name.startswith('crewai_') else ""
+                        )
+                        tool_outputs.append(f"=== {tool_display_name} RESULTS ===\n{output}\n")
+                        
+                    except Exception as e:
+                        logger.error(f"Tool execution error for {effective_tool_name}: {e}")
+                        tool_outputs.append(f"=== {tool_name.upper()} ERROR ===\n{str(e)}\n")
+                        # Re-raise to be caught by the tracking context manager
+                        raise
         
         return "\n".join(tool_outputs)
     
     def _get_effective_tool_name(self, requested_tool: str) -> str:
         """Get the effective tool name, preferring CrewAI versions when available."""
         # Check if CrewAI tools are available
-        from src.tools.tools import CREWAI_AVAILABLE, RECOMMENDED_TOOLS
+        from tools.tools import CREWAI_AVAILABLE, RECOMMENDED_TOOLS
         
         if CREWAI_AVAILABLE and requested_tool in RECOMMENDED_TOOLS:
             crewai_tool = RECOMMENDED_TOOLS[requested_tool]
@@ -286,6 +327,117 @@ Your research should be:
 You should explore topics thoroughly, ask probing questions, and provide research that serves as a solid foundation for compelling content creation.""",
             tools=["agentic_search", "search_web_with_alternatives", "hybrid_search_web"]
         )
+    
+    def execute_task(self, task: str, context: str = "", workflow_id: str = None) -> str:
+        """Execute research task with automatic tool usage and fallback for search failures."""
+        try:
+            logger.info(f"ResearchAgent {self.name} executing research task: {task[:100]}...")
+            
+            # For ResearchAgent, always try to use tools for comprehensive research
+            logger.info("ResearchAgent: Conducting web research for comprehensive analysis")
+            tool_output = self._execute_tools(task)
+            
+            # Check if search tools failed or returned minimal results
+            search_failed = (
+                len(tool_output) < 200 or 
+                "Search temporarily unavailable" in tool_output or
+                "Search failed" in tool_output or
+                "No results found" in tool_output or
+                "did not yield any results" in tool_output.lower()
+            )
+            
+            if search_failed:
+                logger.warning("ResearchAgent: Search tools failed or returned minimal results, using knowledge-based research")
+                response = self._generate_knowledge_based_research(task, context)
+            else:
+                # Create research prompt with tool results
+                research_prompt = self._build_research_prompt_with_tools(task, context, tool_output)
+                response = query_llm(research_prompt)
+            
+            logger.info(f"ResearchAgent {self.name} completed research task")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Error in ResearchAgent {self.name}: {e}")
+            # Fallback to knowledge-based research on error
+            return self._generate_knowledge_based_research(task, context)
+    
+    def _generate_knowledge_based_research(self, task: str, context: str) -> str:
+        """Generate comprehensive research content from knowledge base when search tools fail."""
+        knowledge_prompt = f"""You are a {self.role}.
+
+Your goal: {self.goal}
+
+Research Task: {task}
+
+IMPORTANT: External search tools are currently unavailable, but you have extensive knowledge about technology, AI/ML, and related topics. Generate comprehensive research content using your knowledge base.
+
+{f"Additional Context: {context}" if context else ""}
+
+INSTRUCTIONS FOR KNOWLEDGE-BASED RESEARCH:
+Based on your extensive knowledge and expertise, provide a comprehensive research analysis that includes:
+
+1. **TECHNICAL OVERVIEW**: Detailed technical explanation of the topic, including core concepts, architecture, and key components
+2. **HISTORICAL CONTEXT**: Background, evolution, and key milestones in the development of this technology
+3. **CURRENT STATE**: Present-day applications, implementations, and industry adoption
+4. **TECHNICAL SPECIFICATIONS**: Implementation details, technical requirements, and architectural considerations
+5. **ADVANTAGES & BENEFITS**: Key strengths, capabilities, and value propositions
+6. **CHALLENGES & LIMITATIONS**: Technical challenges, limitations, and potential drawbacks
+7. **INDUSTRY APPLICATIONS**: Real-world use cases, industry applications, and success stories
+8. **BEST PRACTICES**: Implementation guidelines, recommended approaches, and optimization strategies
+9. **FUTURE OUTLOOK**: Emerging trends, potential developments, and future directions
+10. **COMPARISON & ALTERNATIVES**: How it compares to alternative solutions and competitive technologies
+
+Your research should be:
+- Comprehensive (1500+ words)
+- Technically accurate and detailed
+- Well-structured with clear sections
+- Focused on practical applications for technical professionals
+- Include specific examples and use cases
+- Provide actionable insights and recommendations
+
+Begin your comprehensive research analysis:"""
+        
+        return query_llm(knowledge_prompt)
+    
+    def _build_research_prompt_with_tools(self, task: str, context: str, tool_output: str) -> str:
+        """Build a research-specific prompt that emphasizes synthesis and analysis."""
+        prompt_parts = [
+            f"You are a {self.role}.",
+            f"Your goal: {self.goal}",
+            "",
+            f"Research Task: {task}",
+            "",
+            "COMPREHENSIVE RESEARCH FINDINGS:",
+            "=" * 50,
+            tool_output,
+            "=" * 50,
+            ""
+        ]
+        
+        if context:
+            prompt_parts.extend([
+                f"Additional Context: {context}",
+                ""
+            ])
+        
+        prompt_parts.extend([
+            "INSTRUCTIONS FOR SYNTHESIS:",
+            "Based on the comprehensive research findings above, provide a detailed research synthesis that:",
+            "",
+            "1. **SUMMARIZES KEY FINDINGS**: Extract and organize the most important insights from all sources",
+            "2. **IDENTIFIES PATTERNS & TRENDS**: Highlight emerging patterns, contradictions, and trend directions", 
+            "3. **PROVIDES TECHNICAL DETAILS**: Include specific technical information, methodologies, and implementations",
+            "4. **CITES CREDIBLE SOURCES**: Reference specific sources and their key contributions",
+            "5. **ANALYZES IMPLICATIONS**: Discuss practical applications, benefits, challenges, and future directions",
+            "6. **OFFERS EXPERT PERSPECTIVE**: Provide analytical insights that go beyond surface-level information",
+            "",
+            "Your research synthesis should be comprehensive (1000+ words), well-structured, and provide actionable intelligence for technical professionals.",
+            "",
+            "Begin your research synthesis:"
+        ])
+        
+        return "\n".join(prompt_parts)
 
 class Task:
     """Simple task container."""
@@ -307,14 +459,25 @@ class SimpleCrew:
     def __init__(self, agents: List[SimpleAgent], tasks: List[Task]):
         self.agents = agents
         self.tasks = tasks
+        self.workflow_id = str(uuid.uuid4())
+        self.tool_tracker = get_tool_tracker()
     
     def kickoff(self) -> str:
         """Execute all tasks in sequence."""
-        logger.info("Starting crew execution")
+        logger.info(f"Starting crew execution with workflow {self.workflow_id}")
+        
+        # Set workflow context for all agents
+        for agent in self.agents:
+            agent.set_workflow_context(self.workflow_id)
+        
         results = []
         
         for i, task in enumerate(self.tasks):
             logger.info(f"Executing task {i+1}/{len(self.tasks)}: {task.description[:50]}...")
+            
+            # Set workflow ID for task execution
+            task.agent.workflow_id = self.workflow_id
+            
             result = task.execute()
             results.append(f"=== TASK {i+1} RESULT ===\n{result}\n")
             
@@ -323,8 +486,36 @@ class SimpleCrew:
                 self.tasks[i+1].context += f"\n\nPrevious task result:\n{result}"
         
         final_result = "\n".join(results)
-        logger.info("Crew execution completed")
+        logger.info(f"Crew execution completed for workflow {self.workflow_id}")
         return final_result
+    
+    def get_workflow_analytics(self) -> Dict[str, Any]:
+        """Get analytics for this workflow."""
+        # Get all tool usage for this workflow
+        all_entries = []
+        for agent in self.agents:
+            agent_entries = self.tool_tracker.get_tool_usage_history(
+                agent_name=agent.name,
+                hours_back=24
+            )
+            # Filter for this workflow
+            workflow_entries = [
+                entry for entry in agent_entries 
+                if entry.workflow_id == self.workflow_id
+            ]
+            all_entries.extend(workflow_entries)
+        
+        return {
+            "workflow_id": self.workflow_id,
+            "total_tool_calls": len(all_entries),
+            "agents_involved": [agent.name for agent in self.agents],
+            "tasks_count": len(self.tasks),
+            "tool_usage_by_agent": {
+                agent.name: len([e for e in all_entries if e.agent_name == agent.name])
+                for agent in self.agents
+            },
+            "workflow_entries": [entry.to_dict() for entry in all_entries]
+        }
 
 class PlannerAgent(SimpleAgent):
     """Agent specialized for comprehensive editorial planning and content strategy."""
