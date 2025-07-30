@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from src.core.core import query_llm
+from src.core.exceptions import LLMError
 import ollama
 import os
 
@@ -14,8 +15,8 @@ def test_query_llm_success():
 
 def test_query_llm_error():
     with patch("ollama.chat", side_effect=ollama.ResponseError("Error")):
-        result = query_llm("Test prompt")
-        assert result == "An error occurred while querying the LLM."
+        with pytest.raises(LLMError):
+            query_llm("Test prompt")
 
 
 def test_query_llm_empty_prompt():
@@ -28,8 +29,8 @@ def test_query_llm_empty_prompt():
 def test_query_llm_invalid_model():
     with patch.dict(os.environ, {"OLLAMA_MODEL": "invalid_model"}):
         with patch("ollama.chat", side_effect=ollama.ResponseError("Model not found")):
-            result = query_llm("Test prompt")
-            assert result == "An error occurred while querying the LLM."
+            with pytest.raises(LLMError):
+                query_llm("Test prompt")
 
 
 def test_query_llm_missing_env_var():

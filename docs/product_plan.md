@@ -30,7 +30,7 @@ This document provides a concrete, step-by-step guide for building the AI Multi-
 ### Task 1.3: Basic Python Integration
 
 **Instructions for Coding Agent:**
-- Create a `.env` file with the lines: `OLLAMA_MODEL="llama3"` (default), `OLLAMA_MODEL_GEMMA3N="gemma3n"`, `OLLAMA_MODEL_DEEPSEEK_R1="deepseek-r1"`.
+- Create a `.env` file with the lines: `OLLAMA_MODEL="deepseek-r1"` (default), `OLLAMA_MODEL_GEMMA3N="gemma3n"`, `OLLAMA_MODEL_DEEPSEEK_R1="deepseek-r1"`.
 - Create a file named `core.py`.
 - In `core.py`, import `ollama`, `os`, `logging`, and `load_dotenv` from `dotenv`.
 - Call `load_dotenv()`.

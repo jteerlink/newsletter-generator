@@ -1,32 +1,39 @@
-# Python 3.10+ dependencies
-ollama==0.5.1
-python-dotenv==1.1.0
-pytest==8.4.1
-chromadb==1.0.13
-sentence-transformers==4.1.0
-langchain-text-splitters==0.3.8
-duckduckgo-search==6.2.13 
-crawl4ai==0.6.3
-playwright==1.53.0
-python-dateutil==2.8.2
+# Python 3.12+ dependencies
+# Note: This project requires Python 3.12 or higher for modern type annotations and union operator
+ollama>=0.5.1
+python-dotenv>=1.1.0
+pytest>=8.4.1
+# Use compatible chromadb version for crewai
+chromadb==0.5.23
+sentence-transformers>=4.1.0
+langchain-text-splitters>=0.3.8
+duckduckgo-search>=6.2.13 
+crawl4ai>=0.6.3
+playwright>=1.53.0
+python-dateutil>=2.8.2
 
-# CrewAI and tools - Updated for Python 3.10 and modern versions
-crewai>=0.95.0
-crewai-tools>=0.25.8
-langchain>=0.2.0
-streamlit>=1.28.0
-plotly>=5.15.0
+# CrewAI and tools - Updated for Python 3.12+ and modern versions
+crewai>=0.140.0
+crewai-tools>=0.49.0
+langchain>=0.3.0
+streamlit>=1.32.0
+plotly>=5.18.0
 PyYAML>=6.0
 
 # Search capabilities
 google-search-results>=2.4.2
-serper-dev>=0.1.0
+# Note: serper-dev package may not be available, using crewai-tools instead
 
 # Enhanced capabilities for multi-modal RAG
-Pillow>=10.0.0
+Pillow>=10.4.0
 pytesseract>=0.3.10
 PyPDF2>=3.0.1
+feedparser>=6.0.11
 
 # Async processing for MCP orchestration
 aiohttp>=3.9.0
-asyncio-throttle>=1.0.2 
+asyncio-throttle>=1.0.2
+
+# Additional modern dependencies
+pydantic>=2.6.0
+typing-extensions>=4.8.0 

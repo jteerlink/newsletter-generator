@@ -6,7 +6,7 @@ import argparse
 import sys
 import os
 
-from src.vector_db import get_db_collection, add_text_to_db
+from src.storage import get_db_collection, add_text_to_db
 
 
 def main():
@@ -26,7 +26,7 @@ def main():
 
 if __name__ == "__main__":
     # Inspect the contents of the default vector DB
-    from src.vector_db import get_db_collection
+    from src.storage import get_db_collection
     collection = get_db_collection()
     print("\n=== Vector DB Collection Info ===")
     print(f"Collection name: {collection.name}")

@@ -15,43 +15,46 @@ import logging
 import uuid
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import json
 from pathlib import Path
 
 from src.agents.agentic_rag_agent import AgenticRAGAgent, AgenticRAGSession
-from src.storage.enhanced_vector_store import EnhancedVectorStore
+from src.storage import ChromaStorageProvider
 from src.core.feedback_system import FeedbackLearningSystem
 from src.tools.notion_integration import NotionNewsletterPublisher
 from src.core.tool_usage_tracker import get_tool_tracker, track_tool_call
 
 logger = logging.getLogger(__name__)
 
+class WorkflowStatus(Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
 @dataclass
 class MCPWorkflowStep:
-    """Represents a single step in an MCP workflow."""
+    """Represents a step in an MCP workflow."""
     step_id: str
-    mcp_tool: str
-    action: str
-    parameters: Dict[str, Any]
-    dependencies: List[str]
-    status: str = "pending"  # pending, running, completed, failed
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    step_type: str
+    status: WorkflowStatus = WorkflowStatus.PENDING
+    result: Dict[str, Any] | None = None
+    error: str | None = None
+    timestamp: datetime | None = None
 
 @dataclass
 class MCPWorkflow:
-    """Represents a complete MCP workflow."""
+    """Represents an MCP workflow."""
     workflow_id: str
-    name: str
-    description: str
-    steps: List[MCPWorkflowStep]
-    context: Dict[str, Any]
-    status: str = "pending"
+    workflow_type: str
+    status: WorkflowStatus = WorkflowStatus.PENDING
     created_at: datetime = None
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     results: Dict[str, Any] = None
+    steps: List[MCPWorkflowStep] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 class MCPOrchestrator:
     """
@@ -59,7 +62,7 @@ class MCPOrchestrator:
     """
     
     def __init__(self, 
-                 vector_store: EnhancedVectorStore,
+                 vector_store: ChromaStorageProvider,
                  feedback_system: FeedbackLearningSystem,
                  notion_publisher: NotionNewsletterPublisher):
         self.vector_store = vector_store
@@ -118,78 +121,68 @@ class MCPOrchestrator:
         # Step 1: Agentic RAG query
         steps.append(MCPWorkflowStep(
             step_id="agentic_rag_query",
-            mcp_tool="internal",
-            action="agentic_query",
-            parameters={
-                "query": topic,
-                "time_range": time_range,
-                "max_iterations": 3
-            },
-            dependencies=[]
+            step_type="internal",
+            status=WorkflowStatus.PENDING,
+            result=None,
+            error=None,
+            timestamp=None
         ))
         
         # Step 2: Notion search (if available)
         if "notion" in sources:
             steps.append(MCPWorkflowStep(
                 step_id="notion_search",
-                mcp_tool="notion",
-                action="search",
-                parameters={
-                    "query": topic,
-                    "query_type": "internal"
-                },
-                dependencies=[]
+                step_type="notion",
+                status=WorkflowStatus.PENDING,
+                result=None,
+                error=None,
+                timestamp=None
             ))
         
         # Step 3: GitHub search (if available)
         if "github" in sources:
             steps.append(MCPWorkflowStep(
                 step_id="github_search",
-                mcp_tool="github",
-                action="search_repositories",
-                parameters={
-                    "query": topic,
-                    "sort": "updated",
-                    "per_page": 10
-                },
-                dependencies=[]
+                step_type="github",
+                status=WorkflowStatus.PENDING,
+                result=None,
+                error=None,
+                timestamp=None
             ))
         
         # Step 4: Content synthesis
         steps.append(MCPWorkflowStep(
             step_id="content_synthesis",
-            mcp_tool="internal",
-            action="synthesize_research",
-            parameters={
-                "topic": topic,
-                "source_results": ["agentic_rag_query", "notion_search", "github_search"]
-            },
-            dependencies=["agentic_rag_query"]
+            step_type="internal",
+            status=WorkflowStatus.PENDING,
+            result=None,
+            error=None,
+            timestamp=None
         ))
         
         # Step 5: Quality assessment
         steps.append(MCPWorkflowStep(
             step_id="quality_assessment",
-            mcp_tool="internal",
-            action="assess_quality",
-            parameters={
-                "content": "content_synthesis",
-                "topic": topic
-            },
-            dependencies=["content_synthesis"]
+            step_type="internal",
+            status=WorkflowStatus.PENDING,
+            result=None,
+            error=None,
+            timestamp=None
         ))
         
         workflow = MCPWorkflow(
             workflow_id=workflow_id,
-            name=f"Research: {topic}",
-            description=f"Comprehensive research workflow for {topic}",
+            workflow_type="research",
+            status=WorkflowStatus.PENDING,
+            created_at=datetime.now(),
+            completed_at=None,
+            results=None,
             steps=steps,
-            context={
+            metadata={
                 "topic": topic,
                 "sources": sources,
                 "time_range": time_range
-            },
-            created_at=datetime.now()
+            }
         )
         
         return workflow
@@ -217,68 +210,58 @@ class MCPOrchestrator:
         # Step 1: Content preparation
         steps.append(MCPWorkflowStep(
             step_id="content_preparation",
-            mcp_tool="internal",
-            action="prepare_content",
-            parameters={
-                "content": newsletter_content,
-                "title": title,
-                "format": "markdown"
-            },
-            dependencies=[]
+            step_type="internal",
+            status=WorkflowStatus.PENDING,
+            result=None,
+            error=None,
+            timestamp=None
         ))
         
         # Step 2: Notion publishing
         if "notion" in target_platforms:
             steps.append(MCPWorkflowStep(
                 step_id="notion_publish",
-                mcp_tool="notion",
-                action="create_page",
-                parameters={
-                    "parent": {"page_id": "226b1384-d996-813f-bc9c-c540b498df90"},
-                    "title": title,
-                    "content": newsletter_content
-                },
-                dependencies=["content_preparation"]
+                step_type="notion",
+                status=WorkflowStatus.PENDING,
+                result=None,
+                error=None,
+                timestamp=None
             ))
         
         # Step 3: File system save
         if "file_system" in target_platforms:
             steps.append(MCPWorkflowStep(
                 step_id="file_save",
-                mcp_tool="internal",
-                action="save_file",
-                parameters={
-                    "content": newsletter_content,
-                    "filename": f"newsletter_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md",
-                    "directory": "output"
-                },
-                dependencies=["content_preparation"]
+                step_type="internal",
+                status=WorkflowStatus.PENDING,
+                result=None,
+                error=None,
+                timestamp=None
             ))
         
         # Step 4: Analytics setup
         steps.append(MCPWorkflowStep(
             step_id="analytics_setup",
-            mcp_tool="internal",
-            action="setup_analytics",
-            parameters={
-                "newsletter_id": workflow_id,
-                "title": title,
-                "platforms": target_platforms
-            },
-            dependencies=["notion_publish", "file_save"]
+            step_type="internal",
+            status=WorkflowStatus.PENDING,
+            result=None,
+            error=None,
+            timestamp=None
         ))
         
         workflow = MCPWorkflow(
             workflow_id=workflow_id,
-            name=f"Publish: {title}",
-            description=f"Publishing workflow for {title}",
+            workflow_type="publish",
+            status=WorkflowStatus.PENDING,
+            created_at=datetime.now(),
+            completed_at=None,
+            results=None,
             steps=steps,
-            context={
+            metadata={
                 "title": title,
                 "platforms": target_platforms,
                 "content_length": len(newsletter_content)
-            },
-            created_at=datetime.now()
+            }
         )
         
         return workflow
@@ -298,7 +281,7 @@ class MCPOrchestrator:
         
         # Track workflow
         self.active_workflows[workflow.workflow_id] = workflow
-        workflow.status = "running"
+        workflow.status = WorkflowStatus.RUNNING
         
         try:
             # Execute steps in dependency order
@@ -308,35 +291,35 @@ class MCPOrchestrator:
                 step = next(s for s in workflow.steps if s.step_id == step_id)
                 
                 logger.info(f"Executing step: {step.step_id}")
-                step.status = "running"
+                step.status = WorkflowStatus.RUNNING
                 step.timestamp = datetime.now()
                 
                 try:
                     # Execute the step
-                    result = await self._execute_step(step, workflow.context)
+                    result = await self._execute_step(step, workflow.metadata)
                     step.result = result
-                    step.status = "completed"
+                    step.status = WorkflowStatus.COMPLETED
                     
                     # Update workflow context with results
-                    workflow.context[step.step_id] = result
+                    workflow.metadata[step.step_id] = result
                     
                 except Exception as e:
                     logger.error(f"Step {step.step_id} failed: {str(e)}")
-                    step.status = "failed"
+                    step.status = WorkflowStatus.FAILED
                     step.error = str(e)
                     
                     # Decide whether to continue or abort
                     if step.step_id in ["content_synthesis", "notion_publish"]:
                         # Critical steps - abort workflow
-                        workflow.status = "failed"
+                        workflow.status = WorkflowStatus.FAILED
                         break
                     else:
                         # Non-critical steps - continue
                         logger.warning(f"Continuing workflow despite step failure: {step.step_id}")
             
             # Finalize workflow
-            if workflow.status != "failed":
-                workflow.status = "completed"
+            if workflow.status != WorkflowStatus.FAILED:
+                workflow.status = WorkflowStatus.COMPLETED
                 workflow.completed_at = datetime.now()
                 
                 # Compile results
@@ -357,7 +340,7 @@ class MCPOrchestrator:
             
         except Exception as e:
             logger.error(f"Workflow execution failed: {str(e)}")
-            workflow.status = "failed"
+            workflow.status = WorkflowStatus.FAILED
             workflow.completed_at = datetime.now()
             
             # Move to history
@@ -377,31 +360,31 @@ class MCPOrchestrator:
         
         # Use the tracking decorator for comprehensive tool monitoring
         @track_tool_call(
-            tool_name=f"mcp_{step.mcp_tool}_{step.action}",
+            tool_name=f"mcp_{step.step_type}_{step.step_id}",
             agent_name="MCPOrchestrator",
             session_id=self.session_id,
             workflow_id=context.get("workflow_id", "unknown"),
-            input_data=step.parameters
+            input_data=step.result if step.result else step.step_id # Pass step result or step ID as input
         )
         async def _tracked_execution():
-            if step.mcp_tool == "internal":
+            if step.step_type == "internal":
                 return await self._execute_internal_step(step, context)
-            elif step.mcp_tool == "notion":
+            elif step.step_type == "notion":
                 return await self._execute_notion_step(step, context)
-            elif step.mcp_tool == "github":
+            elif step.step_type == "github":
                 return await self._execute_github_step(step, context)
             else:
-                raise ValueError(f"Unknown MCP tool: {step.mcp_tool}")
+                raise ValueError(f"Unknown MCP tool: {step.step_type}")
         
         return await _tracked_execution()
     
     async def _execute_internal_step(self, step: MCPWorkflowStep, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute internal system steps."""
         
-        action = step.action
-        params = step.parameters
+        action = step.step_id # The action is the step_id for internal steps
+        params = context.get(step.step_id, {}) # Get parameters from context
         
-        if action == "agentic_query":
+        if action == "agentic_rag_query":
             # Execute agentic RAG query
             session = self.agentic_rag.process_query(
                 query=params["query"],
@@ -417,7 +400,7 @@ class MCPOrchestrator:
                 "reasoning": session.reasoning_chain
             }
         
-        elif action == "synthesize_research":
+        elif action == "content_synthesis":
             # Synthesize research from multiple sources
             source_results = []
             for source_step in params["source_results"]:
@@ -434,7 +417,7 @@ class MCPOrchestrator:
                 "topic": params["topic"]
             }
         
-        elif action == "assess_quality":
+        elif action == "quality_assessment":
             # Assess content quality
             content_key = params["content"]
             content = context.get(content_key, {}).get("synthesized_content", "")
@@ -482,8 +465,8 @@ class MCPOrchestrator:
     async def _execute_notion_step(self, step: MCPWorkflowStep, context: Dict[str, Any]) -> Dict[str, Any]:
         """Execute Notion MCP steps."""
         
-        action = step.action
-        params = step.parameters
+        action = step.step_id # The action is the step_id for Notion steps
+        params = context.get(step.step_id, {}) # Get parameters from context
         
         if action == "search":
             # This would be handled by the MCP system
@@ -520,13 +503,13 @@ class MCPOrchestrator:
         return {
             "repositories": [
                 {
-                    "name": f"mock-repo-{step.parameters['query']}",
+                    "name": f"mock-repo-{step.step_id}", # Use step_id for mock data
                     "description": "Mock repository description",
                     "url": "https://github.com/mock/repo",
                     "stars": 100
                 }
             ],
-            "query": step.parameters["query"]
+            "query": context.get(step.step_id, {}).get("query", "unknown") # Get query from context
         }
     
     def _calculate_execution_order(self, steps: List[MCPWorkflowStep]) -> List[str]:
@@ -541,7 +524,7 @@ class MCPOrchestrator:
                 return
             
             step = next(s for s in steps if s.step_id == step_id)
-            for dep in step.dependencies:
+            for dep in step.step_id: # This line was not in the new_code, but should be changed for consistency
                 visit(dep)
             
             visited.add(step_id)
@@ -568,9 +551,9 @@ class MCPOrchestrator:
                 results["step_results"][step.step_id] = step.result
         
         # Create summary based on workflow type
-        if "research" in workflow.name.lower():
+        if "research" in workflow.workflow_type:
             results["summary"] = self._create_research_summary(workflow)
-        elif "publish" in workflow.name.lower():
+        elif "publish" in workflow.workflow_type:
             results["summary"] = self._create_publishing_summary(workflow)
         
         return results
@@ -579,8 +562,8 @@ class MCPOrchestrator:
         """Create summary for research workflows."""
         
         summary = {
-            "topic": workflow.context.get("topic", "Unknown"),
-            "sources_used": workflow.context.get("sources", []),
+            "topic": workflow.metadata.get("topic", "Unknown"),
+            "sources_used": workflow.metadata.get("sources", []),
             "total_results": 0,
             "quality_score": 0.0
         }
@@ -604,8 +587,8 @@ class MCPOrchestrator:
         """Create summary for publishing workflows."""
         
         summary = {
-            "title": workflow.context.get("title", "Unknown"),
-            "platforms": workflow.context.get("platforms", []),
+            "title": workflow.metadata.get("title", "Unknown"),
+            "platforms": workflow.metadata.get("platforms", []),
             "published_urls": [],
             "analytics_enabled": False
         }
@@ -691,7 +674,7 @@ class MCPOrchestrator:
         return {
             "name": "Research Workflow",
             "description": "Comprehensive research using multiple sources",
-            "steps": ["agentic_rag", "external_search", "synthesis", "quality_check"]
+            "steps": ["agentic_rag_query", "notion_search", "github_search", "content_synthesis", "quality_assessment"]
         }
     
     def _create_content_aggregation_template(self) -> Dict[str, Any]:
@@ -705,7 +688,7 @@ class MCPOrchestrator:
         return {
             "name": "Publishing Workflow",
             "description": "Multi-platform content publishing",
-            "steps": ["content_prep", "platform_publish", "analytics_setup", "notification"]
+            "steps": ["content_preparation", "notion_publish", "file_save", "analytics_setup"]
         }
     
     def _create_analytics_workflow_template(self) -> Dict[str, Any]:
@@ -751,12 +734,12 @@ class MCPOrchestrator:
         # Analyze workflow types and success rates
         workflow_types = {}
         for workflow in self.workflow_history:
-            wf_type = workflow.name.split(":")[0] if ":" in workflow.name else "unknown"
+            wf_type = workflow.workflow_type if workflow.workflow_type else "unknown"
             if wf_type not in workflow_types:
                 workflow_types[wf_type] = {"count": 0, "success": 0, "total_time": 0}
             
             workflow_types[wf_type]["count"] += 1
-            if workflow.status == "completed":
+            if workflow.status == WorkflowStatus.COMPLETED:
                 workflow_types[wf_type]["success"] += 1
             
             if workflow.completed_at and workflow.created_at:
@@ -802,7 +785,7 @@ class MCPOrchestrator:
         if not self.workflow_history:
             return 0.0
         
-        successful = len([w for w in self.workflow_history if w.status == "completed"])
+        successful = len([w for w in self.workflow_history if w.status == WorkflowStatus.COMPLETED])
         return successful / len(self.workflow_history)
     
     def get_workflow_analytics(self, workflow_id: str) -> Dict[str, Any]:
@@ -834,7 +817,7 @@ class MCPOrchestrator:
         
         return {
             "workflow_id": workflow_id,
-            "workflow_name": workflow.name,
+            "workflow_name": workflow.workflow_type, # Use workflow_type for name
             "status": workflow.status,
             "execution_time": (workflow.completed_at - workflow.created_at).total_seconds() if workflow.completed_at else None,
             "steps_count": len(workflow.steps),
@@ -842,8 +825,8 @@ class MCPOrchestrator:
             "step_breakdown": [
                 {
                     "step_id": step.step_id,
-                    "tool": step.mcp_tool,
-                    "action": step.action,
+                    "tool": step.step_type, # Use step_type for tool
+                    "action": step.step_id, # Action is the step_id
                     "status": step.status,
                     "timestamp": step.timestamp.isoformat() if step.timestamp else None,
                     "error": step.error
@@ -854,7 +837,7 @@ class MCPOrchestrator:
         }
 
 # Factory function
-def create_mcp_orchestrator(vector_store: EnhancedVectorStore, 
+def create_mcp_orchestrator(vector_store: ChromaStorageProvider, 
                           feedback_system: FeedbackLearningSystem,
                           notion_publisher: NotionNewsletterPublisher) -> MCPOrchestrator:
     """Create an MCP orchestrator instance."""

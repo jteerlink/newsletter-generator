@@ -21,10 +21,10 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
-from core.core import query_llm
-from tools.tools import search_web, search_knowledge_base
-from scrapers.crawl4ai_web_scraper import WebScraperWrapper
-from scrapers.rss_extractor import RSSExtractor
+from src.core.core import query_llm
+from src.tools.tools import search_web, search_knowledge_base
+from src.scrapers.crawl4ai_web_scraper import WebScraperWrapper
+from src.scrapers.rss_extractor import RSSExtractor
 
 logger = logging.getLogger(__name__)
 

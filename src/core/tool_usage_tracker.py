@@ -10,7 +10,7 @@ import time
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Union
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from collections import defaultdict
 from contextlib import contextmanager
@@ -36,10 +36,10 @@ class ToolUsageEntry:
     status: ToolExecutionStatus
     input_data: Dict[str, Any]
     output_data: Dict[str, Any]
-    error_message: Optional[str] = None
-    context: Optional[Dict[str, Any]] = None
-    session_id: Optional[str] = None
-    workflow_id: Optional[str] = None
+    error_message: str | None = None
+    context: Dict[str, Any] | None = None
+    session_id: str | None = None
+    workflow_id: str | None = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -181,10 +181,10 @@ class ToolUsageLogger:
     def track_tool_usage(self, 
                         tool_name: str, 
                         agent_name: str,
-                        input_data: Dict[str, Any] = None,
-                        context: Dict[str, Any] = None,
-                        session_id: str = None,
-                        workflow_id: str = None):
+                        input_data: Dict[str, Any] | None = None,
+                        context: Dict[str, Any] | None = None,
+                        session_id: str | None = None,
+                        workflow_id: str | None = None):
         """
         Context manager for tracking tool usage
         
@@ -330,7 +330,7 @@ class ToolUsageLogger:
         return self._performance_cache.copy()
     
     def generate_usage_analytics(self, 
-                                hours_back: int = None) -> ToolUsageAnalytics:
+                                hours_back: int | None = None) -> ToolUsageAnalytics:
         """Generate comprehensive usage analytics"""
         if hours_back is None:
             hours_back = self.analytics_window_hours
@@ -445,8 +445,8 @@ class ToolUsageLogger:
         return summary
     
     def get_tool_usage_history(self, 
-                              tool_name: str = None,
-                              agent_name: str = None,
+                              tool_name: str | None = None,
+                              agent_name: str | None = None,
                               hours_back: int = 24) -> List[ToolUsageEntry]:
         """Get filtered tool usage history"""
         cutoff_time = datetime.now() - timedelta(hours=hours_back)
@@ -466,7 +466,7 @@ class ToolUsageLogger:
         
         return filtered_entries
     
-    def save_metrics_report(self, output_file: str = None):
+    def save_metrics_report(self, output_file: str | None = None):
         """Save comprehensive metrics report to file"""
         if output_file is None:
             output_file = f"logs/tool_usage_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -489,7 +489,7 @@ class ToolUsageLogger:
         return output_file
 
 # Global instance for easy access
-_global_tool_tracker: Optional[ToolUsageLogger] = None
+_global_tool_tracker: ToolUsageLogger | None = None
 
 def get_tool_tracker() -> ToolUsageLogger:
     """Get global tool usage tracker instance"""
@@ -500,10 +500,10 @@ def get_tool_tracker() -> ToolUsageLogger:
 
 def track_tool_call(tool_name: str, 
                    agent_name: str,
-                   input_data: Dict[str, Any] = None,
-                   context: Dict[str, Any] = None,
-                   session_id: str = None,
-                   workflow_id: str = None):
+                   input_data: Dict[str, Any] | None = None,
+                   context: Dict[str, Any] | None = None,
+                   session_id: str | None = None,
+                   workflow_id: str | None = None):
     """Decorator/context manager for tracking tool calls"""
     tracker = get_tool_tracker()
     return tracker.track_tool_usage(

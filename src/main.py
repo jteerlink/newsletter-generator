@@ -21,8 +21,8 @@ import atexit
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.agents.agents import (
-    ResearchAgent, PlannerAgent, WriterAgent, EditorAgent, 
-    ManagerAgent, Task, EnhancedCrew
+    ResearchAgent, WriterAgent, EditorAgent, 
+    ManagerAgent, PlannerAgent, Task, EnhancedCrew
 )
 from src.core.core import query_llm
 from src.core.feedback_system import FeedbackLearningSystem
@@ -45,6 +45,31 @@ logger = logging.getLogger(__name__)
 
 # NOTE: Hierarchical flag constant
 HIERARCHICAL_FLAG = "--hierarchical"
+
+def create_research_workflow(topic: str) -> Dict[str, Any]:
+    """Create a basic research workflow for testing."""
+    research_agent = ResearchAgent()
+    task = Task(description=f"Research {topic}", agent=research_agent)
+    crew = EnhancedCrew([research_agent], [task])
+    return {"topic": topic, "crew": crew}
+
+def test_basic_functionality() -> bool:
+    """Test basic system functionality."""
+    try:
+        # Test LLM connection
+        response = query_llm("Hello, this is a test.")
+        if not response or "error" in response.lower():
+            return False
+        
+        # Test agent creation
+        research_agent = ResearchAgent()
+        if not research_agent:
+            return False
+            
+        return True
+    except Exception as e:
+        logger.error(f"Basic functionality test failed: {e}")
+        return False
 
 def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology professionals") -> EnhancedCrew:
     """Create a comprehensive multi-agent newsletter workflow with ManagerAgent coordination."""
@@ -226,7 +251,21 @@ def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology 
         - Create "aha moments" that shift reader perspective
         - End sections with thought-provoking questions or implications
 
-        CRITICAL: This must be a comprehensive, magazine-quality article that readers will want to bookmark and reference. Write in full paragraphs with rich detail, avoiding lists and bullet points. Target 8,000-12,000 words total. Make every section substantial and valuable.""",
+        CRITICAL: This must be a comprehensive, magazine-quality article that readers will want to bookmark and reference. Write in full paragraphs with rich detail, avoiding lists and bullet points. 
+
+        📏 LENGTH REQUIREMENT: 
+        - MINIMUM: 1,000 words (approximately 4-5 pages)
+        - TARGET: 2,000-3,000 words (approximately 8-12 pages)
+        - MAXIMUM: 5,000 words (approximately 20 pages)
+        
+        ⚠️ CRITICAL: You MUST generate at least 1,000 words. This is a hard requirement.
+        ⚠️ CRITICAL: Each section should be substantial (200-500 words per section). 
+        ⚠️ CRITICAL: Do NOT create short, superficial content. 
+        ⚠️ CRITICAL: This should be a deep, comprehensive analysis that provides exceptional value to readers.
+        ⚠️ CRITICAL: Make every section substantial and valuable.
+        ⚠️ CRITICAL: If your response is less than 1,000 words, you have FAILED the task.
+        
+        Each section should be substantial (200-500 words per section). Do NOT create short, superficial content. This should be a deep, comprehensive analysis that provides exceptional value to readers. Make every section substantial and valuable.""",
         agent=writer_agent,
         context="Build on the planning and research work. Create comprehensive, engaging content that provides exceptional reader value. Be thorough and creative."
     )
@@ -284,6 +323,69 @@ def create_enhanced_newsletter_workflow(topic: str, audience: str = "technology 
 def execute_newsletter_generation(topic: str, collect_feedback: bool = True) -> Dict[str, Any]:
     """Execute the complete newsletter generation workflow with quality monitoring."""
     
+    def _clean_placeholder_text(content: str, topic: str) -> str:
+        """Clean up placeholder text and replace with actual content."""
+        # Replace common placeholders with the actual topic
+        replacements = {
+            '[topic]': topic,
+            '[Topic]': topic.title(),
+            '[TOPIC]': topic.upper(),
+            '[industry/subfield]': f"the {topic} industry",
+            '[specific area]': topic,
+            '[key concept]': topic,
+            '[common issue]': f"challenges in {topic}",
+            '[emerging concern]': f"emerging issues in {topic}",
+            '[technology/innovation]': f"innovations in {topic}",
+            '[desirable outcome]': f"success in {topic}",
+            '[subtopics]': f"various aspects of {topic}",
+            '[Company/Project]': f"leading companies in {topic}",
+            '[Subtopic 1]': f"Key Developments in {topic}",
+            '[Subtopic 2]': f"Challenges in {topic}",
+            '[Subtopic 3]': f"Emerging Trends in {topic}",
+            '[Subtopic 4]': f"Future Applications of {topic}",
+            # Handle common AI/tech specific placeholders
+            '[AI]': 'artificial intelligence',
+            '[ML]': 'machine learning',
+            '[technology]': topic,
+            '[industry]': f"the {topic} industry",
+            '[field]': topic,
+            '[domain]': topic
+        }
+        
+        cleaned_content = content
+        for placeholder, replacement in replacements.items():
+            cleaned_content = cleaned_content.replace(placeholder, replacement)
+        
+        # Clean up markdown formatting
+        cleaned_content = _clean_markdown_formatting(cleaned_content)
+        
+        return cleaned_content
+    
+    def _clean_markdown_formatting(content: str) -> str:
+        """Clean up markdown formatting issues."""
+        # Replace improper header formatting
+        content = content.replace('===============', '')
+        content = content.replace('=====================================', '')
+        content = content.replace('================================', '')
+        content = content.replace('==========', '')
+        
+        # Fix header formatting
+        lines = content.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            # Convert improper headers to proper markdown
+            if line.strip().startswith('**') and line.strip().endswith('**'):
+                # This is a header, ensure it's properly formatted
+                cleaned_lines.append(line)
+            elif line.strip().startswith('=') and len(line.strip()) > 3:
+                # Skip lines that are just equals signs
+                continue
+            else:
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
+    
     start_time = time.time()
     logger.info(f"Starting newsletter generation for: {topic}")
     
@@ -309,8 +411,12 @@ def execute_newsletter_generation(topic: str, collect_feedback: bool = True) -> 
         print("🎉 NEWSLETTER GENERATION COMPLETED!")
         print("="*80)
         
+        # Debug: Show raw result length
+        print(f"🔍 DEBUG: Raw result length: {len(str(result)):,} characters")
+        print(f"🔍 DEBUG: Raw result word count: {len(str(result).split()):,} words")
+        
         # Show substantial preview (increased from 1000 characters)
-        preview_length = 2000
+        preview_length = 3000
         if len(result) > preview_length:
             print(f"📋 Content Preview (first {preview_length} characters):")
             print("-" * 60)
@@ -327,30 +433,99 @@ def execute_newsletter_generation(topic: str, collect_feedback: bool = True) -> 
         if hasattr(result, 'strip'):
             raw_content = str(result)
             
-            # Remove workflow metadata and extract just the newsletter
-            lines = raw_content.split('\n')
-            cleaned_lines = []
-            skip_lines = False
+            # Look for the actual newsletter content by finding key markers
+            content_markers = [
+                "**Improved Newsletter Content:**",
+                "**Improved Content:**",
+                "**Introduction:**",
+                "**Benefits:**",
+                "**Uses:**",
+                "**Case Studies:**",
+                "**Conclusion:**",
+                "**Call-to-Action:**",
+                "**Newsletter Content:**",
+                "**Content:**",
+                "**I. Introduction**",
+                "**II. Key Developments**",
+                "**III. Real-World Applications**",
+                "**IV. Conclusion**"
+            ]
             
-            for line in lines:
-                # Skip workflow metadata sections
-                if any(phrase in line for phrase in [
-                    "=== TASK", "=== WORKFLOW", "PlannerAgent:", "ResearchAgent:", 
-                    "WriterAgent:", "EditorAgent:", "⚠️ PERFORMANCE WARNING",
-                    "Generation Metadata", "Execution Time:", "Content Length:", 
-                    "Status:", "avg ", "tasks", "WORKFLOW PERFORMANCE SUMMARY"
-                ]):
-                    skip_lines = True
-                    continue
-                elif line.strip().startswith("---") and skip_lines:
-                    skip_lines = False
-                    continue
-                elif not skip_lines:
+            # Find the start of actual content
+            content_start = -1
+            for marker in content_markers:
+                if marker in raw_content:
+                    content_start = raw_content.find(marker)
+                    break
+            
+            if content_start != -1:
+                # Extract content from the marker onwards
+                content_section = raw_content[content_start:]
+                
+                # Split into lines and clean up
+                lines = content_section.split('\n')
+                cleaned_lines = []
+                in_content = True
+                
+                for line in lines:
+                    # Stop at editorial metadata sections
+                    if any(phrase in line for phrase in [
+                        "**Editorial Report**",
+                        "**Quality Assessment Summary**",
+                        "**Focus Areas Addressed**",
+                        "**Key Improvements Made**",
+                        "**Quality Level:**",
+                        "**Editorial Review Process:**",
+                        "**Detailed Analysis:**",
+                        "**Quality Scorecard:**",
+                        "**Optimization Areas:**",
+                        "**Improvement Areas**",
+                        "**Formatting**",
+                        "**Recommendations:**"
+                    ]):
+                        break
+                    
+                    # Skip workflow metadata sections
+                    if any(phrase in line for phrase in [
+                        "=== TASK", "=== WORKFLOW", "PlannerAgent:", "ResearchAgent:", 
+                        "WriterAgent:", "EditorAgent:", "⚠️ PERFORMANCE WARNING",
+                        "Generation Metadata", "Execution Time:", "Content Length:", 
+                        "Status:", "avg ", "tasks", "WORKFLOW PERFORMANCE SUMMARY"
+                    ]):
+                        continue
+                    
                     cleaned_lines.append(line)
-            
-            newsletter_content = '\n'.join(cleaned_lines).strip()
+                
+                newsletter_content = '\n'.join(cleaned_lines).strip()
+                newsletter_content = _clean_placeholder_text(newsletter_content, topic)
+            else:
+                # Fallback: try to extract content after removing obvious metadata
+                lines = raw_content.split('\n')
+                cleaned_lines = []
+                skip_lines = False
+                
+                for line in lines:
+                    # Skip workflow metadata sections
+                    if any(phrase in line for phrase in [
+                        "=== TASK", "=== WORKFLOW", "PlannerAgent:", "ResearchAgent:", 
+                        "WriterAgent:", "EditorAgent:", "⚠️ PERFORMANCE WARNING",
+                        "Generation Metadata", "Execution Time:", "Content Length:", 
+                        "Status:", "avg ", "tasks", "WORKFLOW PERFORMANCE SUMMARY",
+                        "**Editorial Report**", "**Quality Assessment Summary**"
+                    ]):
+                        skip_lines = True
+                        continue
+                    elif line.strip().startswith("---") and skip_lines:
+                        skip_lines = False
+                        continue
+                    elif not skip_lines:
+                        cleaned_lines.append(line)
+                
+                newsletter_content = '\n'.join(cleaned_lines).strip()
+                newsletter_content = _clean_placeholder_text(newsletter_content, topic)
         else:
             newsletter_content = str(result)
+            newsletter_content = _clean_placeholder_text(newsletter_content, topic)
         
         # Calculate word count and character count for the newsletter content only
         word_count = len(newsletter_content.split())
@@ -411,12 +586,19 @@ Character Count: {char_count:,} characters
         
         # Display results (truncated for safety)
         print("\n📈 PERFORMANCE SUMMARY:")
-        task_results = workflow_performance.get('task_results', {})
+        task_results = workflow_performance.get('task_results', [])
         agent_performance = workflow_performance.get('agent_performance', {})
         
-        completed_tasks = sum(1 for task_info in task_results.values() 
-                             if isinstance(task_info, dict) and 'error' not in task_info.get('result', '').lower())
-        total_tasks = len(task_results)
+        # Handle task_results as a list (from EnhancedCrew)
+        if isinstance(task_results, list):
+            completed_tasks = sum(1 for task_info in task_results 
+                                 if isinstance(task_info, dict) and 'error' not in str(task_info.get('result', '')).lower())
+            total_tasks = len(task_results)
+        else:
+            # Fallback for dictionary format
+            completed_tasks = sum(1 for task_info in task_results.values() 
+                                 if isinstance(task_info, dict) and 'error' not in str(task_info.get('result', '')).lower())
+            total_tasks = len(task_results)
         
         print(f"✅ Tasks Completed: {completed_tasks}/{total_tasks}")
         if total_tasks > 0:

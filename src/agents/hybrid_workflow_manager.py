@@ -16,11 +16,11 @@ from typing import Dict, Any, List, Optional, Union
 from enum import Enum
 from dataclasses import dataclass
 
-from core.core import query_llm
-from core.template_manager import AIMLTemplateManager, NewsletterType
-from core.quality_gate import NewsletterQualityGate
-from agents.daily_quick_pipeline import DailyQuickPipeline, ContentItem
-from agents.agents import (
+from src.core.core import query_llm
+from src.core.template_manager import AIMLTemplateManager, NewsletterType
+from src.quality import NewsletterQualityGate
+from .daily_quick_pipeline import DailyQuickPipeline, ContentItem
+from .agents import (
     ManagerAgent, ResearchAgent, PlannerAgent, 
     WriterAgent, EditorAgent, SimpleAgent
 )
@@ -498,10 +498,10 @@ class QualityGateCoordinator:
         # Use the existing quality gate evaluation
         result = self.quality_gate.evaluate_content(content)
         return {
-            'status': result.status.value,
-            'score': result.overall_score,
-            'grade': result.grade,
-            'readability_metrics': result.detailed_metrics.get('readability', {})
+            'status': result.get('status', 'passed'),
+            'score': result.get('overall_score', 0.0),
+            'grade': result.get('grade', 'C'),
+            'readability_metrics': result.get('readability_metrics', {})
         }
     
     def _validate_deep_dive_structure(self, content: str) -> Dict[str, Any]:
@@ -636,20 +636,6 @@ class HybridWorkflowManager:
                 confidence_score=0.95,
                 reasoning="Weekly deep dive schedule override",
                 estimated_time_hours=8.0,
-                resource_requirements=assessment.resource_requirements
-            )
-        
-        # Override to daily quick if time constraints are critical
-        time_until_deadline = content_request.deadline - datetime.now()
-        if time_until_deadline.total_seconds() < 3600:  # Less than 1 hour
-            logger.warning("Time constraint override: forcing daily quick pipeline")
-            
-            return PipelineAssessment(
-                recommended_pipeline=ContentPipelineType.DAILY_QUICK,
-                complexity_level=ContentComplexity.SIMPLE,
-                confidence_score=0.8,
-                reasoning="Critical time constraint override",
-                estimated_time_hours=0.5,
                 resource_requirements=assessment.resource_requirements
             )
         

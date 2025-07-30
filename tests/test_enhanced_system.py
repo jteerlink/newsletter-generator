@@ -121,9 +121,9 @@ class TestEnhancedAgentSystem:
         
         # Create tasks
         tasks = [
-            Task("Plan content structure", planner, "Focus on organization"),
-            Task("Research the topic", researcher, "Find current information"),
-            Task("Write the content", writer, "Create engaging content")
+            Task("Plan content structure", planner, context="Focus on organization"),
+            Task("Research the topic", researcher, context="Find current information"),
+            Task("Write the content", writer, context="Create engaging content")
         ]
         
         # Create enhanced crew
@@ -340,10 +340,10 @@ class TestSystemIntegration:
         
         # Create test tasks
         tasks = [
-            Task("Plan newsletter", planner, "Create strategic plan"),
-            Task("Research content", researcher, "Find current information"),
-            Task("Write newsletter", writer, "Create engaging content"),
-            Task("Edit and review", editor, "Ensure quality standards")
+            Task("Plan newsletter", planner, context="Create strategic plan"),
+            Task("Research content", researcher, context="Find current information"),
+            Task("Write newsletter", writer, context="Create engaging content"),
+            Task("Edit and review", editor, context="Ensure quality standards")
         ]
         
         # Create enhanced crew

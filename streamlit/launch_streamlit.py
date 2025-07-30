@@ -16,8 +16,7 @@ def check_dependencies():
         'streamlit',
         'plotly',
         'PyYAML',
-        'ollama',
-        'crewai'
+        'ollama'
     ]
     
     missing_packages = []
@@ -75,17 +74,14 @@ def setup_environment():
 def launch_streamlit(interface_type="enhanced", port=8501, host="localhost"):
     """Launch the Streamlit interface"""
     
-    # Determine which interface to launch
-    if interface_type == "enhanced":
-        app_file = "streamlit/streamlit_app_enhanced.py"
-    else:
-        app_file = "streamlit/streamlit_app.py"
+    # Use the consolidated app file
+    app_file = "streamlit/app.py"
     
     if not Path(app_file).exists():
         print(f"❌ Interface file {app_file} not found!")
         return False
     
-    print(f"🚀 Launching {interface_type} interface...")
+    print(f"🚀 Launching newsletter generator interface...")
     print(f"📊 Interface: {app_file}")
     print(f"🌐 URL: http://{host}:{port}")
     print(f"🔧 To stop the server, press Ctrl+C")
@@ -120,7 +116,7 @@ def main():
         "--interface", 
         choices=["basic", "enhanced"], 
         default="enhanced",
-        help="Choose interface type (default: enhanced)"
+        help="Interface type (legacy option, now uses consolidated app)"
     )
     
     parser.add_argument(

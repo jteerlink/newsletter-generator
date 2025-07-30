@@ -20,7 +20,7 @@ from typing import Dict, Any
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.storage.enhanced_vector_store import create_enhanced_vector_store
+from src.storage import ChromaStorageProvider
 from src.agents.agentic_rag_agent import create_agentic_rag_agent
 from src.interface.mcp_orchestrator import create_mcp_orchestrator
 from src.core.feedback_system import FeedbackLearningSystem
@@ -49,8 +49,17 @@ async def demo_enhanced_vector_store():
     print_section("Enhanced Vector Store Demo", 
                   "Demonstrating multi-modal RAG with hierarchical and temporal retrieval")
     
-    # Create enhanced vector store
-    vector_store = create_enhanced_vector_store()
+    # Create enhanced vector store using new unified storage system
+    from src.storage.base import StorageConfig
+    config = StorageConfig(
+        db_path="./data/enhanced_chroma_db",
+        collection_name="enhanced_content",
+        chunk_size=1000,
+        chunk_overlap=100
+    )
+    vector_store = ChromaStorageProvider(config)
+    if not vector_store.initialize():
+        raise RuntimeError("Failed to initialize enhanced vector store")
     
     # Add some sample documents
     print_subsection("Adding Sample Documents")
@@ -65,13 +74,19 @@ async def demo_enhanced_vector_store():
     - RAG systems becoming more sophisticated
     """
     
-    chunks = vector_store.add_document(text_doc, {
-        "source": "ai_trends_2024",
-        "timestamp": datetime.now().isoformat(),
-        "topic": "AI",
-        "granularity": "document"
-    })
-    print(f"✅ Added text document: {len(chunks)} chunks")
+    from src.storage.base import DocumentMetadata, DataType
+    metadata = DocumentMetadata(
+        doc_id="ai_trends_2024",
+        title="AI Trends 2024",
+        source="ai_trends_2024",
+        content_type=DataType.TEXT,
+        timestamp=datetime.now(),
+        author="system",
+        tags=["AI", "2024", "trends"]
+    )
+    
+    doc_id = vector_store.add_document(text_doc, metadata)
+    print(f"✅ Added text document: {doc_id}")
     
     # Add another document with different timestamp
     older_doc = """
@@ -82,45 +97,40 @@ async def demo_enhanced_vector_store():
     - Ethical AI frameworks
     """
     
-    old_chunks = vector_store.add_document(older_doc, {
-        "source": "ai_trends_2023",
-        "timestamp": (datetime.now() - timedelta(days=365)).isoformat(),
-        "topic": "AI",
-        "granularity": "document"
-    })
-    print(f"✅ Added historical document: {len(old_chunks)} chunks")
+    old_metadata = DocumentMetadata(
+        doc_id="ai_trends_2023",
+        title="AI Trends 2023",
+        source="ai_trends_2023",
+        content_type=DataType.TEXT,
+        timestamp=datetime.now() - timedelta(days=365),
+        author="system",
+        tags=["AI", "2023", "trends"]
+    )
     
-    # Demonstrate hierarchical query
-    print_subsection("Hierarchical Query Demonstration")
+    old_doc_id = vector_store.add_document(older_doc, old_metadata)
+    print(f"✅ Added historical document: {old_doc_id}")
+    
+    # Demonstrate search functionality
+    print_subsection("Search Demonstration")
     
     query = "What are the latest developments in AI?"
-    hierarchical_results = vector_store.hierarchical_query(
-        query, granularity="mixed", top_k=5
-    )
+    search_results = vector_store.search(query, top_k=5)
     
     print(f"Query: {query}")
-    print(f"Results found: {len(hierarchical_results)}")
-    for i, result in enumerate(hierarchical_results[:2]):
-        print(f"  {i+1}. Source: {result.get('metadata', {}).get('source', 'Unknown')}")
-        print(f"     Content: {result.get('document', '')[:100]}...")
+    print(f"Results found: {len(search_results)}")
+    for i, result in enumerate(search_results[:2]):
+        print(f"  {i+1}. Score: {result.score:.3f}")
+        print(f"     Content: {result.content[:100]}...")
+        if result.metadata:
+            print(f"     Source: {result.metadata.source}")
     
-    # Demonstrate temporal query
-    print_subsection("Temporal Query with Trend Analysis")
+    # Demonstrate document retrieval
+    print_subsection("Document Retrieval")
     
-    time_range = {
-        "start": datetime.now() - timedelta(days=30),
-        "end": datetime.now()
-    }
-    
-    temporal_results = vector_store.temporal_query(
-        query, time_range=time_range, trend_analysis=True
-    )
-    
-    print(f"Temporal query results: {len(temporal_results['results'])}")
-    if 'trends' in temporal_results:
-        trends = temporal_results['trends']
-        print(f"Volume trend: {trends.get('volume_trend', {}).get('trend', 'N/A')}")
-        print(f"Emerging themes: {trends.get('emerging_themes', [])}")
+    doc_content, doc_metadata = vector_store.get_document("ai_trends_2024")
+    if doc_content:
+        print(f"Retrieved document: {doc_metadata.title}")
+        print(f"Content preview: {doc_content[:200]}...")
     
     return vector_store
 

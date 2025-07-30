@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass
 import json
 
-from src.storage.enhanced_vector_store import EnhancedVectorStore
+from src.storage import ChromaStorageProvider
 from src.core.core import query_llm
 from src.tools.tools import AVAILABLE_TOOLS
 
@@ -45,7 +45,7 @@ class AgenticRAGAgent:
     An agent that can reason about retrieval and synthesis strategies.
     """
     
-    def __init__(self, vector_store: EnhancedVectorStore, llm_model: str = "llama3"):
+    def __init__(self, vector_store: ChromaStorageProvider, llm_model: str = "deepseek-r1"):
         self.vector_store = vector_store
         self.llm_model = llm_model
         self.session_history = []
@@ -523,6 +523,6 @@ class AgenticRAGAgent:
         }
 
 # Factory function
-def create_agentic_rag_agent(vector_store: EnhancedVectorStore) -> AgenticRAGAgent:
+def create_agentic_rag_agent(vector_store: ChromaStorageProvider) -> AgenticRAGAgent:
     """Create an agentic RAG agent instance."""
     return AgenticRAGAgent(vector_store) 

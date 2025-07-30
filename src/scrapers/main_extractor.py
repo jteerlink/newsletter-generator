@@ -19,22 +19,18 @@ try:
     from .rss_extractor import RSSExtractor
     from .crawl4ai_web_scraper import Crawl4AiWebScraper, SmartCrawl4AiWebScraper, WebScraperWrapper
     from .data_processor import DataProcessor, ReportGenerator
-    # For fallback compatibility, keep the old web scraper as backup
-    try:
-        from .web_scraper import SmartWebScraper as LegacyWebScraper
-    except ImportError:
-        LegacyWebScraper = None
 except ImportError:
     # If relative imports fail, try absolute imports (when run directly)
-    from config_loader import ConfigLoader, SourceConfig
-    from rss_extractor import RSSExtractor
-    from crawl4ai_web_scraper import Crawl4AiWebScraper, SmartCrawl4AiWebScraper, WebScraperWrapper
-    from data_processor import DataProcessor, ReportGenerator
-    # For fallback compatibility, keep the old web scraper as backup
     try:
-        from web_scraper import SmartWebScraper as LegacyWebScraper
+        from config_loader import ConfigLoader, SourceConfig
+        from rss_extractor import RSSExtractor
+        from crawl4ai_web_scraper import Crawl4AiWebScraper, SmartCrawl4AiWebScraper, WebScraperWrapper
+        from data_processor import DataProcessor, ReportGenerator
     except ImportError:
-        LegacyWebScraper = None
+        from src.scrapers.config_loader import ConfigLoader, SourceConfig
+        from src.scrapers.rss_extractor import RSSExtractor
+        from src.scrapers.crawl4ai_web_scraper import Crawl4AiWebScraper, SmartCrawl4AiWebScraper, WebScraperWrapper
+        from src.scrapers.data_processor import DataProcessor, ReportGenerator
 
 # Ensure logs directory exists at repo root
 log_dir = Path(__file__).resolve().parent.parent.parent / "logs"
@@ -143,18 +139,11 @@ class NewsExtractor:
                     
             except Exception as e:
                 logger.error(f"Failed to initialize crawl4ai scraper: {e}")
-                if LegacyWebScraper and self.use_selenium_fallback:
-                    logger.info("Falling back to legacy web scraper")
-                    return LegacyWebScraper(use_selenium=self.use_selenium_fallback)
-                else:
-                    raise
+                # Since legacy scraper is removed, we can't fallback
+                raise ImportError(f"Crawl4AI scraper failed to initialize: {e}")
         else:
-            # Use legacy scraper if explicitly requested
-            if LegacyWebScraper:
-                logger.info("Using legacy web scraper")
-                return LegacyWebScraper(use_selenium=self.use_selenium_fallback)
-            else:
-                raise ImportError("Legacy web scraper not available and crawl4ai disabled")
+            # Legacy scraper is no longer available
+            raise ImportError("Legacy web scraper not available and crawl4ai disabled")
 
     def _get_scraper_type(self) -> str:
         """Get the type of scraper being used"""
@@ -164,7 +153,7 @@ class NewsExtractor:
             else:
                 return "crawl4ai_standard"
         else:
-            return "legacy_selenium" if self.use_selenium_fallback else "legacy_requests"
+            return "crawl4ai_disabled"
 
     def _get_scraper_config(self) -> Dict[str, Any]:
         """Get scraper configuration details"""

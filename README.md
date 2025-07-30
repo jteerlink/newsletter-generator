@@ -94,7 +94,7 @@ pip install -r streamlit/requirements.txt  # For web interface
 ### 2. Model Setup
 Pull the required models:
 ```bash
-ollama pull llama3          # Primary model for content generation
+ollama pull deepseek-r1     # Primary model for content generation
 ollama pull gemma3n         # Secondary model for analysis
 ollama pull deepseek-r1     # Advanced model for deep-dive content
 ```
@@ -103,7 +103,7 @@ ollama pull deepseek-r1     # Advanced model for deep-dive content
 Create a `.env` file in the project root:
 ```ini
 # Ollama Models
-OLLAMA_MODEL=llama3
+OLLAMA_MODEL=deepseek-r1
 OLLAMA_MODEL_GEMMA3N=gemma3n
 OLLAMA_MODEL_DEEPSEEK_R1=deepseek-r1
 

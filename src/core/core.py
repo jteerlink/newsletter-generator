@@ -1,53 +1,51 @@
-"""Phase-1 core module
-
-Contains a thin wrapper around Ollama's chat endpoint. The real logic will be
-implemented in Phase 1; for now this module only defines signatures so other
-modules can import without errors.
-"""
+"""Core module for LLM interactions and logging setup."""
 
 from __future__ import annotations
 
 import ollama
-import os
 import logging
-from pathlib import Path
 from dotenv import load_dotenv
+
+from .constants import DEFAULT_LLM_MODEL, LLM_TIMEOUT, LLM_MAX_RETRIES, ERROR_MESSAGES
+from .exceptions import LLMError
+from .utils import setup_logging, retry_on_failure
 
 load_dotenv()
 
-# Configure logging with proper path handling
-log_dir = Path(__file__).parent.parent.parent / "logs"
-log_dir.mkdir(exist_ok=True)
-log_file = log_dir / "interaction.log"
-
-logging.basicConfig(
-    filename=str(log_file),
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s:%(message)s",
-)
+# Setup logging
+logger = setup_logging(__name__)
 
 
-def query_llm(prompt: str) -> str:
+@retry_on_failure(max_retries=LLM_MAX_RETRIES)
+def query_llm(prompt: str, model: str | None = None) -> str:
     """
     Query the configured LLM model with a user prompt and return the response.
 
     Args:
         prompt (str): The prompt string to send to the LLM.
+        model (str, optional): The model to use. Defaults to DEFAULT_LLM_MODEL.
 
     Returns:
-        str: The LLM's response as a string, or an error message if the query fails.
+        str: The LLM's response as a string.
+
+    Raises:
+        LLMError: If the LLM query fails.
     """
-    model = os.getenv("OLLAMA_MODEL", "llama3")
+    if model is None:
+        model = DEFAULT_LLM_MODEL
+    
     try:
         response = ollama.chat(
-            model=model, messages=[{"role": "user", "content": prompt}]
+            model=model, 
+            messages=[{"role": "user", "content": prompt}],
+            options={"timeout": LLM_TIMEOUT}
         )
         result = response["message"]["content"]
-        logging.info(f"Prompt: {prompt}\nResponse: {result}")
+        logger.info(f"LLM query successful with model {model}")
         return result
     except ollama.ResponseError as e:
-        logging.error(f"Prompt: {prompt}\nError: {e}")
-        return "An error occurred while querying the LLM."
+        logger.error(f"LLM ResponseError: {e}")
+        raise LLMError(f"{ERROR_MESSAGES['llm_timeout']}: {e}")
     except Exception as e:
-        logging.error(f"Prompt: {prompt}\nUnexpected error: {e}")
-        return "An unexpected error occurred while querying the LLM."
+        logger.error(f"Unexpected LLM error: {e}")
+        raise LLMError(f"Unexpected error in LLM query: {e}")

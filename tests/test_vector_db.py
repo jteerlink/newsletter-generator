@@ -1,6 +1,6 @@
 import pytest
 from src.core.utils import chunk_text, embed_chunks
-from src.vector_db import add_text_to_db, get_db_collection
+from src.storage import add_text_to_db, get_db_collection
 import shutil
 import os
 import tempfile

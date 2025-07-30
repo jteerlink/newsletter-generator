@@ -30,10 +30,11 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 try:
-    from src.storage.vector_store import VectorStore
+    from src.storage import ChromaStorageProvider
+    from src.storage.base import StorageConfig
 except ImportError:
     # Optional dependency - VectorStore functionality will be disabled
-    VectorStore = None
+    ChromaStorageProvider = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -50,10 +51,20 @@ class DataProcessor:
         self.content_analyzer = ContentAnalyzer()
 
         # VectorStore for ChromaDB storage (optional dependency)
-        if VectorStore is not None:
+        if ChromaStorageProvider is not None:
             try:
-                self.vector_store = VectorStore()
-                logger.info("VectorStore initialized successfully")
+                config = StorageConfig(
+                    db_path="./data/chroma_db",
+                    collection_name="scraped_content",
+                    chunk_size=1000,
+                    chunk_overlap=100
+                )
+                self.vector_store = ChromaStorageProvider(config)
+                if self.vector_store.initialize():
+                    logger.info("VectorStore initialized successfully")
+                else:
+                    logger.warning("Failed to initialize VectorStore")
+                    self.vector_store = None
             except Exception as e:
                 logger.warning(f"Failed to initialize VectorStore: {e}")
                 self.vector_store = None

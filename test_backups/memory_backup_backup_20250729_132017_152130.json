@@ -1,0 +1,7 @@
+{
+  "version_id": "backup_20250729_132017_152130",
+  "timestamp": "2025-07-29T13:20:17.152166",
+  "description": "Test backup",
+  "documents_count": 1,
+  "storage_type": "memory"
+}

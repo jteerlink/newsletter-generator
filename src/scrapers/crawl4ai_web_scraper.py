@@ -22,8 +22,14 @@ try:
     from .config_loader import SourceConfig
     from .rss_extractor import Article
 except ImportError:
-    from config_loader import SourceConfig
-    from rss_extractor import Article
+    try:
+        # Try importing from src.scrapers first
+        from src.scrapers.config_loader import SourceConfig
+        from src.scrapers.rss_extractor import Article
+    except ImportError:
+        # Fallback to direct imports (for when run directly)
+        from config_loader import SourceConfig
+        from rss_extractor import Article
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -128,7 +134,7 @@ class Crawl4AiWebScraper:
         max_retries: int = 3, 
         headless: bool = True,
         use_llm_extraction: bool = False,
-        llm_provider: str = "ollama/llama3",
+        llm_provider: str = "ollama/deepseek-r1",
         max_concurrent: int = 3,
         browser_type: str = "chromium"
     ):
@@ -955,7 +961,10 @@ async def main():
         try:
             from .config_loader import ConfigLoader
         except ImportError:
-            from config_loader import ConfigLoader
+            try:
+                from config_loader import ConfigLoader
+            except ImportError:
+                from src.scrapers.config_loader import ConfigLoader
         
         config = ConfigLoader("src/sources.yaml")
         sources = config.get_active_sources()[:2]  # Test with first 2 sources
