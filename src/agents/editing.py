@@ -14,7 +14,6 @@ from typing import Dict, Any, List, Optional, Tuple
 from .base import SimpleAgent, AgentType, TaskResult, TaskStatus
 from src.core.core import query_llm
 from src.core.template_manager import NewsletterType, AIMLTemplateManager
-from src.quality import ContentValidator
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,6 @@ class EditorAgent(SimpleAgent):
             tools=[],  # Editors typically don't need external tools
             **kwargs
         )
-        self.content_validator = ContentValidator()
     
     def execute_task(self, task: str, context: str = "", **kwargs) -> str:
         """Execute editing task with comprehensive quality review."""

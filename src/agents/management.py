@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from .base import SimpleAgent, AgentType, TaskResult, TaskStatus
 from src.core.core import query_llm
 from src.core.template_manager import NewsletterType, AIMLTemplateManager
-from src.quality import NewsletterQualityGate, QualityGateStatus
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +64,6 @@ class ManagerAgent(SimpleAgent):
             **kwargs
         )
         self.template_manager = AIMLTemplateManager()
-        self.quality_gate = NewsletterQualityGate()
         self.active_workflows: Dict[str, WorkflowPlan] = {}
     
     def execute_task(self, task: str, context: str = "", **kwargs) -> str:

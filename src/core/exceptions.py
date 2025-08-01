@@ -34,4 +34,8 @@ class ValidationError(NewsletterError):
 
 class ImportError(NewsletterError):
     """Raised when there's an import error."""
+    pass
+
+class LLMError(NewsletterError):
+    """Raised when there's an LLM operation error."""
     pass 

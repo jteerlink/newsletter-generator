@@ -8,12 +8,75 @@ and other common operations.
 import re
 import json
 import logging
-from typing import List, Dict, Any, Optional, Union
+import time
+import functools
+from typing import List, Dict, Any, Optional, Union, Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 import hashlib
 
 logger = logging.getLogger(__name__)
+
+def setup_logging(name: str = None, level: str = "INFO") -> logging.Logger:
+    """
+    Setup logging configuration.
+    
+    Args:
+        name: Logger name
+        level: Logging level
+        
+    Returns:
+        Configured logger
+    """
+    if name is None:
+        name = __name__
+    
+    logger = logging.getLogger(name)
+    
+    # Set log level
+    log_level = getattr(logging, level.upper(), logging.INFO)
+    logger.setLevel(log_level)
+    
+    # Only add handler if logger doesn't already have handlers
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    
+    return logger
+
+def retry_on_failure(max_retries: int = 3, delay: float = 1.0):
+    """
+    Decorator to retry a function on failure.
+    
+    Args:
+        max_retries: Maximum number of retry attempts
+        delay: Delay between retries in seconds
+        
+    Returns:
+        Decorated function
+    """
+    def decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    if attempt < max_retries - 1:
+                        time.sleep(delay)
+            
+            # If we get here, all retries failed
+            raise last_exception
+        
+        return wrapper
+    return decorator
 
 def clean_text(text: str) -> str:
     """Clean and normalize text content."""
