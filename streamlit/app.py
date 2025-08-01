@@ -1,7 +1,7 @@
 """
-Hybrid Newsletter System - Streamlit Interface
-Modern, comprehensive UI for the Phase 1-4 hybrid newsletter system
-Features daily quick pipeline, deep dive pipeline, and quality assurance monitoring
+Simplified Newsletter System - Streamlit Interface
+Modern, comprehensive UI for the hierarchical newsletter system
+Features deep dive pipeline and quality assurance monitoring
 """
 
 import streamlit as st
@@ -18,17 +18,15 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-# Import the new hybrid system components
-from src.agents.daily_quick_pipeline import DailyQuickPipeline
-from src.agents.hybrid_workflow_manager import ContentRequest
-from src.agents.hybrid_workflow_manager import HybridWorkflowManager, ContentPipelineType
+# Import the simplified system components
+from src.main import execute_hierarchical_newsletter_generation
 from src.quality import QualityAssuranceSystem
 from src.core.core import query_llm
 from src.tools.notion_integration import NotionNewsletterPublisher
 
 # Page configuration
 st.set_page_config(
-    page_title="Hybrid Newsletter System",
+    page_title="Newsletter System",
     page_icon="🚀",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -380,8 +378,6 @@ if 'generation_stats' not in st.session_state:
     st.session_state.generation_stats = None
 if 'is_generating' not in st.session_state:
     st.session_state.is_generating = False
-if 'selected_pipeline' not in st.session_state:
-    st.session_state.selected_pipeline = 'daily_quick'
 if 'selected_pillar' not in st.session_state:
     st.session_state.selected_pillar = 'news_breakthroughs'
 if 'quality_metrics' not in st.session_state:
@@ -391,8 +387,8 @@ def create_system_header():
     """Create the modern system header"""
     st.markdown("""
     <div class="system-header">
-        <h1>🚀 Hybrid Newsletter System</h1>
-        <p>AI-powered newsletter generation with daily quick pipeline and deep dive analysis</p>
+        <h1>🚀 Newsletter System</h1>
+        <p>AI-powered newsletter generation with hierarchical deep-dive analysis</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -401,12 +397,12 @@ def create_feature_overview():
     st.markdown("""
     <div class="feature-grid">
         <div class="feature-card">
-            <h3>⚡ Daily Quick Pipeline</h3>
-            <p>Generate 5-minute newsletters with breaking news, tool spotlights, and quick hits. Perfect for daily engagement with 90% mobile readership.</p>
-        </div>
-        <div class="feature-card">
             <h3>🔬 Deep Dive Analysis</h3>
             <p>Comprehensive 4,000+ word technical articles with research, analysis, and expert insights. Weekly in-depth exploration of complex topics.</p>
+        </div>
+        <div class="feature-card">
+            <h3>🤖 Hierarchical Execution</h3>
+            <p>ManagerAgent orchestrates specialized agents for research, writing, and editing. Coordinated workflow ensures high-quality output.</p>
         </div>
         <div class="feature-card">
             <h3>📊 Quality Assurance</h3>
@@ -415,46 +411,24 @@ def create_feature_overview():
     </div>
     """, unsafe_allow_html=True)
 
-def create_pipeline_selector():
-    """Create pipeline selection interface"""
+def create_pipeline_overview():
+    """Create pipeline overview interface"""
     st.markdown("""
     <div class="pipeline-selector">
-        <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">📋 Content Pipeline Selection</h2>
-        <p style="color: var(--text-light); margin-bottom: 2rem;">Choose between rapid daily content or comprehensive deep dive analysis</p>
+        <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">🔬 Deep Dive Pipeline</h2>
+        <p style="color: var(--text-light); margin-bottom: 2rem;">Comprehensive newsletter generation with hierarchical agent execution</p>
     </div>
     """, unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2, gap="large")
-    
-    with col1:
-        daily_active = "active" if st.session_state.selected_pipeline == 'daily_quick' else ""
-        if st.button("⚡ Daily Quick Pipeline", key="daily_btn", use_container_width=True):
-            st.session_state.selected_pipeline = 'daily_quick'
-            st.rerun()
-        
-        st.markdown(f"""
-        <div class="pipeline-option {daily_active}">
-            <h3>⚡ Daily Quick Pipeline</h3>
-            <p><strong>Target:</strong> 5-minute read • <strong>Format:</strong> Mobile-first</p>
-            <p><strong>Content:</strong> News & breakthroughs, tools & tutorials, quick hits</p>
-            <p><strong>Generation Time:</strong> ~3 minutes</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        deep_active = "active" if st.session_state.selected_pipeline == 'deep_dive' else ""
-        if st.button("🔬 Deep Dive Pipeline", key="deep_btn", use_container_width=True):
-            st.session_state.selected_pipeline = 'deep_dive'
-            st.rerun()
-        
-        st.markdown(f"""
-        <div class="pipeline-option {deep_active}">
-            <h3>🔬 Deep Dive Pipeline</h3>
-            <p><strong>Target:</strong> 4,000+ words • <strong>Format:</strong> Comprehensive</p>
-            <p><strong>Content:</strong> Technical analysis, research, expert insights</p>
-            <p><strong>Generation Time:</strong> ~15 minutes</p>
-        </div>
-        """, unsafe_allow_html=True)
+    st.markdown("""
+    <div class="pipeline-option active">
+        <h3>🔬 Deep Dive Pipeline</h3>
+        <p><strong>Target:</strong> 4,000+ words • <strong>Format:</strong> Comprehensive</p>
+        <p><strong>Content:</strong> Technical analysis, research, expert insights</p>
+        <p><strong>Generation Time:</strong> ~15 minutes</p>
+        <p><strong>Agents:</strong> Manager → Planner → Research → Writer → Editor</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 def create_content_pillar_selector():
     """Create content pillar selection interface"""
@@ -542,9 +516,9 @@ def create_configuration_panel():
         
         word_count = st.slider(
             "📊 Target Word Count",
-            min_value=500,
+            min_value=1000,
             max_value=5000,
-            value=1500 if st.session_state.selected_pipeline == 'daily_quick' else 4000,
+            value=4000,
             step=250,
             help="Target word count for the newsletter"
         )
@@ -628,84 +602,35 @@ def create_quality_dashboard():
             """, unsafe_allow_html=True)
 
 def generate_newsletter(config: Dict[str, Any]):
-    """Generate newsletter using the hybrid system"""
+    """Generate newsletter using the hierarchical system"""
     try:
-        # Initialize system components
-        workflow_manager = HybridWorkflowManager()
+        # Initialize quality system
         quality_system = QualityAssuranceSystem()
-        
-        # Create content request
-        content_request = ContentRequest(
-            topic=config['topic'],
-            content_pillar=st.session_state.selected_pillar,
-            target_audience=config['audience'],
-            word_count_target=config['word_count'],
-            deadline=datetime.now() + timedelta(hours=1),
-            priority={"High": 1, "Medium": 2, "Low": 3}[config['priority']],
-            special_requirements=config['special_requirements']
-        )
         
         # Progress tracking
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        # Step 1: Route workflow
-        status_text.text("🔄 Analyzing content complexity and routing workflow...")
+        # Step 1: Generate content using hierarchical execution
+        status_text.text("🔄 Executing hierarchical newsletter generation...")
         progress_bar.progress(10)
         
-        workflow_result = workflow_manager.route_content_workflow(content_request)
-        
-        # Step 2: Generate content
-        status_text.text("📝 Generating newsletter content...")
-        progress_bar.progress(30)
-        
-        if st.session_state.selected_pipeline == 'daily_quick':
-            # Use daily quick pipeline
-            daily_pipeline = DailyQuickPipeline()
-            raw_result = daily_pipeline.generate_daily_newsletter()
-            
-            # Transform the result to match expected structure
-            generation_result = {
-                'newsletter_content': raw_result.get('markdown', ''),
-                'subject_line_info': {
-                    'subject_line': raw_result.get('subject_line', ''),
-                    'preview_text': raw_result.get('preview_text', ''),
-                    'character_count': len(raw_result.get('subject_line', ''))
-                },
-                'html_content': raw_result.get('html', ''),
-                'notion_content': raw_result.get('notion', ''),
-                'metadata': raw_result.get('metadata', {})
-            }
-        else:
-            # Use deep dive pipeline (from workflow result)
-            raw_result = workflow_result.get('result', workflow_result)
-            
-            # Transform the result to match expected structure
-            if isinstance(raw_result, dict) and 'markdown' in raw_result:
-                generation_result = {
-                    'newsletter_content': raw_result.get('markdown', ''),
-                    'subject_line_info': {
-                        'subject_line': raw_result.get('subject_line', ''),
-                        'preview_text': raw_result.get('preview_text', ''),
-                        'character_count': len(raw_result.get('subject_line', ''))
-                    },
-                    'html_content': raw_result.get('html', ''),
-                    'notion_content': raw_result.get('notion', ''),
-                    'metadata': raw_result.get('metadata', {})
-                }
-            else:
-                generation_result = raw_result
+        # Execute hierarchical newsletter generation
+        generation_result = execute_hierarchical_newsletter_generation(
+            topic=config['topic'],
+            audience=config['audience']
+        )
         
         progress_bar.progress(70)
         
-        # Step 3: Quality assurance
+        # Step 2: Quality assurance
         status_text.text("🔍 Running quality assurance checks...")
         
         if generation_result and isinstance(generation_result, dict):
             try:
                 ready, validation_report = quality_system.validate_newsletter_ready_for_publish(
                     generation_result,
-                    st.session_state.selected_pipeline
+                    'deep_dive'  # Only deep dive pipeline now
                 )
                 
                 quality_metrics_obj = validation_report.get('quality_metrics')
@@ -726,13 +651,6 @@ def generate_newsletter(config: Dict[str, Any]):
         progress_bar.progress(100)
         status_text.text("✅ Newsletter generation complete!")
         
-        # Debug information
-        if st.session_state.get('debug_mode', False):
-            st.info(f"Debug: Pipeline used: {workflow_result.get('pipeline_used', 'Unknown')}")
-            st.info(f"Debug: Result type: {type(generation_result)}")
-            st.info(f"Debug: Result keys: {list(generation_result.keys()) if isinstance(generation_result, dict) else 'Not a dict'}")
-            st.info(f"Debug: Content length: {len(str(generation_result.get('newsletter_content', '')))} characters")
-        
         return generation_result
         
     except Exception as e:
@@ -749,38 +667,22 @@ def display_newsletter_content(content: Dict[str, Any]):
     
     if content:
         # Create tabs for different content sections
-        if st.session_state.selected_pipeline == 'daily_quick':
-            tabs = st.tabs(["📰 Newsletter", "📊 Subject Lines", "📱 Mobile Preview", "🔍 Quality Report"])
-            
-            with tabs[0]:
-                newsletter_content = content.get('newsletter_content', '')
-                if newsletter_content:
-                    st.markdown(newsletter_content)
-                else:
-                    st.warning("No newsletter content generated. This might be due to configuration issues.")
-            
-            with tabs[1]:
-                subject_info = content.get('subject_line_info', {})
-                st.write("**Subject Line:**", subject_info.get('subject_line', 'N/A'))
-                st.write("**Preview Text:**", subject_info.get('preview_text', 'N/A'))
-                st.write("**Character Count:**", subject_info.get('character_count', 0))
-            
-            with tabs[2]:
-                st.markdown("### 📱 Mobile Optimization Preview")
-                st.info("Content optimized for mobile-first reading experience")
-                
-            with tabs[3]:
-                if st.session_state.quality_metrics:
-                    st.markdown("### Quality Assurance Report")
-                    for metric, score in st.session_state.quality_metrics.items():
-                        st.metric(metric.replace('_', ' ').title(), f"{score:.1%}")
-        else:
-            # Deep dive content display
-            newsletter_content = content.get('newsletter_content', '')
+        tabs = st.tabs(["📰 Newsletter", "📊 Quality Report"])
+        
+        with tabs[0]:
+            newsletter_content = content.get('content', '')
             if newsletter_content:
                 st.markdown(newsletter_content)
             else:
                 st.warning("No newsletter content generated. This might be due to configuration issues.")
+        
+        with tabs[1]:
+            if st.session_state.quality_metrics:
+                st.markdown("### Quality Assurance Report")
+                for metric, score in st.session_state.quality_metrics.items():
+                    st.metric(metric.replace('_', ' ').title(), f"{score:.1%}")
+            else:
+                st.info("Quality metrics not available for this generation.")
     else:
         st.warning("No content to display. Generate a newsletter to see results.")
 
@@ -798,7 +700,7 @@ def publish_newsletter(content: Dict[str, Any], topic: str):
         filename = f"{timestamp}_{safe_topic}.md"
         filepath = output_dir / filename
         
-        newsletter_content = content.get('newsletter_content', '')
+        newsletter_content = content.get('content', '')
         if newsletter_content:
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(newsletter_content)
@@ -812,9 +714,9 @@ def publish_newsletter(content: Dict[str, Any], topic: str):
         
         # Prepare data for Notion
         notion_data = {
-            "title": content.get('subject_line_info', {}).get('subject_line', topic),
-            "content": content.get('newsletter_content', ''),
-            "category": "Daily Quick Newsletter" # Or get from session state
+            "title": topic,
+            "content": content.get('content', ''),
+            "category": "Deep Dive Newsletter"
         }
         
         notion_url = publisher.create_notion_page(notion_data)
@@ -835,8 +737,8 @@ def main():
     # Feature overview
     create_feature_overview()
     
-    # Pipeline selection
-    create_pipeline_selector()
+    # Pipeline overview
+    create_pipeline_overview()
     
     # Content pillar selection
     create_content_pillar_selector()

@@ -49,15 +49,9 @@ class NotionNewsletterPublisher:
         try:
             logger.info("Would create Notion page using MCP tools")
             
-            # Extract content based on newsletter type
-            if 'sections' in newsletter_data:
-                # Daily Quick format
-                content = self.format_daily_quick_content(newsletter_data)
-                title = f"Daily Newsletter - {newsletter_data.get('topic', 'AI Update')}"
-            else:
-                # Deep Dive format  
-                content = newsletter_data.get('markdown', newsletter_data.get('content', ''))
-                title = f"Deep Dive - {newsletter_data.get('topic', 'AI Analysis')}"
+            # Extract content for deep dive format
+            content = newsletter_data.get('content', newsletter_data.get('markdown', ''))
+            title = newsletter_data.get('title', f"Deep Dive - {newsletter_data.get('topic', 'AI Analysis')}")
             
             # Add timestamp to title
             timestamp = datetime.now().strftime("%Y-%m-%d")
@@ -73,38 +67,20 @@ class NotionNewsletterPublisher:
             logger.error(f"Error creating Notion page: {e}")
             return None
     
-    def format_daily_quick_content(self, newsletter_data: Dict[str, Any]) -> str:
-        """Format daily quick newsletter content for Notion"""
+    def format_deep_dive_content(self, newsletter_data: Dict[str, Any]) -> str:
+        """Format deep dive newsletter content for Notion"""
         content_parts = []
         
         # Header
-        topic = newsletter_data.get('topic', 'AI Update')
+        topic = newsletter_data.get('topic', 'AI Analysis')
         content_parts.append(f"# {topic}")
         content_parts.append(f"*Generated: {datetime.now().strftime('%B %d, %Y')}*")
         content_parts.append("")
         
-        # Sections
-        sections = newsletter_data.get('sections', {})
-        
-        if 'news_breakthroughs' in sections:
-            content_parts.append("## 🚀 News & Breakthroughs")
-            content_parts.append(sections['news_breakthroughs'])
-            content_parts.append("")
-        
-        if 'tools_tutorials' in sections:
-            content_parts.append("## 🛠️ Tools & Tutorials")
-            content_parts.append(sections['tools_tutorials'])
-            content_parts.append("")
-        
-        if 'quick_hits' in sections:
-            content_parts.append("## ⚡ Quick Hits")
-            content_parts.append(sections['quick_hits'])
-            content_parts.append("")
-        
-        if 'takeaways' in sections:
-            content_parts.append("## 🎯 Key Takeaways")
-            content_parts.append(sections['takeaways'])
-            content_parts.append("")
+        # Main content
+        content = newsletter_data.get('content', '')
+        if content:
+            content_parts.append(content)
         
         return "\n".join(content_parts)
     

@@ -133,7 +133,6 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "chromadb.*",
-    "crewai.*",
     "ollama.*",
     "streamlit.*",
     "crawl4ai.*",

@@ -1,61 +1,37 @@
-"""Custom exceptions for the newsletter generator."""
+"""
+Simplified exception classes for the newsletter generator.
 
-class NewsletterGeneratorError(Exception):
-    """Base exception for newsletter generator."""
+This module provides a streamlined exception hierarchy for error handling.
+"""
+
+class NewsletterError(Exception):
+    """Base exception for newsletter generator errors."""
     pass
 
-class LLMError(NewsletterGeneratorError):
-    """Exception raised for LLM-related errors."""
+class ConfigurationError(NewsletterError):
+    """Raised when there's a configuration issue."""
     pass
 
-class SearchError(NewsletterGeneratorError):
-    """Exception raised for search-related errors."""
+class StorageError(NewsletterError):
+    """Raised when there's a storage operation error."""
     pass
 
-class ScrapingError(NewsletterGeneratorError):
-    """Exception raised for scraping-related errors."""
+class SearchError(NewsletterError):
+    """Raised when there's a search operation error."""
     pass
 
-class ValidationError(NewsletterGeneratorError):
-    """Exception raised for validation errors."""
+class ContentError(NewsletterError):
+    """Raised when there's a content processing error."""
     pass
 
-class AgentError(NewsletterGeneratorError):
-    """Exception raised for agent-related errors."""
+class AgentError(NewsletterError):
+    """Raised when there's an agent operation error."""
     pass
 
-class ConfigurationError(NewsletterGeneratorError):
-    """Exception raised for configuration errors."""
+class ValidationError(NewsletterError):
+    """Raised when content validation fails."""
     pass
 
-class QualityGateError(NewsletterGeneratorError):
-    """Exception raised for quality gate failures."""
-    pass
-
-class ImportError(NewsletterGeneratorError):
-    """Exception raised for import-related errors."""
-    pass
-
-class StorageError(NewsletterGeneratorError):
-    """Exception raised for storage-related errors."""
-    pass
-
-class WorkflowError(NewsletterGeneratorError):
-    """Exception raised for workflow-related errors."""
-    pass
-
-class ContentError(NewsletterGeneratorError):
-    """Exception raised for content-related errors."""
-    pass
-
-class ToolError(NewsletterGeneratorError):
-    """Exception raised for tool-related errors."""
-    pass
-
-class FeedbackError(NewsletterGeneratorError):
-    """Exception raised for feedback-related errors."""
-    pass
-
-class PerformanceError(NewsletterGeneratorError):
-    """Exception raised for performance-related errors."""
+class ImportError(NewsletterError):
+    """Raised when there's an import error."""
     pass 

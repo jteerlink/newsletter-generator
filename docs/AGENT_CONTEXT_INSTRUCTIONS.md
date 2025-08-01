@@ -2,7 +2,7 @@
 
 **Document Version:** 1.0  
 **Last Updated:** July 30, 2025  
-**System:** Hybrid Newsletter Generator with Multi-Agent Architecture  
+**System:** Hierarchical Newsletter Generator with Multi-Agent Architecture  
 
 ---
 
@@ -10,7 +10,7 @@
 
 1. [Core Agent Framework](#core-agent-framework)
 2. [Primary Editorial Agents](#primary-editorial-agents)
-3. [Specialized Pipeline Agents](#specialized-pipeline-agents)
+3. [Hierarchical Management Agents](#hierarchical-management-agents)
 4. [Advanced System Agents](#advanced-system-agents)
 5. [Agent Capabilities & Tools](#agent-capabilities--tools)
 6. [Quality Assurance Framework](#quality-assurance-framework)
@@ -207,86 +207,37 @@ based on complexity, requirements, and available resources.
 
 ---
 
-## **Specialized Pipeline Agents**
+## **Hierarchical Management Agents**
 
-### **Daily Quick Pipeline Agents**
+### **ManagerAgent** 🎯
 
-**Location:** `src/agents/daily_quick_pipeline.py`
+**Location:** `src/agents/management.py`
 
-#### **NewsAggregatorAgent** 📰
-
-**Role:** Automated daily news collection from 40+ curated sources
-
-**Capabilities:**
-- **Multi-source Aggregation:** RSS feeds, direct scraping, API integrations
-- **Technical Relevance Filtering:** AI-powered content scoring
-- **Trending Topic Identification:** Real-time trend detection
-- **Web Search Integration:** Enhanced research for trending topics
-
-**Content Categories:**
-- News & Breakthroughs
-- Tools & Tutorials  
-- Quick Hits
-
-#### **ContentCuratorAgent** 🎯
-
-**Role:** Intelligent content scoring and selection for 5-minute reads
-
-**Scoring Criteria:**
-- **Technical Relevance:** Alignment with technical audience interests
-- **Practical Applicability:** Real-world implementation value
-- **Innovation Significance:** Breakthrough potential and impact
-
-#### **QuickBitesAgent** ⚡
-
-**Role:** Format content following newsletter style examples
-
-**Capabilities:**
-- **Mobile-first Formatting:** Optimized for mobile readership
-- **Quick Consumption Design:** 5-minute read target
-- **Section-specific Formatting:** News, tools, and quick hits optimization
-
-#### **SubjectLineAgent** 📧
-
-**Role:** Generate compelling subject lines <50 characters
-
-**Capabilities:**
-- **Email Optimization:** A/B testing and engagement optimization
-- **Character Limit Compliance:** <50 character constraint
-- **Engagement Focus:** Click-through rate optimization
-
-#### **NewsletterAssemblerAgent** 📦
-
-**Role:** Mobile-first final assembly
-
-**Capabilities:**
-- **Multi-format Output:** HTML, Markdown, Plain text
-- **Mobile Optimization:** Responsive design implementation
-- **Quality Validation:** Final quality checks before publication
-
----
-
-### **Hybrid Workflow Manager**
-
-**Location:** `src/agents/hybrid_workflow_manager.py`
-
-**Role:** Intelligent content routing between daily quick and deep dive pipelines
+**Role:** Hierarchical workflow orchestration and coordination
 
 **Context Instructions:**
 ```
-Main orchestrator that intelligently routes content between 
-daily quick pipeline and deep dive pipeline based on complexity analysis
+You are the master orchestrator of the newsletter generation workflow. 
+You analyze topics, create workflow plans, and coordinate specialized agents 
+to produce comprehensive, high-quality technical content.
 ```
 
 **Capabilities:**
-- **Content Complexity Analysis:** AI-powered assessment of content requirements
-- **Pipeline Selection:** Intelligent routing between daily quick (90%) and deep dive (10%)
-- **Publishing Schedule Management:** Weekly schedule coordination
-- **Quality Gate Coordination:** Multi-stage quality assurance
+- **Workflow Planning:** Create detailed execution plans for content generation
+- **Agent Coordination:** Orchestrate ResearchAgent, WriterAgent, and EditorAgent
+- **Quality Gate Management:** Ensure content meets technical accuracy and readability standards
+- **Topic Analysis:** Assess content requirements and complexity
+- **Template Selection:** Choose appropriate newsletter templates based on topic
 
-**Pipeline Distribution:**
-- **Daily Quick Pipeline:** 90% of content (5-minute reads)
-- **Deep Dive Pipeline:** 10% of content (weekly comprehensive articles)
+**Workflow Types:**
+- **Simple Workflow:** Basic research and writing for straightforward topics
+- **Standard Workflow:** Enhanced with planning and quality gates
+- **Complex Workflow:** Multi-stream parallel processing with advanced quality assurance
+- **Fallback Workflow:** Simplified process for error recovery
+
+**Tools:** Workflow coordination and management (no external tools)
+
+**Best For:** Content strategy, newsletter structure, audience targeting
 
 ---
 
@@ -402,7 +353,6 @@ agent_map = {
 ### **Performance Standards**
 
 **Processing Time:**
-- Daily Quick Pipeline: <2 minutes
 - Deep Dive Pipeline: <10 minutes
 - Quality Validation: <30 seconds
 

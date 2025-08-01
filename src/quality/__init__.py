@@ -1,36 +1,19 @@
 """
-Unified Quality System for Newsletter Generation
+Quality assurance system for newsletter generation.
 
-This module provides a consolidated quality validation system that combines
-content validation, technical validation, and quality monitoring capabilities.
+This module provides quality validation and improvement tools
+for newsletter content generation.
 """
 
-from .base import QualityValidator, QualityMetrics, QualityStatus, QualityReport
-from .content_validator import ContentQualityValidator
-from .technical_validator import TechnicalQualityValidator
-from .quality_monitor import QualityMonitor
+from .base import QualityAssuranceSystem, QualityResult, QualityMetrics
+from .content_validation import ContentValidator
+from .technical_validation import TechnicalValidator
 
-# Legacy compatibility layer
-from .compatibility import (
-    ContentValidator,
-    NewsletterQualityGate,
-    QualityGateStatus,
-    QualityGateResult,
-    QualityAssuranceSystem
-)
-
+# Export main classes
 __all__ = [
-    'QualityValidator',
-    'QualityMetrics', 
-    'QualityStatus',
-    'QualityReport',
-    'ContentQualityValidator',
-    'TechnicalQualityValidator',
-    'QualityMonitor',
-    # Legacy compatibility
+    'QualityAssuranceSystem',
+    'QualityResult', 
+    'QualityMetrics',
     'ContentValidator',
-    'NewsletterQualityGate',
-    'QualityGateStatus',
-    'QualityGateResult',
-    'QualityAssuranceSystem'
+    'TechnicalValidator'
 ]

@@ -1,22 +1,21 @@
 # AI Multi-Agent Newsletter Generator
 
 ## Project Overview
-This project is an advanced AI-powered multi-agent system designed to automate high-quality newsletter content generation for technical professionals. The system features a sophisticated **hybrid architecture** that intelligently routes content between rapid daily generation (90% of content) and comprehensive deep-dive analysis (10% of content), ensuring optimal efficiency while maintaining exceptional quality standards.
+This project is an advanced AI-powered multi-agent system designed to automate high-quality newsletter content generation for technical professionals. The system features a **hierarchical deep-dive architecture** that generates comprehensive, in-depth content through specialized agents working in coordinated workflows, ensuring exceptional quality standards for technical newsletters.
 
 ## 🌟 Key Features
 
-### **Hybrid Architecture**
-- **Daily Quick Pipeline**: 5-minute technical content generation (90% of content)
-- **Deep Dive Pipeline**: Comprehensive weekly analysis articles (10% of content) 
-- **Intelligent Routing**: AI-powered content complexity assessment and pipeline selection
+### **Hierarchical Deep-Dive Architecture**
+- **Deep Dive Pipeline**: Comprehensive technical content generation with in-depth analysis
+- **Hierarchical Execution**: ManagerAgent orchestrates specialized agents for research, writing, and editing
 - **Quality Assurance System**: Multi-gate validation with technical accuracy, mobile readability, and code validation
 
 ### **Advanced AI System**
-- **Multi-Agent Architecture**: Specialized agents for research, writing, editing, and quality control
+- **Hierarchical Multi-Agent Architecture**: ManagerAgent orchestrates specialized agents for research, writing, editing, and quality control
 - **Local LLM Integration**: Ollama with llama3, gemma3n, and deepseek-r1 models
 - **Agentic RAG**: Enhanced retrieval-augmented generation for technical accuracy
 - **Content Format Optimizer**: Mobile-first optimization for technical newsletters
-- **CrewAI Integration**: Modern CrewAI framework with SerperDevTool for web search
+- **Crawl4AI Integration**: Modern web scraping with intelligent content extraction
 
 ### **Modern Web Interface**
 - **Streamlit UI**: Modern, responsive interface with consistent design system
@@ -35,8 +34,10 @@ This project is an advanced AI-powered multi-agent system designed to automate h
 newsletter-generator/
 ├── src/                     # Core application code
 │   ├── agents/             # Multi-agent system implementation
-│   │   ├── daily_quick_pipeline.py        # 5-minute content generation
-│   │   ├── hybrid_workflow_manager.py     # Intelligent content routing
+│   │   ├── management.py              # ManagerAgent for hierarchical orchestration
+│   │   ├── research.py                # ResearchAgent for comprehensive research
+│   │   ├── writing.py                 # WriterAgent for content generation
+│   │   ├── editing.py                 # EditorAgent for quality review
 │   │   ├── quality_assurance_system.py    # Comprehensive QA validation
 │   │   ├── content_format_optimizer.py    # Mobile-first optimization
 │   │   └── agents.py                      # Core agent implementations
@@ -45,10 +46,8 @@ newsletter-generator/
 │   ├── storage/            # Vector database and enhanced storage
 │   └── tools/              # AI tools and utilities
 ├── streamlit/              # Modern web interface
-│   ├── app_hybrid_minimal.py       # Main Streamlit application
-│   ├── streamlit_app_hybrid.py     # Full-featured interface
-│   ├── ui_components_hybrid.py     # Modern UI components
-│   ├── styles.css                  # Professional styling
+│   ├── app.py              # Main Streamlit application
+│   ├── styles.css          # Professional styling
 │   └── run_streamlit_app.py        # Easy launcher
 ├── docs/                   # Documentation and analysis
 ├── dev/                    # Development, testing, and benchmarking
@@ -136,7 +135,7 @@ python streamlit/run_streamlit_app.py
 
 **Manual Start:**
 ```bash
-streamlit run streamlit/app_hybrid_minimal.py
+streamlit run streamlit/app.py
 ```
 
 Access at: **http://localhost:8501**
@@ -145,16 +144,20 @@ Access at: **http://localhost:8501**
 
 ### Web Interface (Recommended)
 The modern Streamlit interface provides:
-- **Content Generation**: Choose between Daily Quick (5-min reads) or Deep Dive (comprehensive analysis)
-- **Topic Intelligence**: AI-powered topic validation and complexity assessment  
-- **Audience Targeting**: 7+ specialized audience types (CTOs, Engineers, Data Scientists, etc.)
+- **Hierarchical Deep-Dive Pipeline**: Comprehensive newsletter generation with ManagerAgent orchestration
+- **Content Pillar Selection**: Choose from News & Breakthroughs, Tools & Tutorials, or Deep Dives & Analysis
+- **Topic Intelligence**: AI-powered topic validation and audience targeting
 - **Quality Dashboard**: Real-time quality scores with technical accuracy, mobile readability, and code validation
 - **Content Preview**: Live preview with responsive design testing
 - **Multi-format Export**: HTML, Markdown, and Plain text with download options
 
 ### Command Line Interface
 ```bash
-python src/main.py  # Basic generation
+# Generate newsletter with topic
+python src/main.py "AI and Machine Learning"
+
+# Show help
+python src/main.py --help
 ```
 
 ### Development & Testing
@@ -174,11 +177,11 @@ python dev/test_phase4.py  # Quality assurance testing
 
 ## 🏗️ System Architecture
 
-### **Hybrid Content Workflow**
-1. **Content Assessment**: AI analyzes topic complexity and requirements
-2. **Intelligent Routing**: System selects optimal pipeline (Daily Quick vs Deep Dive)
-3. **Content Generation**: Specialized agents generate content using appropriate workflow
-4. **Quality Validation**: Multi-gate QA system ensures technical accuracy and readability
+### **Hierarchical Content Workflow**
+1. **Topic Analysis**: ManagerAgent analyzes topic and creates workflow plan
+2. **Research Phase**: ResearchAgent gathers comprehensive information
+3. **Content Generation**: WriterAgent creates detailed, engaging content
+4. **Quality Validation**: EditorAgent ensures technical accuracy and readability
 5. **Format Optimization**: Mobile-first optimization and multi-format output
 
 ### **Quality Assurance Gates**
@@ -188,57 +191,14 @@ python dev/test_phase4.py  # Quality assurance testing
 - **Performance Monitoring**: <2-second processing time validation
 
 ### **Agent Specialization**
-- **Daily Quick Pipeline**: Optimized for rapid, high-quality 5-minute reads
-- **Deep Dive Pipeline**: Comprehensive research and analysis for weekly features
-- **Quality Assurance System**: Technical validation and mobile optimization
+- **ManagerAgent**: Orchestrates workflow and coordinates specialized agents
+- **ResearchAgent**: Comprehensive research and information gathering
+- **WriterAgent**: Detailed content generation and writing
+- **EditorAgent**: Quality review and technical validation
 - **Content Format Optimizer**: Mobile-first design and multi-platform compatibility
 
 ## 📊 Performance Metrics
 
 ### **Current System Performance**
 - **Processing Time**: <1 second average (0.0008s measured)
-- **Quality Scores**: 100% technical accuracy, 92% mobile readability, 100% code validation
-- **Test Coverage**: 100% success rate across all integration tests
-- **Mobile Optimization**: Optimized for 60% mobile readership
-
-### **Content Generation Efficiency**
-- **Daily Quick**: 90% of content, 5-minute generation time
-- **Deep Dive**: 10% of content, comprehensive weekly analysis
-- **Quality Gates**: All content passes technical accuracy, mobile readability, and code validation
-
-## 📖 Documentation
-- **[docs/](docs/)** - System architecture, integration guides, and technical analysis
-- **[streamlit/README.md](streamlit/README.md)** - Web interface documentation and usage guide
-- **[dev/README.md](dev/README.md)** - Development, testing, and benchmarking guide
-- **[dev/phase4_final_summary.md](dev/phase4_final_summary.md)** - Quality assurance system documentation
-- **[dev/python_3_10_crewai_setup_guide.md](dev/python_3_10_crewai_setup_guide.md)** - Python 3.10 and CrewAI setup guide
-
-## 🧪 Development & Testing
-
-### **Development Environment**
-- **Testing Framework**: Comprehensive pytest suite with integration tests
-- **Benchmarking**: Performance analysis and system metrics
-- **Quality Validation**: Multi-component quality assurance testing
-- **Development Tools**: Located in `dev/` directory with detailed documentation
-
-### **Recent Implementations**
-- **Phase 1**: Daily Quick Pipeline for rapid content generation
-- **Phase 2**: Hybrid Workflow Manager with intelligent content routing  
-- **Phase 3**: Content Format Optimizer for mobile-first design
-- **Phase 4**: Quality Assurance System with comprehensive validation
-- **Environment Update**: Python 3.10 and modern CrewAI with SerperDevTool
-
-## 🔧 Troubleshooting
-- **Python Version**: Ensure Python 3.10+ is installed (`python --version`)
-- **Ollama not running**: Ensure `ollama serve` is active in terminal
-- **Model not found**: Verify models installed with `ollama list`
-- **Import errors**: Check virtual environment activation and dependency installation
-- **CrewAI tools issues**: Run `pip install crewai>=0.95.0 crewai-tools>=0.25.8`
-- **Streamlit issues**: Use `python streamlit/run_streamlit_app.py` for automated dependency checking
-- **Quality validation failing**: Check `dev/integration_test_results.json` for detailed metrics
-
-## 📈 Next Steps & Roadmap
-- **Real-time Analytics**: Enhanced performance dashboards and quality trends
-- **A/B Testing Integration**: Quality impact measurement on engagement metrics
-- **Advanced AI Validation**: Domain-specific knowledge base integration
-- **Enhanced Search**: Improved web search capabilities with SerperDevTool 
+- **Quality Scores**: 100% technical accuracy, 92% mobile readability, 100% code validation 

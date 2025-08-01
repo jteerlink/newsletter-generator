@@ -194,18 +194,13 @@ class ManagerAgent(SimpleAgent):
             return f"Management task failed: {e}"
     
     def create_hierarchical_workflow(self, topic: str, complexity: str = "standard") -> Dict[str, Any]:
-        """Create a hierarchical workflow plan for newsletter generation."""
+        """Create a hierarchical workflow plan for newsletter generation (simplified deep dive only)."""
         try:
-            # Determine workflow structure based on complexity
-            if complexity == "simple":
-                workflow_structure = self._create_simple_workflow(topic)
-            elif complexity == "complex":
-                workflow_structure = self._create_complex_workflow(topic)
-            else:
-                workflow_structure = self._create_standard_workflow(topic)
+            # Use unified deep dive workflow for all content
+            workflow_structure = self._create_deep_dive_workflow(topic)
             
-            # Add quality gates
-            workflow_structure['quality_gates'] = self._determine_quality_gates(complexity)
+            # Add basic quality gates
+            workflow_structure['quality_gates'] = ["content_quality", "technical_accuracy"]
             
             # Calculate estimated time
             workflow_structure['estimated_time'] = self._calculate_estimated_time(workflow_structure)
@@ -216,57 +211,21 @@ class ManagerAgent(SimpleAgent):
             logger.error(f"Error creating hierarchical workflow: {e}")
             return self._create_fallback_workflow(topic)
     
-    def _create_simple_workflow(self, topic: str) -> Dict[str, Any]:
-        """Create a simple workflow for basic newsletters."""
+    def _create_deep_dive_workflow(self, topic: str) -> Dict[str, Any]:
+        """Create a unified deep dive workflow for all newsletter content."""
         return {
             'topic': topic,
-            'complexity': 'simple',
-            'streams': [
-                {
-                    'name': 'Research and Writing',
-                    'description': 'Basic research and content creation',
-                    'tasks': [
-                        {
-                            'name': 'Research',
-                            'description': f'Research {topic}',
-                            'agent_type': 'research',
-                            'estimated_time': 15
-                        },
-                        {
-                            'name': 'Write',
-                            'description': f'Write newsletter about {topic}',
-                            'agent_type': 'writer',
-                            'dependencies': ['Research'],
-                            'estimated_time': 20
-                        }
-                    ]
-                }
-            ],
-            'estimated_time': 35
-        }
-    
-    def _create_standard_workflow(self, topic: str) -> Dict[str, Any]:
-        """Create a standard workflow for typical newsletters."""
-        return {
-            'topic': topic,
-            'complexity': 'standard',
+            'complexity': 'deep_dive',
             'streams': [
                 {
                     'name': 'Research Stream',
                     'description': 'Comprehensive research and analysis',
                     'tasks': [
                         {
-                            'name': 'Initial Research',
-                            'description': f'Initial research on {topic}',
-                            'agent_type': 'research',
-                            'estimated_time': 20
-                        },
-                        {
                             'name': 'Deep Research',
-                            'description': f'Deep dive research on {topic}',
+                            'description': f'Comprehensive research on {topic}',
                             'agent_type': 'research',
-                            'dependencies': ['Initial Research'],
-                            'estimated_time': 25
+                            'estimated_time': 30
                         }
                     ]
                 },
@@ -276,111 +235,20 @@ class ManagerAgent(SimpleAgent):
                     'tasks': [
                         {
                             'name': 'Write Content',
-                            'description': f'Write newsletter content about {topic}',
+                            'description': f'Write comprehensive newsletter content about {topic}',
                             'agent_type': 'writer',
-                            'dependencies': ['Deep Research'],
-                            'estimated_time': 30
+                            'estimated_time': 40
                         },
                         {
                             'name': 'Edit Content',
                             'description': f'Edit and improve newsletter content',
                             'agent_type': 'editor',
-                            'dependencies': ['Write Content'],
-                            'estimated_time': 20
+                            'estimated_time': 25
                         }
                     ]
                 }
             ],
             'estimated_time': 95
-        }
-    
-    def _create_complex_workflow(self, topic: str) -> Dict[str, Any]:
-        """Create a complex workflow for advanced newsletters."""
-        return {
-            'topic': topic,
-            'complexity': 'complex',
-            'streams': [
-                {
-                    'name': 'Research and Analysis',
-                    'description': 'Comprehensive research and analysis',
-                    'tasks': [
-                        {
-                            'name': 'Market Research',
-                            'description': f'Market research on {topic}',
-                            'agent_type': 'research',
-                            'estimated_time': 25
-                        },
-                        {
-                            'name': 'Technical Research',
-                            'description': f'Technical research on {topic}',
-                            'agent_type': 'research',
-                            'estimated_time': 30
-                        },
-                        {
-                            'name': 'Competitive Analysis',
-                            'description': f'Competitive analysis for {topic}',
-                            'agent_type': 'research',
-                            'dependencies': ['Market Research'],
-                            'estimated_time': 20
-                        }
-                    ]
-                },
-                {
-                    'name': 'Content Development',
-                    'description': 'Advanced content development',
-                    'tasks': [
-                        {
-                            'name': 'Outline Creation',
-                            'description': f'Create detailed outline for {topic}',
-                            'agent_type': 'writer',
-                            'dependencies': ['Technical Research'],
-                            'estimated_time': 15
-                        },
-                        {
-                            'name': 'Content Writing',
-                            'description': f'Write comprehensive content about {topic}',
-                            'agent_type': 'writer',
-                            'dependencies': ['Outline Creation'],
-                            'estimated_time': 40
-                        },
-                        {
-                            'name': 'Content Enhancement',
-                            'description': f'Enhance content with examples and insights',
-                            'agent_type': 'writer',
-                            'dependencies': ['Content Writing'],
-                            'estimated_time': 25
-                        }
-                    ]
-                },
-                {
-                    'name': 'Quality Assurance',
-                    'description': 'Comprehensive quality assurance',
-                    'tasks': [
-                        {
-                            'name': 'Technical Review',
-                            'description': f'Technical review of {topic} content',
-                            'agent_type': 'editor',
-                            'dependencies': ['Content Enhancement'],
-                            'estimated_time': 20
-                        },
-                        {
-                            'name': 'Quality Edit',
-                            'description': f'Quality editing and improvement',
-                            'agent_type': 'editor',
-                            'dependencies': ['Technical Review'],
-                            'estimated_time': 25
-                        },
-                        {
-                            'name': 'Final Review',
-                            'description': f'Final review and approval',
-                            'agent_type': 'editor',
-                            'dependencies': ['Quality Edit'],
-                            'estimated_time': 15
-                        }
-                    ]
-                }
-            ],
-            'estimated_time': 240
         }
     
     def _create_fallback_workflow(self, topic: str) -> Dict[str, Any]:
@@ -407,13 +275,8 @@ class ManagerAgent(SimpleAgent):
         }
     
     def _determine_quality_gates(self, complexity: str) -> List[str]:
-        """Determine appropriate quality gates for workflow complexity."""
-        if complexity == "simple":
-            return ["basic_quality"]
-        elif complexity == "standard":
-            return ["content_quality", "technical_accuracy"]
-        else:  # complex
-            return ["content_quality", "technical_accuracy", "comprehensive_review"]
+        """Determine appropriate quality gates (simplified for deep dive only)."""
+        return ["content_quality", "technical_accuracy"]
     
     def _calculate_estimated_time(self, workflow: Dict[str, Any]) -> int:
         """Calculate estimated total time for workflow."""
@@ -474,14 +337,18 @@ class ManagerAgent(SimpleAgent):
     
     def _execute_parallel_streams(self, streams: List[Dict], 
                                 available_agents: List[SimpleAgent]) -> Dict[str, Any]:
-        """Execute workflow streams in parallel where possible."""
+        """Execute workflow streams sequentially (simplified approach)."""
         stream_results = {}
+        context = ""  # Simple context passing
         
         for stream in streams:
             stream_name = stream.get('name', 'unknown')
             try:
-                stream_result = self._execute_single_stream(stream, available_agents, stream_results)
+                stream_result = self._execute_single_stream(stream, available_agents, context)
                 stream_results[stream_name] = stream_result
+                # Update context with results for next stream
+                if stream_result.get('status') == 'completed':
+                    context += f"\n\n{stream_name} Results:\n{stream_result.get('final_result', '')}"
             except Exception as e:
                 logger.error(f"Error executing stream {stream_name}: {e}")
                 stream_results[stream_name] = {'status': 'failed', 'error': str(e)}
@@ -489,8 +356,8 @@ class ManagerAgent(SimpleAgent):
         return stream_results
     
     def _execute_single_stream(self, stream: Dict, available_agents: List[SimpleAgent], 
-                             context_results: Dict) -> Dict[str, Any]:
-        """Execute a single workflow stream."""
+                             context: str) -> Dict[str, Any]:
+        """Execute a single workflow stream (simplified sequential execution)."""
         stream_name = stream.get('name', 'unknown')
         tasks = stream.get('tasks', [])
         
@@ -498,33 +365,34 @@ class ManagerAgent(SimpleAgent):
             'name': stream_name,
             'status': 'completed',
             'tasks': {},
-            'total_time': 0
+            'total_time': 0,
+            'final_result': ''
         }
         
         start_time = time.time()
+        accumulated_results = context
         
         for task in tasks:
             task_name = task.get('name', 'unknown')
             try:
-                # Check dependencies
-                dependencies = task.get('dependencies', [])
-                if not self._check_dependencies(dependencies, stream_result['tasks']):
-                    raise Exception(f"Dependencies not met for task {task_name}")
-                
-                # Find suitable agent
+                # Find suitable agent (simplified logic)
                 agent = self._find_suitable_agent(task.get('agent_type', 'research'), available_agents)
                 if not agent:
                     raise Exception(f"No suitable agent found for task {task_name}")
                 
-                # Execute task
+                # Execute task with accumulated context
                 task_description = task.get('description', '')
-                task_result = agent.execute_task(task_description)
+                full_context = f"{task_description}\n\nContext from previous tasks:\n{accumulated_results}"
+                task_result = agent.execute_task(full_context)
                 
                 stream_result['tasks'][task_name] = {
                     'status': 'completed',
                     'result': task_result,
                     'agent': agent.name
                 }
+                
+                # Add to accumulated results for next task
+                accumulated_results += f"\n\n{task_name}: {task_result}"
                 
             except Exception as e:
                 logger.error(f"Error executing task {task_name}: {e}")
@@ -535,14 +403,9 @@ class ManagerAgent(SimpleAgent):
                 stream_result['status'] = 'failed'
         
         stream_result['total_time'] = time.time() - start_time
+        stream_result['final_result'] = accumulated_results
         return stream_result
     
-    def _check_dependencies(self, dependencies: List[str], completed_tasks: Dict[str, Any]) -> bool:
-        """Check if task dependencies are met."""
-        for dependency in dependencies:
-            if dependency not in completed_tasks or completed_tasks[dependency].get('status') != 'completed':
-                return False
-        return True
     
     def _find_suitable_agent(self, agent_type: str, available_agents: List[SimpleAgent]) -> Optional[SimpleAgent]:
         """Find a suitable agent for a task."""
@@ -573,12 +436,14 @@ class ManagerAgent(SimpleAgent):
             content = self._extract_content_from_results(results)
             
             # Evaluate quality gate
-            gate_status = self.quality_gate.evaluate_content(content, gate_id)
+            gate_result = self.quality_gate.evaluate_content(content, gate_id)
             
             return {
-                'status': 'passed' if gate_status.status == QualityGateStatus.PASSED else 'failed',
+                'status': 'passed' if gate_result.get('status') == 'passed' else 'failed',
                 'gate_id': gate_id,
-                'evaluation': gate_status.status.value
+                'evaluation': gate_result.get('status', 'unknown'),
+                'score': gate_result.get('score', 0.0),
+                'issues': gate_result.get('issues', [])
             }
             
         except Exception as e:
@@ -586,15 +451,15 @@ class ManagerAgent(SimpleAgent):
             return {'status': 'error', 'error': str(e)}
     
     def _extract_content_from_results(self, results: Dict[str, Any]) -> str:
-        """Extract content from workflow results."""
+        """Extract content from workflow results (simplified)."""
         content_parts = []
         
-        for stream_name, stream_result in results.get('streams', {}).items():
-            for task_name, task_result in stream_result.get('tasks', {}).items():
-                if task_result.get('status') == 'completed':
-                    content_parts.append(f"## {task_name}\n{task_result.get('result', '')}")
+        for stream_name, stream_result in results.items():
+            final_result = stream_result.get('final_result', '')
+            if final_result:
+                content_parts.append(final_result)
         
-        return "\n\n".join(content_parts)
+        return "\n\n".join(content_parts) if content_parts else ""
     
     def _extract_topic_from_task(self, task: str) -> str:
         """Extract topic from task description."""
@@ -688,44 +553,17 @@ Workflow ID: {workflow_id}
         return formatted.strip()
     
     def _format_workflow_results(self, results: Dict[str, Any], workflow_id: str) -> str:
-        """Format workflow results for display."""
-        formatted = f"""
-# Workflow Results: {workflow_id}
-
-**Status:** {results.get('status', 'unknown')}
-**Total Time:** {results.get('total_time', 0):.2f} seconds
-**Topic:** {results.get('topic', 'unknown')}
-
-## Stream Results
-"""
+        """Format workflow results for display (simplified)."""
+        # Extract the final content from all streams
+        content_parts = []
         
         for stream_name, stream_result in results.get('streams', {}).items():
-            formatted += f"""
-### {stream_name}
-**Status:** {stream_result.get('status', 'unknown')}
-**Time:** {stream_result.get('total_time', 0):.2f} seconds
-
-**Tasks:**
-"""
-            for task_name, task_result in stream_result.get('tasks', {}).items():
-                status = task_result.get('status', 'unknown')
-                agent = task_result.get('agent', 'unknown')
-                formatted += f"- **{task_name}** ({agent}): {status}\n"
+            final_result = stream_result.get('final_result', '')
+            if final_result:
+                content_parts.append(final_result)
         
-        formatted += f"""
-## Quality Gate Results
-"""
-        for gate_name, gate_result in results.get('quality_gates', {}).items():
-            status = gate_result.get('status', 'unknown')
-            formatted += f"- **{gate_name}**: {status}\n"
-        
-        if results.get('errors'):
-            formatted += f"""
-## Errors
-{chr(10).join(results.get('errors', []))}
-"""
-        
-        return formatted.strip()
+        # Return the combined content as the main result
+        return "\n\n".join(content_parts) if content_parts else "No content generated"
     
     def get_management_analytics(self) -> Dict[str, Any]:
         """Get management-specific analytics."""
@@ -735,11 +573,6 @@ Workflow ID: {workflow_id}
         management_metrics = {
             "workflows_managed": len(self.active_workflows),
             "avg_workflow_time": sum(w.estimated_total_time for w in self.active_workflows.values()) / len(self.active_workflows) if self.active_workflows else 0,
-            "workflow_complexity_distribution": {
-                "simple": sum(1 for w in self.active_workflows.values() if w.complexity == "simple"),
-                "standard": sum(1 for w in self.active_workflows.values() if w.complexity == "standard"),
-                "complex": sum(1 for w in self.active_workflows.values() if w.complexity == "complex")
-            },
             "quality_gate_performance": {
                 "total_gates": sum(len(w.quality_gates) for w in self.active_workflows.values()),
                 "passed_gates": 0,  # Would need to track actual results

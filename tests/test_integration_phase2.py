@@ -17,7 +17,7 @@ import os
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.agents.agents import ResearchAgent, Task, EnhancedCrew, SimpleAgent
+from src.agents.agents import ResearchAgent, SimpleAgent
 from src.tools.tools import search_web, search_knowledge_base, AVAILABLE_TOOLS
 from src.core.core import query_llm
 
@@ -36,30 +36,14 @@ class TestPhase2Tools:
         from src.tools.tools import CREWAI_AVAILABLE
         if CREWAI_AVAILABLE:
             assert 'crewai_search_web' in AVAILABLE_TOOLS
-            assert 'hybrid_search_web' in AVAILABLE_TOOLS
             assert callable(AVAILABLE_TOOLS['crewai_search_web'])
-            assert callable(AVAILABLE_TOOLS['hybrid_search_web'])
     
     def test_knowledge_base_tool_structure(self):
         """Test that knowledge base tool has correct structure."""
         assert 'search_knowledge_base' in AVAILABLE_TOOLS
         assert callable(AVAILABLE_TOOLS['search_knowledge_base'])
     
-    def test_hybrid_search_execution(self):
-        """Test hybrid search execution (graceful fallback)."""
-        try:
-            if 'hybrid_search_web' in AVAILABLE_TOOLS:
-                result = AVAILABLE_TOOLS['hybrid_search_web']("test query", max_results=1)
-                assert isinstance(result, str)
-                assert len(result) > 0
-                # The function should return some content (either search results or fallback)
-                # We're more lenient about the content since it depends on API availability
-                assert len(result.strip()) > 10  # Should have meaningful content
-        except Exception as e:
-            # Rate limiting, API issues, or other errors are acceptable
-            error_str = str(e).lower()
-            acceptable_errors = ['ratelimit', 'rate', 'api', 'temporarily', 'timeout', 'connection', 'network']
-            assert any(keyword in error_str for keyword in acceptable_errors), f"Unexpected error: {e}"
+
     
     def test_web_search_execution(self):
         """Test legacy web search execution (may be rate limited)."""
@@ -101,9 +85,8 @@ class TestPhase2Agents:
         assert "Research Analyst" in agent.role
         assert 'agentic_search' in agent.tools
         assert 'search_web_with_alternatives' in agent.tools
-        assert 'hybrid_search_web' in agent.tools
         # Agent should have access to multiple tools via the registry
-        assert len(agent.available_tools) >= 3
+        assert len(agent.available_tools) >= 2
     
     def test_agent_prompt_building(self):
         """Test agent prompt building functionality."""
@@ -130,98 +113,9 @@ class TestPhase2Agents:
         assert agent._should_use_tools("I need to search for information")
         assert not agent._should_use_tools("I can complete this without tools")
 
-class TestPhase2TaskExecution:
-    """Test Phase 2 task execution."""
-    
-    def test_task_creation(self):
-        """Test task creation."""
-        agent = SimpleAgent("Test", "Tester", "Test", "Test")
-        task = Task("test description", agent, context="test context")
-        
-        assert task.description == "test description"
-        assert task.agent == agent
-        assert task.context == "test context"
-        assert task.result is None
-    
-    def test_basic_task_execution(self):
-        """Test basic task execution without tools."""
-        agent = SimpleAgent("Test", "Tester", "Test", "Test")
-        task = Task("Say hello", agent)
-        
-        try:
-            result = task.execute()
-            assert isinstance(result, str)
-            assert len(result) > 0
-            assert task.result == result
-        except Exception as e:
-            # LLM connection issues are acceptable in test environment
-            logger.warning(f"Task execution failed (expected in test env): {e}")
 
-class TestPhase2Integration:
-    """Test Phase 2 end-to-end integration."""
-    
-    def test_crew_creation(self):
-        """Test crew creation."""
-        agent = ResearchAgent()
-        task = Task("research test", agent)
-        crew = EnhancedCrew([agent], [task])
-        
-        assert len(crew.agents) == 1
-        assert len(crew.tasks) == 1
-        assert crew.agents[0] == agent
-        assert crew.tasks[0] == task
-    
-    def test_simple_workflow_structure(self):
-        """Test that workflow components are properly structured."""
-        # Create workflow components
-        research_agent = ResearchAgent()
-        
-        research_task = Task(
-            description="Research AI trends",
-            agent=research_agent,
-            context="Test context"
-        )
-        
-        analysis_task = Task(
-            description="Analyze findings",
-            agent=research_agent,
-            context=""
-        )
-        
-        crew = EnhancedCrew([research_agent], [research_task, analysis_task])
-        
-        # Verify structure
-        assert len(crew.agents) == 1
-        assert len(crew.tasks) == 2
-        assert crew.tasks[0].description == "Research AI trends"
-        assert crew.tasks[1].description == "Analyze findings"
-    
-    @pytest.mark.slow
-    def test_end_to_end_workflow(self):
-        """Test complete end-to-end workflow (marked as slow test)."""
-        try:
-            # Create a minimal workflow
-            agent = ResearchAgent()
-            task = Task("What is artificial intelligence?", agent)
-            crew = EnhancedCrew([agent], [task])
-            
-            # Execute workflow
-            result = crew.kickoff()
-            
-            # Verify results
-            assert isinstance(result, str)
-            assert len(result) > 0
-            assert "TASK 1 RESULT" in result
-            
-            logger.info("End-to-end workflow test passed")
-            
-        except Exception as e:
-            logger.warning(f"End-to-end test failed (may be due to environment): {e}")
-            # In CI/test environments, network/LLM issues are common
-            if any(keyword in str(e).lower() for keyword in ['connection', 'timeout', 'network', 'rate']):
-                pytest.skip(f"Skipping due to external dependency: {e}")
-            else:
-                raise
+
+
 
 class TestPhase2Requirements:
     """Test that Phase 2 requirements are met."""
@@ -239,25 +133,20 @@ class TestPhase2Requirements:
     
     def test_agent_framework_exists(self):
         """Verify agent framework exists (Task 2.4)."""
-        from src.agents.agents import SimpleAgent, ResearchAgent, Task, EnhancedCrew
+        from src.agents.agents import SimpleAgent, ResearchAgent
         
         # Test that classes exist and are instantiable
         agent = SimpleAgent("Test", "Test", "Test", "Test")
         research_agent = ResearchAgent()
-        task = Task("Test", agent)
-        crew = EnhancedCrew([agent], [task])
         
         assert isinstance(agent, SimpleAgent)
         assert isinstance(research_agent, ResearchAgent)
-        assert isinstance(task, Task)
-        assert isinstance(crew, EnhancedCrew)
     
     def test_integration_components_exist(self):
         """Verify integration components exist (Task 2.5)."""
         # Test main execution workflow exists
-        from src.main import create_research_workflow, test_basic_functionality
+        from src.main import test_basic_functionality
         
-        assert callable(create_research_workflow)
         assert callable(test_basic_functionality)
 
 def run_phase2_validation():
@@ -275,16 +164,10 @@ def run_phase2_validation():
     agent = ResearchAgent()
     assert agent.name == "ResearchAgent"
     
-    # Test 3: Task execution structure
-    print("✓ Testing task execution structure...")
-    task = Task("test", agent)
-    assert task.description == "test"
-    
-    # Test 4: Crew orchestration
-    print("✓ Testing crew orchestration...")
-    crew = SimpleCrew([agent], [task])
-    assert len(crew.agents) == 1
-    assert len(crew.tasks) == 1
+    # Test 3: Agent execution
+    print("✓ Testing agent execution...")
+    result = agent.execute_task("test task")
+    assert isinstance(result, str)
     
     print("✓ Phase 2 validation complete!")
     print("All core components are properly integrated.")

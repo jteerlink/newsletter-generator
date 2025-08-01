@@ -2,7 +2,7 @@
 
 import importlib
 import logging
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, List
 from .exceptions import ImportError
 
 logger = logging.getLogger(__name__)
@@ -33,14 +33,14 @@ class ImportHelper:
         dependencies = {
             "ollama": "ollama",
             "chromadb": "chromadb",
-            "crewai": "crewai",
             "streamlit": "streamlit",
             "requests": "requests",
             "beautifulsoup4": "bs4",
             "feedparser": "feedparser",
             "python-dotenv": "dotenv",
             "pydantic": "pydantic",
-            "scikit-learn": "sklearn"
+            "scikit-learn": "sklearn",
+            "crawl4ai": "crawl4ai"
         }
         
         results = {}
@@ -53,11 +53,10 @@ class ImportHelper:
     def get_optional_dependencies() -> Dict[str, bool]:
         """Check optional dependencies."""
         optional_deps = {
-            "crawl4ai": "crawl4ai",
-            "playwright": "playwright",
-            "pytesseract": "pytesseract",
-            "PyPDF2": "PyPDF2",
-            "PIL": "PIL"
+            "plotly": "plotly",
+            "pandas": "pandas",
+            "numpy": "numpy",
+            "matplotlib": "matplotlib"
         }
         
         results = {}
@@ -65,6 +64,52 @@ class ImportHelper:
             results[name] = ImportHelper.safe_import(module) is not None
             
         return results
+    
+    @staticmethod
+    def check_import_errors() -> Dict[str, str]:
+        """Check for specific import errors and return error messages."""
+        error_messages = {}
+        
+        # Check for common import issues
+        try:
+            import chromadb
+        except ImportError as e:
+            error_messages["chromadb"] = str(e)
+        
+        try:
+            import ollama
+        except ImportError as e:
+            error_messages["ollama"] = str(e)
+        
+        try:
+            import crawl4ai
+        except ImportError as e:
+            error_messages["crawl4ai"] = str(e)
+        
+        return error_messages
+    
+    @staticmethod
+    def get_missing_dependencies() -> List[str]:
+        """Get list of missing required dependencies."""
+        dependencies = ImportHelper.check_dependencies()
+        missing = [name for name, available in dependencies.items() if not available]
+        return missing
+    
+    @staticmethod
+    def validate_environment() -> Dict[str, Any]:
+        """Validate the current environment and dependencies."""
+        required_deps = ImportHelper.check_dependencies()
+        optional_deps = ImportHelper.get_optional_dependencies()
+        import_errors = ImportHelper.check_import_errors()
+        missing_deps = ImportHelper.get_missing_dependencies()
+        
+        return {
+            "required_dependencies": required_deps,
+            "optional_dependencies": optional_deps,
+            "import_errors": import_errors,
+            "missing_dependencies": missing_deps,
+            "environment_valid": len(missing_deps) == 0
+        }
 
 def safe_import_core():
     """Safely import core modules with proper error handling."""

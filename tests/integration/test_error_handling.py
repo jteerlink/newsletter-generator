@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from src.agents.agents import ResearchAgent, WriterAgent, EditorAgent, Task, EnhancedCrew
+from src.agents.agents import ResearchAgent, WriterAgent, EditorAgent
 from src.core.exceptions import (
     NewsletterGeneratorError, LLMError, SearchError, 
     ScrapingError, ValidationError, AgentError
@@ -55,63 +55,8 @@ class TestAgentErrorHandling:
             assert "Error in agent" in result
             assert "memory" in result.lower()
 
-class TestWorkflowErrorHandling:
-    """Test workflow error handling."""
-    
-    def test_workflow_agent_failure_handling(self):
-        """Test workflow handling when an agent fails."""
-        research_agent = ResearchAgent()
-        writer_agent = WriterAgent()
-        
-        # Make research agent fail
-        with patch.object(research_agent, 'execute_task', side_effect=AgentError("Research failed")):
-            research_task = Task("Research task", research_agent)
-            writing_task = Task("Writing task", writer_agent)
-            
-            crew = EnhancedCrew([research_agent, writer_agent], [research_task, writing_task])
-            result = crew.kickoff()
-            
-            # Should handle agent failure gracefully
-            assert "Error in agent" in result or "Research failed" in result
-    
-    def test_workflow_partial_failure_handling(self):
-        """Test workflow handling when some agents fail but others succeed."""
-        research_agent = ResearchAgent()
-        writer_agent = WriterAgent()
-        editor_agent = EditorAgent()
-        
-        # Make research and editor fail, but writer succeed
-        with patch.object(research_agent, 'execute_task', side_effect=AgentError("Research failed")):
-            with patch.object(editor_agent, 'execute_task', side_effect=AgentError("Editing failed")):
-                with patch.object(writer_agent, 'execute_task', return_value="Writing completed"):
-                    research_task = Task("Research task", research_agent)
-                    writing_task = Task("Writing task", writer_agent)
-                    editing_task = Task("Editing task", editor_agent)
-                    
-                    crew = EnhancedCrew([research_agent, writer_agent, editor_agent], 
-                                      [research_task, writing_task, editing_task])
-                    result = crew.kickoff()
-                    
-                    # Should handle partial failure
-                    assert "Error in agent" in result or "failed" in result
-    
-    def test_workflow_cascade_failure_handling(self):
-        """Test workflow handling when failures cascade through agents."""
-        research_agent = ResearchAgent()
-        writer_agent = WriterAgent()
-        
-        # Make research fail, which should prevent writer from getting context
-        with patch.object(research_agent, 'execute_task', side_effect=AgentError("Research failed")):
-            with patch.object(writer_agent, 'execute_task') as mock_writer:
-                research_task = Task("Research task", research_agent)
-                writing_task = Task("Writing task", writer_agent)
-                
-                crew = EnhancedCrew([research_agent, writer_agent], [research_task, writing_task])
-                result = crew.kickoff()
-                
-                # Writer should not be called if research fails
-                mock_writer.assert_not_called()
-                assert "Error in agent" in result
+
+
 
 class TestLLMErrorHandling:
     """Test LLM error handling."""
@@ -324,19 +269,7 @@ class TestRecoveryMechanisms:
 class TestErrorPropagation:
     """Test error propagation through the system."""
     
-    def test_error_propagation_from_agents_to_workflow(self):
-        """Test that errors from agents properly propagate to workflows."""
-        research_agent = ResearchAgent()
-        
-        # Make agent fail
-        with patch.object(research_agent, 'execute_task', side_effect=AgentError("Agent failed")):
-            research_task = Task("Research task", research_agent)
-            crew = EnhancedCrew([research_agent], [research_task])
-            
-            result = crew.kickoff()
-            
-            # Error should propagate from agent to workflow
-            assert "Error in agent" in result or "Agent failed" in result
+
     
     def test_error_propagation_from_tools_to_agents(self):
         """Test that errors from tools properly propagate to agents."""

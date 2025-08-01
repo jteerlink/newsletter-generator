@@ -3,9 +3,7 @@
 This directory contains the Streamlit web interface for the newsletter generator:
 
 ## Main Interface Files
-- **streamlit_app.py** - Basic Streamlit application with core functionality
-- **streamlit_app_enhanced.py** - Enhanced version with advanced UI components and styling
-- **ui_components.py** - Reusable UI components and styling functions
+- **app.py** - Main Streamlit application with simplified interface
 - **launch_streamlit.py** - Smart launcher script with dependency checking
 
 ## Documentation
@@ -24,21 +22,31 @@ This directory contains the Streamlit web interface for the newsletter generator
    
    Or run directly:
    ```bash
-   streamlit run streamlit/streamlit_app_enhanced.py
+   streamlit run streamlit/app.py
    ```
 
 ## Features
+- **Hierarchical Deep-Dive Pipeline** - Comprehensive newsletter generation with ManagerAgent orchestration
+- **Content Pillar Selection** - Choose from News & Breakthroughs, Tools & Tutorials, or Deep Dives & Analysis
 - **Topic Input & Validation** - Real-time topic validation and suggestions
 - **Audience Selection** - 7+ audience types for targeted content
-- **Workflow Options** - Standard multi-agent vs hierarchical workflows
-- **Content Controls** - Length settings, quality focus areas, source selection
+- **Configuration Controls** - Length settings, quality focus areas, special requirements
 - **Progress Tracking** - Real-time generation progress with animations
+- **Quality Assurance** - Real-time quality monitoring with technical accuracy validation
 - **Output Display** - Multi-format output with statistics and download options
 - **Performance Analytics** - Execution time tracking and visualization
-- **Feedback System** - Multi-dimensional feedback collection
 
-## Interface Versions
-- **streamlit_app.py** - Basic interface for simple use cases
-- **streamlit_app_enhanced.py** - Recommended version with full feature set and modern styling
+## Simplified Interface
+The interface has been streamlined to focus on the hierarchical deep-dive pipeline:
+- **Single Pipeline Mode** - Only deep dive pipeline with hierarchical execution
+- **Content Pillars** - Three focused content areas for targeted generation
+- **Quality Monitoring** - Real-time quality metrics and validation
+- **Modern UI** - Clean, professional interface with consistent design system
 
-The enhanced version includes advanced CSS styling, better progress tracking, and comprehensive feedback analytics. 
+## Architecture
+- **ManagerAgent** - Orchestrates the hierarchical workflow
+- **Specialized Agents** - Research, Writer, Editor, and Planner agents
+- **Quality Assurance** - Multi-gate validation system
+- **Notion Integration** - Direct publishing to Notion workspace
+
+The interface provides a modern, user-friendly way to generate comprehensive technical newsletters using the hierarchical multi-agent system. 

@@ -24,14 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 class AgentType(Enum):
-    """Enumeration of agent types."""
+    """Enumeration of core agent types."""
     RESEARCH = "research"
     WRITER = "writer"
     EDITOR = "editor"
     MANAGER = "manager"
-    PLANNER = "planner"
-    QUALITY = "quality"
-    RAG = "rag"
 
 
 class TaskStatus(Enum):
@@ -362,11 +359,11 @@ class SimpleAgent(BaseAgent):
 
 
 class AgentFactory:
-    """Factory for creating different types of agents."""
+    """Simplified factory for creating core agents only."""
     
     @staticmethod
     def create_agent(agent_type: AgentType, **kwargs) -> BaseAgent:
-        """Create an agent of the specified type."""
+        """Create an agent of the specified type (core agents only)."""
         if agent_type == AgentType.RESEARCH:
             from .research import ResearchAgent
             return ResearchAgent(**kwargs)
@@ -379,17 +376,8 @@ class AgentFactory:
         elif agent_type == AgentType.MANAGER:
             from .management import ManagerAgent
             return ManagerAgent(**kwargs)
-        elif agent_type == AgentType.PLANNER:
-            from .planning import PlannerAgent
-            return PlannerAgent(**kwargs)
-        elif agent_type == AgentType.QUALITY:
-            from .quality import QualityAgent
-            return QualityAgent(**kwargs)
-        elif agent_type == AgentType.RAG:
-            from .rag import RAGAgent
-            return RAGAgent(**kwargs)
         else:
-            raise ValueError(f"Unknown agent type: {agent_type}")
+            raise ValueError(f"Unknown core agent type: {agent_type}. Only RESEARCH, WRITER, EDITOR, and MANAGER are supported.")
     
     @staticmethod
     def create_simple_agent(name: str, role: str, goal: str, backstory: str, 
