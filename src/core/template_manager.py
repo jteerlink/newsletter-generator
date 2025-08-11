@@ -108,11 +108,14 @@ class AIMLTemplateManager:
                         "Provide working code examples with explanations",
                         "Include step-by-step implementation guides",
                         "Discuss common pitfalls and how to avoid them",
-                        "Share optimization techniques and best practices"
+                        "Share optimization techniques and best practices",
+                        "Generate validated, executable code examples",
+                        "Include multiple complexity levels (beginner to advanced)",
+                        "Use appropriate frameworks (PyTorch, TensorFlow, etc.)"
                     ],
                     word_count_target=800,
-                    required_elements=["code examples", "implementation steps", "best practices"],
-                    optional_elements=["troubleshooting guide", "performance tips"]
+                    required_elements=["code examples", "implementation steps", "best practices", "working code"],
+                    optional_elements=["troubleshooting guide", "performance tips", "code validation results"]
                 ),
                 TemplateSection(
                     name="Real-World Applications",
@@ -570,3 +573,194 @@ class AIMLTemplateManager:
             validation_results["section_analysis"][section.name] = section_analysis
 
         return validation_results
+    
+    def enhance_template_with_code_examples(self, template: NewsletterTemplate, 
+                                          topic: str) -> NewsletterTemplate:
+        """Enhance a template with code example generation capabilities"""
+        enhanced_sections = []
+        
+        for section in template.sections:
+            enhanced_section = section
+            
+            # Add code generation guidelines for technical sections
+            if ("implementation" in section.name.lower() or 
+                "technical" in section.name.lower() or
+                "architecture" in section.name.lower()):
+                
+                enhanced_guidelines = section.content_guidelines + [
+                    "Include 2-3 working code examples with different complexity levels",
+                    "Validate all code examples for syntax and executability", 
+                    "Provide clear explanations for each code block",
+                    "Use framework-appropriate best practices",
+                    "Include expected outputs and results"
+                ]
+                
+                enhanced_elements = section.required_elements + ["validated code examples"]
+                
+                enhanced_section = TemplateSection(
+                    name=section.name,
+                    description=section.description,
+                    content_guidelines=enhanced_guidelines,
+                    word_count_target=section.word_count_target,
+                    required_elements=enhanced_elements,
+                    optional_elements=section.optional_elements
+                )
+            
+            enhanced_sections.append(enhanced_section)
+        
+        # Update special instructions to include code generation
+        enhanced_instructions = template.special_instructions + [
+            "Generate working code examples using the integrated code generation system",
+            "Validate all code for syntax correctness and executability",
+            "Include code examples that demonstrate key concepts practically",
+            "Use appropriate AI/ML frameworks (PyTorch, TensorFlow, scikit-learn, etc.)",
+            "Provide multiple complexity levels to serve different audiences"
+        ]
+        
+        enhanced_template = NewsletterTemplate(
+            name=f"Enhanced {template.name}",
+            type=template.type,
+            description=f"{template.description} (with integrated code generation)",
+            target_audience=template.target_audience,
+            sections=enhanced_sections,
+            total_word_target=template.total_word_target,
+            special_instructions=enhanced_instructions
+        )
+        
+        return enhanced_template
+    
+    def generate_code_enhanced_prompt(self, template: NewsletterTemplate, 
+                                    topic: str, enable_code_generation: bool = True) -> str:
+        """Generate a template prompt with code generation capabilities"""
+        base_prompt = self.generate_template_prompt(template, topic)
+        
+        if not enable_code_generation:
+            return base_prompt
+        
+        # Add code generation instructions
+        code_instructions = """
+
+## CODE GENERATION REQUIREMENTS
+
+For technical sections, you MUST include working code examples:
+
+1. **Code Quality Standards:**
+   - All code must be syntactically correct and executable
+   - Include appropriate imports and dependencies
+   - Use proper variable names and follow PEP 8 style
+   - Add comments to explain complex logic
+
+2. **Code Example Structure:**
+   - Provide 2-3 examples per technical section
+   - Start with basic examples, progress to more complex
+   - Include expected output or results
+   - Explain what each code block demonstrates
+
+3. **Framework Selection:**
+   - Choose the most appropriate framework for the topic
+   - PyTorch for deep learning concepts
+   - TensorFlow for production-ready models  
+   - scikit-learn for traditional ML
+   - pandas for data manipulation
+   - NumPy for numerical computing
+
+4. **Code Documentation:**
+   - Include docstrings for functions and classes
+   - Add inline comments for complex operations
+   - Provide usage examples and expected inputs/outputs
+   - Explain parameter choices and design decisions
+
+5. **Error Handling:**
+   - Include basic error handling where appropriate
+   - Show common pitfalls and how to avoid them
+   - Provide debugging tips and troubleshooting guidance
+
+IMPORTANT: All code examples will be automatically validated for syntax and tested for execution. Ensure code quality meets professional standards.
+"""
+        
+        return base_prompt + code_instructions
+    
+    def suggest_code_frameworks_for_topic(self, topic: str) -> List[str]:
+        """Suggest appropriate frameworks for a given topic"""
+        topic_lower = topic.lower()
+        suggested_frameworks = []
+        
+        # Deep learning frameworks
+        if any(keyword in topic_lower for keyword in [
+            "neural network", "deep learning", "cnn", "rnn", "transformer"
+        ]):
+            suggested_frameworks.extend(["pytorch", "tensorflow"])
+        
+        # NLP frameworks
+        if any(keyword in topic_lower for keyword in [
+            "nlp", "text", "language", "bert", "gpt"
+        ]):
+            suggested_frameworks.extend(["huggingface", "pytorch"])
+        
+        # Traditional ML
+        if any(keyword in topic_lower for keyword in [
+            "classification", "regression", "clustering", "ensemble"
+        ]):
+            suggested_frameworks.append("sklearn")
+        
+        # Data analysis
+        if any(keyword in topic_lower for keyword in [
+            "data", "analysis", "preprocessing", "visualization"
+        ]):
+            suggested_frameworks.extend(["pandas", "numpy"])
+        
+        # Computer vision
+        if any(keyword in topic_lower for keyword in [
+            "vision", "image", "object detection", "segmentation"
+        ]):
+            suggested_frameworks.extend(["opencv", "pytorch", "tensorflow"])
+        
+        # Remove duplicates while preserving order
+        return list(dict.fromkeys(suggested_frameworks)) or ["python"]
+    
+    def validate_code_enhanced_content(self, content: str, template: NewsletterTemplate,
+                                     require_code_examples: bool = True) -> Dict[str, Any]:
+        """Validate content with code example requirements"""
+        base_validation = self.validate_template_content(content, template)
+        
+        if not require_code_examples:
+            return base_validation
+        
+        # Additional validation for code examples
+        code_validation = {
+            "has_code_blocks": "```python" in content or "```" in content,
+            "code_block_count": content.count("```python"),
+            "has_code_explanations": False,
+            "framework_coverage": [],
+            "code_quality_issues": []
+        }
+        
+        # Check for code explanations
+        if ("explanation" in content.lower() or 
+            "demonstrates" in content.lower() or
+            "example shows" in content.lower()):
+            code_validation["has_code_explanations"] = True
+        
+        # Check framework coverage
+        frameworks = ["pytorch", "tensorflow", "sklearn", "pandas", "numpy"]
+        for framework in frameworks:
+            if framework in content.lower():
+                code_validation["framework_coverage"].append(framework)
+        
+        # Validate minimum code requirements for technical templates
+        if template.type == NewsletterType.TECHNICAL_DEEP_DIVE:
+            if code_validation["code_block_count"] < 2:
+                base_validation["issues"].append(
+                    "Technical deep-dive requires at least 2 code examples"
+                )
+                base_validation["template_compliance"] = False
+            
+            if not code_validation["has_code_explanations"]:
+                base_validation["issues"].append(
+                    "Code examples need clear explanations"
+                )
+        
+        # Add code-specific validation results
+        base_validation["code_validation"] = code_validation
+        
+        return base_validation

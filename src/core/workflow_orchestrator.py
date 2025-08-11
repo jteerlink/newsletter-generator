@@ -24,6 +24,7 @@ from .execution_state import ExecutionState
 from .learning_system import LearningSystem
 from .refinement_loop import RefinementLoop, RefinementResult
 from .tool_usage_tracker import get_tool_tracker
+from .template_manager import AIMLTemplateManager, NewsletterType
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class WorkflowResult:
     phase_results: Dict[str, Any]
     learning_data: Dict[str, Any]
     status: str  # 'completed', 'failed', 'partial'
+    code_generation_metrics: Dict[str, Any] = None  # Phase 3: Code generation metrics
 
 
 class WorkflowOrchestrator:
@@ -66,6 +68,17 @@ class WorkflowOrchestrator:
 
         # Phase 2.1: Add tool usage tracking
         self.tool_tracker = get_tool_tracker()
+        
+        # Phase 3: Add template manager for code generation
+        self.template_manager = AIMLTemplateManager()
+        
+        # Code generation metrics tracking
+        self.code_generation_metrics = {
+            'examples_generated': 0,
+            'validation_score': 0.0,
+            'execution_success_rate': 0.0,
+            'frameworks_used': []
+        }
 
     def _initialize_agents(self) -> None:
         """Initialize the agent instances."""
@@ -159,7 +172,8 @@ class WorkflowOrchestrator:
                 execution_time=execution_time,
                 phase_results=phase_results,
                 learning_data=learning_data,
-                status='completed'
+                status='completed',
+                code_generation_metrics=self.code_generation_metrics.copy()  # Phase 3: Include code metrics
             )
 
             logger.info(
@@ -179,7 +193,8 @@ class WorkflowOrchestrator:
                 execution_time=execution_time,
                 phase_results={},
                 learning_data={'error': str(e)},
-                status='failed'
+                status='failed',
+                code_generation_metrics=self.code_generation_metrics.copy()  # Phase 3: Include code metrics
             )
 
     def _load_campaign_context(self, context_id: str) -> CampaignContext:
@@ -270,49 +285,30 @@ class WorkflowOrchestrator:
 
     def _execute_writing_phase(
             self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:
-        """Execute the writing phase."""
-        logger.info("Starting writing phase")
+        """Execute the writing phase with Phase 3 code generation integration."""
+        logger.info("Starting enhanced writing phase with code generation")
 
         try:
             if 'writer' in self.agents:
-                # Use the writer agent if available with tracking
-                writing_task = f"Write a comprehensive newsletter about: {
-                    topic}"
-                writing_context = f"""
-                Research findings: {
-                    research_result.get(
-                        'content', '')}
-                Campaign context: {
-                    self.campaign_context.content_style if self.campaign_context else 'default'}
-                Target audience: {
-                    self.campaign_context.audience_persona if self.campaign_context else 'general'}
-                """
-
-                with self.tool_tracker.track_tool_usage(
-                    tool_name="writer_agent_execution",
-                    agent_name="WorkflowOrchestrator",
-                    workflow_id=self.execution_state.workflow_id,
-                    session_id=self.execution_state.session_id,
-                    input_data={"topic": topic, "writing_task": writing_task, "research_content_length": len(research_result.get('content', ''))},
-                    context={"phase": "writing", "agent": "writer"}
-                ):
-                    # Set agent context for downstream tracking
-                    self.agents['writer'].set_context(
-                        workflow_id=self.execution_state.workflow_id,
-                        session_id=self.execution_state.session_id
+                # Determine if this is a technical topic requiring code examples
+                is_technical = self._is_technical_topic(topic)
+                
+                # Get appropriate template
+                template_type = self.template_manager.suggest_template(topic)
+                template = self.template_manager.get_template(template_type)
+                
+                if is_technical and template:
+                    # Enhanced technical content with code generation
+                    writing_result = self._execute_technical_writing_with_code(
+                        research_result, topic, template
+                    )
+                else:
+                    # Standard writing workflow
+                    writing_result = self._execute_standard_writing(
+                        research_result, topic
                     )
 
-                    writing_result = self.agents['writer'].execute_task(
-                        writing_task,
-                        context=writing_context
-                    )
-
-                return {
-                    'status': 'completed',
-                    'content': writing_result,
-                    'word_count': len(writing_result.split()),
-                    'timestamp': time.time()
-                }
+                return writing_result
             else:
                 # Fallback to basic writing
                 return self._execute_basic_writing(research_result, topic)
@@ -325,6 +321,135 @@ class WorkflowOrchestrator:
                 'content': f"Writing phase for {topic} failed: {e}",
                 'timestamp': time.time()
             }
+    
+    def _execute_technical_writing_with_code(
+            self, research_result: Dict[str, Any], topic: str, template) -> Dict[str, Any]:
+        """Execute technical writing with integrated code generation."""
+        logger.info("Executing technical writing with code generation")
+        
+        with self.tool_tracker.track_tool_usage(
+            tool_name="technical_writer_agent_with_code",
+            agent_name="WorkflowOrchestrator", 
+            workflow_id=self.execution_state.workflow_id,
+            session_id=self.execution_state.session_id,
+            input_data={
+                "topic": topic,
+                "template_type": template.type.value,
+                "research_content_length": len(research_result.get('content', ''))
+            },
+            context={"phase": "writing", "subphase": "technical_with_code"}
+        ):
+            # Set agent context
+            self.agents['writer'].set_context(
+                workflow_id=self.execution_state.workflow_id,
+                session_id=self.execution_state.session_id
+            )
+            
+            # Generate technical content with code examples
+            writing_context = f"""
+            Research findings: {research_result.get('content', '')}
+            Campaign context: {self.campaign_context.content_style if self.campaign_context else 'default'}
+            Target audience: {self.campaign_context.audience_persona if self.campaign_context else 'technical professionals'}
+            """
+            
+            content = self.agents['writer'].generate_technical_content_with_code(
+                topic=topic,
+                context=writing_context,
+                include_code=True
+            )
+            
+            # Generate additional code examples if needed
+            code_examples = self.agents['writer'].generate_code_examples(
+                topic=topic,
+                count=2
+            )
+            
+            # Track code generation metrics
+            self._update_code_generation_metrics(code_examples)
+            
+            return {
+                'status': 'completed',
+                'content': content,
+                'word_count': len(content.split()),
+                'code_examples_count': len(code_examples),
+                'template_used': template.type.value,
+                'technical_enhanced': True,
+                'timestamp': time.time()
+            }
+    
+    def _execute_standard_writing(
+            self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:
+        """Execute standard writing workflow."""
+        logger.info("Executing standard writing workflow")
+        
+        writing_task = f"Write a comprehensive newsletter about: {topic}"
+        writing_context = f"""
+        Research findings: {research_result.get('content', '')}
+        Campaign context: {self.campaign_context.content_style if self.campaign_context else 'default'}
+        Target audience: {self.campaign_context.audience_persona if self.campaign_context else 'general'}
+        """
+
+        with self.tool_tracker.track_tool_usage(
+            tool_name="writer_agent_execution",
+            agent_name="WorkflowOrchestrator",
+            workflow_id=self.execution_state.workflow_id,
+            session_id=self.execution_state.session_id,
+            input_data={
+                "topic": topic, 
+                "writing_task": writing_task, 
+                "research_content_length": len(research_result.get('content', ''))
+            },
+            context={"phase": "writing", "agent": "writer"}
+        ):
+            # Set agent context for downstream tracking
+            self.agents['writer'].set_context(
+                workflow_id=self.execution_state.workflow_id,
+                session_id=self.execution_state.session_id
+            )
+
+            writing_result = self.agents['writer'].execute_task(
+                writing_task,
+                context=writing_context
+            )
+
+            return {
+                'status': 'completed',
+                'content': writing_result,
+                'word_count': len(writing_result.split()),
+                'timestamp': time.time()
+            }
+    
+    def _is_technical_topic(self, topic: str) -> bool:
+        """Determine if a topic requires technical treatment with code examples."""
+        technical_keywords = [
+            'ai', 'machine learning', 'deep learning', 'neural network',
+            'algorithm', 'python', 'pytorch', 'tensorflow', 'programming',
+            'data science', 'api', 'implementation', 'architecture',
+            'framework', 'library', 'code', 'technical', 'engineering'
+        ]
+        
+        topic_lower = topic.lower()
+        return any(keyword in topic_lower for keyword in technical_keywords)
+    
+    def _update_code_generation_metrics(self, code_examples: List[str]) -> None:
+        """Update code generation metrics for tracking."""
+        if code_examples:
+            self.code_generation_metrics['examples_generated'] += len(code_examples)
+            
+            # Extract frameworks from code examples (simplified)
+            for example in code_examples:
+                if 'pytorch' in example.lower():
+                    if 'pytorch' not in self.code_generation_metrics['frameworks_used']:
+                        self.code_generation_metrics['frameworks_used'].append('pytorch')
+                elif 'tensorflow' in example.lower():
+                    if 'tensorflow' not in self.code_generation_metrics['frameworks_used']:
+                        self.code_generation_metrics['frameworks_used'].append('tensorflow')
+                elif 'sklearn' in example.lower():
+                    if 'sklearn' not in self.code_generation_metrics['frameworks_used']:
+                        self.code_generation_metrics['frameworks_used'].append('sklearn')
+                elif 'pandas' in example.lower():
+                    if 'pandas' not in self.code_generation_metrics['frameworks_used']:
+                        self.code_generation_metrics['frameworks_used'].append('pandas')
 
     def _execute_basic_writing(
             self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:

@@ -15,6 +15,10 @@ from src.core.campaign_context import CampaignContext
 from src.core.core import query_llm
 from src.core.feedback_system import StructuredFeedback
 from src.core.template_manager import NewsletterTemplate, NewsletterType
+from src.core.code_generator import AIMLCodeGenerator, CodeType
+from src.tools.syntax_validator import SyntaxValidator, ValidationLevel
+from src.tools.code_executor import SafeCodeExecutor, ExecutionConfig, SecurityLevel
+from src.templates.code_templates import template_library, Framework, TemplateCategory
 
 from .base import AgentType, SimpleAgent
 
@@ -41,6 +45,15 @@ class WriterAgent(SimpleAgent):
             **kwargs
         )
         self.campaign_context: Optional[CampaignContext] = None
+        
+        # Initialize Phase 3 code generation components
+        self.code_generator = AIMLCodeGenerator()
+        self.syntax_validator = SyntaxValidator(ValidationLevel.STANDARD)
+        self.code_executor = SafeCodeExecutor(ExecutionConfig(
+            security_level=SecurityLevel.SECURE,
+            timeout=10.0
+        ))
+        self.code_templates = template_library
 
     def write_from_context(
             self,
@@ -566,6 +579,181 @@ class WriterAgent(SimpleAgent):
         except Exception as e:
             logger.error(f"Error generating headlines: {e}")
             return [f"Newsletter - {content[:50]}..."]
+
+    def generate_code_examples(self, topic: str, framework: str = None, 
+                              complexity: str = "beginner", count: int = 2) -> List[str]:
+        """Generate code examples for technical newsletter content."""
+        try:
+            logger.info(f"Generating {count} code examples for topic: {topic}")
+            
+            # Determine best framework if not specified
+            if not framework:
+                framework = self.code_generator.suggest_framework(topic)
+                logger.info(f"Auto-selected framework: {framework}")
+            
+            # Generate examples using different approaches
+            code_examples = []
+            
+            # 1. Try to get from template library first
+            template = self.code_templates.get_template(
+                Framework(framework.lower()),
+                TemplateCategory.BASIC_EXAMPLE,
+                complexity
+            )
+            
+            if template:
+                code_examples.append(self._format_template_example(template))
+                logger.info("Added template-based example")
+            
+            # 2. Generate custom examples
+            for i in range(max(0, count - len(code_examples))):
+                try:
+                    example = self.code_generator.generate_code_example(
+                        topic=topic,
+                        framework=framework,
+                        code_type=CodeType.BASIC_EXAMPLE,
+                        complexity=complexity
+                    )
+                    
+                    # Validate the generated code
+                    validation_result = self.syntax_validator.validate(example.code)
+                    
+                    if validation_result.is_valid or validation_result.overall_score > 0.7:
+                        formatted_example = self.code_generator.format_code_for_newsletter(example)
+                        code_examples.append(formatted_example)
+                        logger.info(f"Added generated example {i+1}")
+                    else:
+                        logger.warning(f"Generated code failed validation: {validation_result.overall_score}")
+                        
+                except Exception as e:
+                    logger.warning(f"Error generating code example {i+1}: {e}")
+            
+            return code_examples[:count]
+            
+        except Exception as e:
+            logger.error(f"Error in code generation: {e}")
+            return [f"# Code example for {topic}\n# Error: Could not generate example"]
+    
+    def generate_technical_content_with_code(self, topic: str, context: str = "",
+                                           include_code: bool = True) -> str:
+        """Generate technical content with integrated code examples."""
+        try:
+            # Generate base content
+            content_prompt = f"""
+            Create technical newsletter content about: {topic}
+            
+            Context: {context}
+            
+            Requirements:
+            - Technical depth appropriate for AI/ML professionals
+            - Clear explanations with practical insights
+            - Structure with sections and subsections
+            {"- Include placeholders for code examples" if include_code else ""}
+            - Use markdown formatting
+            
+            Write engaging, informative content that explains the topic thoroughly.
+            """
+            
+            base_content = query_llm(content_prompt)
+            
+            if not include_code:
+                return base_content
+            
+            # Generate and integrate code examples
+            code_examples = self.generate_code_examples(topic, count=2)
+            
+            if code_examples:
+                # Add code examples section
+                code_section = "\n\n## Code Examples\n\n"
+                code_section += "\n\n".join(code_examples)
+                
+                # Insert code examples into content
+                final_content = base_content + code_section
+            else:
+                final_content = base_content
+            
+            logger.info(f"Generated technical content with {len(code_examples)} code examples")
+            return final_content
+            
+        except Exception as e:
+            logger.error(f"Error generating technical content: {e}")
+            return f"# Error generating content for {topic}\n\nPlease try again."
+    
+    def validate_and_test_code(self, code: str, framework: str = "python") -> Dict[str, Any]:
+        """Validate and test code examples for quality assurance."""
+        try:
+            # Syntax validation
+            validation_result = self.syntax_validator.validate(code)
+            
+            # Code execution test
+            execution_result = self.code_executor.execute(code)
+            
+            return {
+                "validation": {
+                    "is_valid": validation_result.is_valid,
+                    "syntax_score": validation_result.syntax_score,
+                    "style_score": validation_result.style_score,
+                    "overall_score": validation_result.overall_score,
+                    "issues_count": len(validation_result.issues),
+                    "has_imports": validation_result.has_imports,
+                    "has_comments": validation_result.has_comments
+                },
+                "execution": {
+                    "status": execution_result.status.value,
+                    "execution_time": execution_result.execution_time,
+                    "has_output": bool(execution_result.stdout.strip()),
+                    "has_errors": bool(execution_result.stderr.strip())
+                },
+                "recommendations": self._generate_code_recommendations(validation_result, execution_result)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error validating code: {e}")
+            return {"error": str(e)}
+    
+    def _format_template_example(self, template) -> str:
+        """Format a template code example for newsletter inclusion."""
+        return f"""
+## {template.name}
+
+{template.description}
+
+**Framework:** {template.framework.value}
+**Complexity:** {template.complexity.value}
+**Dependencies:** {', '.join(template.dependencies)}
+
+```python
+{template.code}
+```
+
+### Explanation
+
+{template.explanation}
+
+**Use Cases:**
+{chr(10).join(f"- {use_case}" for use_case in template.use_cases)}
+"""
+    
+    def _generate_code_recommendations(self, validation_result, execution_result) -> List[str]:
+        """Generate recommendations based on validation and execution results."""
+        recommendations = []
+        
+        if not validation_result.is_valid:
+            recommendations.append("Fix syntax errors before using this code")
+        
+        if validation_result.style_score < 0.8:
+            recommendations.append("Improve code style for better readability")
+        
+        if not validation_result.has_comments:
+            recommendations.append("Add comments to explain complex logic")
+        
+        if execution_result.status.value != "success":
+            recommendations.append("Test and debug code execution issues")
+        
+        if validation_result.overall_score > 0.9 and execution_result.status.value == "success":
+            recommendations.append("Code quality is excellent - ready for publication")
+        
+        return recommendations
 
     def get_writing_analytics(self) -> Dict[str, Any]:
         """Get writing-specific analytics."""

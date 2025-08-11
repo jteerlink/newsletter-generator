@@ -3,12 +3,13 @@ Enhanced Search Tools
 
 This module provides enhanced search capabilities with confidence scoring,
 multi-provider support, and intelligent result ranking for the newsletter
-generation system.
+generation system. Includes ArXiv, GitHub, and NewsAPI integration.
 """
 
 import hashlib
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -46,6 +47,313 @@ class SearchQuery:
     freshness_days: Optional[int] = None
 
 
+class ArxivSearchProvider:
+    """ArXiv search provider for academic papers and research."""
+
+    def __init__(self):
+        self.name = "arxiv_search"
+        self.base_url = "http://export.arxiv.org/api/query"
+
+    def is_available(self) -> bool:
+        """Check if ArXiv API is available."""
+        try:
+            response = requests.get(f"{self.base_url}?search_query=test&max_results=1", timeout=5)
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """Search ArXiv for academic papers."""
+        try:
+            search_query = self._build_arxiv_query(query)
+            
+            params = {
+                'search_query': search_query,
+                'start': 0,
+                'max_results': min(max_results, 10),
+                'sortBy': 'relevance',
+                'sortOrder': 'descending'
+            }
+            
+            response = requests.get(self.base_url, params=params, timeout=15)
+            response.raise_for_status()
+            
+            return self._parse_arxiv_response(response.text)
+            
+        except Exception as e:
+            logger.error(f"ArXiv search failed: {e}")
+            return []
+
+    def _build_arxiv_query(self, query: str) -> str:
+        """Build ArXiv-compatible query string."""
+        cleaned_query = re.sub(r'[^\w\s-]', '', query)
+        return f"ti:{cleaned_query} OR abs:{cleaned_query}"
+
+    def _parse_arxiv_response(self, xml_content: str) -> List[Dict[str, Any]]:
+        """Parse ArXiv XML response to result dictionaries."""
+        results = []
+        
+        try:
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(xml_content)
+            
+            namespace = {'atom': 'http://www.w3.org/2005/Atom'}
+            
+            for entry in root.findall('atom:entry', namespace):
+                title_elem = entry.find('atom:title', namespace)
+                summary_elem = entry.find('atom:summary', namespace)
+                id_elem = entry.find('atom:id', namespace)
+                
+                authors = []
+                for author in entry.findall('atom:author', namespace):
+                    name_elem = author.find('atom:name', namespace)
+                    if name_elem is not None:
+                        authors.append(name_elem.text)
+                
+                if title_elem is not None and summary_elem is not None and id_elem is not None:
+                    title = title_elem.text.strip()
+                    summary = summary_elem.text.strip()
+                    
+                    if authors:
+                        author_text = f"Authors: {', '.join(authors[:3])}{'...' if len(authors) > 3 else ''}"
+                        summary = f"{author_text}\n\n{summary[:400]}..."
+                    
+                    results.append({
+                        'title': f"[ArXiv] {title}",
+                        'url': id_elem.text,
+                        'snippet': summary,
+                        'source': self.name
+                    })
+            
+        except Exception as e:
+            logger.error(f"Failed to parse ArXiv response: {e}")
+        
+        return results
+
+
+class GitHubSearchProvider:
+    """GitHub search provider for code examples and repositories."""
+
+    def __init__(self):
+        self.name = "github_search"
+        self.api_base = "https://api.github.com/search"
+        self.github_token = self._get_github_token()
+
+    def _get_github_token(self) -> Optional[str]:
+        """Get GitHub token from environment."""
+        import os
+        return os.getenv('GITHUB_TOKEN')
+
+    def is_available(self) -> bool:
+        """Check if GitHub API is available."""
+        try:
+            headers = {}
+            if self.github_token:
+                headers['Authorization'] = f'token {self.github_token}'
+            
+            response = requests.get(
+                f"{self.api_base}/repositories?q=test&sort=stars&per_page=1",
+                headers=headers,
+                timeout=5
+            )
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """Search GitHub for repositories and code."""
+        results = []
+        
+        try:
+            repo_results = self._search_repositories(query, max_results)
+            results.extend(repo_results)
+            
+            if self.github_token and len(results) < max_results:
+                code_results = self._search_code(query, max_results - len(results))
+                results.extend(code_results)
+            
+            return results[:max_results]
+            
+        except Exception as e:
+            logger.error(f"GitHub search failed: {e}")
+            return []
+
+    def _search_repositories(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Search GitHub repositories."""
+        try:
+            headers = {}
+            if self.github_token:
+                headers['Authorization'] = f'token {self.github_token}'
+            
+            params = {
+                'q': query,
+                'sort': 'stars',
+                'order': 'desc',
+                'per_page': min(max_results, 5)
+            }
+            
+            response = requests.get(
+                f"{self.api_base}/repositories",
+                headers=headers,
+                params=params,
+                timeout=10
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for repo in data.get('items', []):
+                title = f"[GitHub Repo] {repo['full_name']}"
+                description = repo.get('description', 'No description available')
+                
+                snippet = f"⭐ {repo['stargazers_count']} stars | "
+                snippet += f"Language: {repo.get('language', 'Unknown')} | "
+                snippet += description[:200]
+                
+                results.append({
+                    'title': title,
+                    'url': repo['html_url'],
+                    'snippet': snippet,
+                    'source': self.name
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"GitHub repository search failed: {e}")
+            return []
+
+    def _search_code(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Search GitHub code files."""
+        try:
+            headers = {'Authorization': f'token {self.github_token}'}
+            
+            params = {
+                'q': query,
+                'sort': 'indexed',
+                'per_page': min(max_results, 3)
+            }
+            
+            response = requests.get(
+                f"{self.api_base}/code",
+                headers=headers,
+                params=params,
+                timeout=10
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for item in data.get('items', []):
+                repo_name = item['repository']['full_name']
+                file_name = item['name']
+                title = f"[GitHub Code] {file_name} in {repo_name}"
+                
+                snippet = f"File: {item['path']} | "
+                snippet += f"Repository: {repo_name} | "
+                snippet += item.get('text_matches', [{}])[0].get('fragment', 'Code example')[:200]
+                
+                results.append({
+                    'title': title,
+                    'url': item['html_url'],
+                    'snippet': snippet,
+                    'source': self.name
+                })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"GitHub code search failed: {e}")
+            return []
+
+
+class NewsAPIProvider:
+    """NewsAPI provider for recent news and developments."""
+
+    def __init__(self):
+        self.name = "news_api"
+        self.api_key = self._get_news_api_key()
+        self.base_url = "https://newsapi.org/v2"
+
+    def _get_news_api_key(self) -> Optional[str]:
+        """Get NewsAPI key from environment."""
+        import os
+        return os.getenv('NEWS_API_KEY')
+
+    def is_available(self) -> bool:
+        """Check if NewsAPI is available."""
+        if not self.api_key:
+            return False
+        
+        try:
+            headers = {'X-API-Key': self.api_key}
+            response = requests.get(
+                f"{self.base_url}/sources",
+                headers=headers,
+                timeout=5
+            )
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """Search for recent news articles."""
+        if not self.is_available():
+            return []
+        
+        try:
+            headers = {'X-API-Key': self.api_key}
+            
+            params = {
+                'q': query,
+                'sortBy': 'relevancy',
+                'pageSize': min(max_results, 10),
+                'language': 'en'
+            }
+            
+            response = requests.get(
+                f"{self.base_url}/everything",
+                headers=headers,
+                params=params,
+                timeout=10
+            )
+            response.raise_for_status()
+            
+            data = response.json()
+            results = []
+            
+            for article in data.get('articles', []):
+                if article.get('title') and article.get('url'):
+                    title = f"[News] {article['title']}"
+                    description = article.get('description', '')
+                    source_name = article.get('source', {}).get('name', 'Unknown')
+                    published_at = article.get('publishedAt', '')
+                    
+                    snippet = f"Source: {source_name} | "
+                    if published_at:
+                        try:
+                            date_obj = datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+                            snippet += f"Published: {date_obj.strftime('%Y-%m-%d')} | "
+                        except:
+                            pass
+                    snippet += description[:300] if description else 'No description available'
+                    
+                    results.append({
+                        'title': title,
+                        'url': article['url'],
+                        'snippet': snippet,
+                        'source': self.name
+                    })
+            
+            return results
+            
+        except Exception as e:
+            logger.error(f"NewsAPI search failed: {e}")
+            return []
+
+
 class EnhancedSearchTool:
     """
     Enhanced search tool with confidence scoring and multi-provider support.
@@ -59,10 +367,18 @@ class EnhancedSearchTool:
 
     def __init__(self):
         """Initialize the enhanced search tool."""
+        # Initialize new provider instances
+        self.arxiv_provider = ArxivSearchProvider()
+        self.github_provider = GitHubSearchProvider()
+        self.news_provider = NewsAPIProvider()
+        
         self.search_providers = {
             'duckduckgo': self._search_duckduckgo,
             'google': self._search_google,
-            'bing': self._search_bing
+            'bing': self._search_bing,
+            'arxiv': self._search_arxiv,
+            'github': self._search_github,
+            'news': self._search_news
         }
         self.cache = {}
         self.cache_ttl = 3600  # 1 hour cache
@@ -189,6 +505,24 @@ class EnhancedSearchTool:
         key_terms = [
             word for word in words if word not in stop_words and len(word) > 3]
         return key_terms[:5]  # Return top 5 terms
+
+    def _search_arxiv(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Wrapper for ArXiv search provider."""
+        if self.arxiv_provider.is_available():
+            return self.arxiv_provider.search(query, max_results)
+        return []
+
+    def _search_github(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Wrapper for GitHub search provider."""
+        if self.github_provider.is_available():
+            return self.github_provider.search(query, max_results)
+        return []
+
+    def _search_news(self, query: str, max_results: int) -> List[Dict[str, Any]]:
+        """Wrapper for NewsAPI search provider."""
+        if self.news_provider.is_available():
+            return self.news_provider.search(query, max_results)
+        return []
 
     def _search_duckduckgo(
             self, query: str, max_results: int) -> List[Dict[str, Any]]:
@@ -449,6 +783,91 @@ class EnhancedSearchTool:
                 return False
 
         return True
+
+    def intelligent_search(self, query: str, context_hints: List[str] = None, max_results: int = 10) -> List[SearchResult]:
+        """
+        Perform intelligent search with provider selection based on query context.
+        
+        Args:
+            query: Search query string
+            context_hints: List of context hints to guide provider selection
+            max_results: Maximum number of results to return
+            
+        Returns:
+            List of SearchResult objects ranked by relevance
+        """
+        context_hints = context_hints or []
+        
+        # Determine best providers for this query
+        best_providers = self._select_best_providers(query, context_hints)
+        
+        # Execute search with selected providers
+        all_results = []
+        
+        for provider_name in best_providers:
+            if provider_name in self.search_providers:
+                try:
+                    provider_results = self.search_providers[provider_name](
+                        query, max_results // len(best_providers) + 2)
+                    all_results.extend(provider_results)
+                    logger.info(f"Retrieved {len(provider_results)} results from {provider_name}")
+                    
+                    # Early termination if we have enough results
+                    if len(all_results) >= max_results:
+                        break
+                        
+                except Exception as e:
+                    logger.warning(f"Intelligent search failed with {provider_name}: {e}")
+                    continue
+        
+        # Score and rank results
+        scored_results = self._score_results(all_results, query, ' '.join(context_hints))
+        ranked_results = self._rank_results(scored_results)
+        
+        # Deduplicate results
+        final_results = self._deduplicate_results(ranked_results)
+        
+        return final_results[:max_results]
+
+    def _select_best_providers(self, query: str, context_hints: List[str]) -> List[str]:
+        """Select the best providers for a given query and context."""
+        query_lower = query.lower()
+        context_lower = ' '.join(context_hints).lower()
+        
+        selected_providers = []
+        
+        # Academic/research queries -> ArXiv first
+        if any(term in query_lower or term in context_lower for term in 
+               ['research', 'study', 'paper', 'academic', 'scientific', 'arxiv']):
+            if self.arxiv_provider.is_available():
+                selected_providers.append('arxiv')
+        
+        # Code/programming queries -> GitHub first
+        if any(term in query_lower or term in context_lower for term in 
+               ['code', 'programming', 'implementation', 'github', 'repository', 'api']):
+            if self.github_provider.is_available():
+                selected_providers.append('github')
+        
+        # News/recent development queries -> NewsAPI first
+        if any(term in query_lower or term in context_lower for term in 
+               ['news', 'recent', 'latest', 'development', 'breaking', 'today']):
+            if self.news_provider.is_available():
+                selected_providers.append('news')
+        
+        # Always include DuckDuckGo as a fallback for general web search
+        selected_providers.append('duckduckgo')
+        
+        # Add Google if implemented
+        if 'google' not in selected_providers:
+            selected_providers.append('google')
+        
+        # Return unique providers, limited to top 3 for performance
+        unique_providers = []
+        for provider in selected_providers:
+            if provider not in unique_providers:
+                unique_providers.append(provider)
+        
+        return unique_providers[:3]
 
     def get_search_analytics(self, query: str) -> Dict[str, Any]:
         """

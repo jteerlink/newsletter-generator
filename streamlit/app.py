@@ -22,7 +22,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from src.main import execute_hierarchical_newsletter_generation
 from src.quality import QualityAssuranceSystem
 from src.core.core import query_llm
-from src.tools.notion_integration import NotionNewsletterPublisher
 
 # Page configuration
 st.set_page_config(
@@ -686,12 +685,12 @@ def display_newsletter_content(content: Dict[str, Any]):
     else:
         st.warning("No content to display. Generate a newsletter to see results.")
 
-def publish_newsletter(content: Dict[str, Any], topic: str):
-    """Save newsletter to file and publish to Notion."""
+def save_newsletter(content: Dict[str, Any], topic: str):
+    """Save newsletter to file."""
     try:
-        st.info("🚀 Publishing newsletter...")
+        st.info("💾 Saving newsletter...")
         
-        # 1. Save to file
+        # Save to file
         output_dir = Path("output")
         output_dir.mkdir(exist_ok=True)
         
@@ -705,29 +704,16 @@ def publish_newsletter(content: Dict[str, Any], topic: str):
             with open(filepath, "w", encoding="utf-8") as f:
                 f.write(newsletter_content)
             st.success(f"✅ Newsletter saved to `{filepath}`")
+            
+            # Show file info
+            st.info(f"📄 File: {filename}")
+            st.info(f"📍 Location: {filepath.absolute()}")
+            st.info(f"📊 Size: {len(newsletter_content):,} characters")
         else:
             st.error("❌ No newsletter content to save")
-            return
-        
-        # 2. Publish to Notion
-        publisher = NotionNewsletterPublisher()
-        
-        # Prepare data for Notion
-        notion_data = {
-            "title": topic,
-            "content": content.get('content', ''),
-            "category": "Deep Dive Newsletter"
-        }
-        
-        notion_url = publisher.create_notion_page(notion_data)
-        
-        if notion_url:
-            st.success(f"✅ Published to Notion! [View Page]({notion_url})")
-        else:
-            st.error("❌ Failed to publish to Notion.")
             
     except Exception as e:
-        st.error(f"An error occurred during publishing: {str(e)}")
+        st.error(f"An error occurred during saving: {str(e)}")
 
 def main():
     """Main application function"""
@@ -779,8 +765,8 @@ def main():
         
         st.markdown("---")
         
-        if st.button("🚀 Publish Newsletter", use_container_width=True):
-            publish_newsletter(st.session_state.newsletter_output, config['topic'])
+        if st.button("💾 Save Newsletter", use_container_width=True):
+            save_newsletter(st.session_state.newsletter_output, config['topic'])
 
 if __name__ == "__main__":
     main() 

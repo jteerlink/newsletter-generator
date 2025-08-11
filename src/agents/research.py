@@ -15,7 +15,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.core.campaign_context import CampaignContext
 from src.core.core import query_llm
+from src.core.research_strategy import IntelligentResearchOrchestrator
 from src.tools.tools import search_knowledge_base, search_web
+from src.tools.enhanced_search import EnhancedSearchTool
+from src.tools.query_refinement import get_query_refinement_engine
 
 from .base import AgentType, SimpleAgent
 
@@ -42,16 +45,103 @@ class ResearchAgent(SimpleAgent):
             **kwargs
         )
         self.campaign_context: Optional[CampaignContext] = None
+        
+        # Initialize enhanced research components
+        try:
+            self.research_orchestrator = IntelligentResearchOrchestrator()
+            self.enhanced_search = EnhancedSearchTool()
+            self.query_refiner = get_query_refinement_engine()
+            logger.info("Enhanced research components initialized successfully")
+        except Exception as e:
+            logger.warning(f"Enhanced research components initialization failed: {e}")
+            self.research_orchestrator = None
+            self.enhanced_search = None
+            self.query_refiner = None
 
     def conduct_context_aware_research(
             self, topic: str, context: CampaignContext) -> Dict[str, Any]:
         """Conduct research based on campaign context and audience persona with enhanced capabilities."""
         self.campaign_context = context
 
+        # Try using enhanced research orchestrator first
+        if self.research_orchestrator:
+            try:
+                logger.info("Using enhanced research orchestrator")
+                
+                # Use intelligent research orchestrator
+                import asyncio
+                if asyncio.iscoroutinefunction(self.research_orchestrator.conduct_research):
+                    try:
+                        loop = asyncio.get_event_loop()
+                        enhanced_results = loop.run_until_complete(
+                            self.research_orchestrator.conduct_research(topic, context)
+                        )
+                    except RuntimeError:
+                        # If no event loop is running, create one
+                        enhanced_results = asyncio.run(
+                            self.research_orchestrator.conduct_research(topic, context)
+                        )
+                else:
+                    enhanced_results = self.research_orchestrator.conduct_research(topic, context)
+                
+                if enhanced_results and enhanced_results.results:
+                    logger.info(f"Enhanced research found {len(enhanced_results.results)} results with confidence {enhanced_results.confidence:.2f}")
+                    
+                    # Convert enhanced results to the expected format
+                    research_results = []
+                    for result in enhanced_results.results:
+                        research_results.append({
+                            'source': result.source,
+                            'query': topic,  # Use original topic as query
+                            'content': f"{result.title}\n\n{result.snippet}",
+                            'title': result.title,
+                            'url': result.url,
+                            'relevance_to_topic': 0.8,  # High relevance from enhanced search
+                            'audience_alignment': 0.7,  # Good alignment
+                            'confidence_score': enhanced_results.confidence,
+                            'enhanced_search': True
+                        })
+                    
+                    # Validate and process enhanced results
+                    validated_results = self.validate_sources(research_results)
+                    verification_results = self._perform_reactive_verification(validated_results, context)
+                    
+                    # Generate structured output with enhanced metadata
+                    structured_output = self.generate_structured_output({
+                        'topic': topic,
+                        'context': context,
+                        'research_results': validated_results,
+                        'verification_results': verification_results,
+                        'search_queries': [topic],  # Simplified for enhanced search
+                        'enhanced_metadata': {
+                            'orchestrator_used': True,
+                            'execution_time': enhanced_results.execution_time,
+                            'sources_used': enhanced_results.sources_used,
+                            'total_results': enhanced_results.total_results,
+                            'synthesis_score': enhanced_results.synthesis_score
+                        }
+                    })
+                    
+                    return structured_output
+                    
+            except Exception as e:
+                logger.warning(f"Enhanced research orchestrator failed: {e}")
+        
+        # Fallback to original research approach
+        logger.info("Using fallback research approach")
+        
         # Generate context-aware search queries with proactive expansion
         search_queries = self._generate_context_aware_queries(topic, context)
-        expanded_queries = self._expand_queries_proactively(
-            search_queries, context)
+        
+        # Use query refiner if available
+        if self.query_refiner:
+            try:
+                refined_queries = self.query_refiner.refine_query(topic, context)
+                search_queries.extend(refined_queries[:5])  # Add top 5 refined queries
+            except Exception as e:
+                logger.warning(f"Query refinement failed: {e}")
+        
+        expanded_queries = self._expand_queries_proactively(search_queries, context)
 
         # Execute research with context consideration
         research_results = self._execute_context_aware_research(
@@ -70,7 +160,11 @@ class ResearchAgent(SimpleAgent):
             'context': context,
             'research_results': validated_results,
             'verification_results': verification_results,
-            'search_queries': expanded_queries
+            'search_queries': expanded_queries,
+            'enhanced_metadata': {
+                'orchestrator_used': False,
+                'fallback_reason': 'Enhanced orchestrator unavailable or failed'
+            }
         })
 
         return structured_output
@@ -199,6 +293,47 @@ class ResearchAgent(SimpleAgent):
             'verification_notes': analysis.get(
                 'notes',
                 '')}
+
+    def enhanced_search_with_confidence(self, query: str, context_hints: List[str] = None, max_results: int = 10) -> List[Dict]:
+        """
+        Use enhanced search tool with confidence scoring.
+        
+        Args:
+            query: Search query
+            context_hints: Context hints for intelligent provider selection
+            max_results: Maximum number of results
+            
+        Returns:
+            List of search results with enhanced metadata
+        """
+        try:
+            if self.enhanced_search:
+                # Use intelligent search from enhanced tool
+                results = self.enhanced_search.intelligent_search(query, context_hints or [], max_results)
+                
+                # Convert to expected format
+                formatted_results = []
+                for result in results:
+                    formatted_results.append({
+                        'title': result.title,
+                        'url': result.url,
+                        'snippet': result.snippet,
+                        'source': result.source,
+                        'confidence_score': result.confidence_score,
+                        'relevance_score': result.relevance_score,
+                        'authority_score': result.authority_score,
+                        'overall_score': result.overall_score,
+                        'enhanced_search': True
+                    })
+                
+                return formatted_results
+            else:
+                logger.warning("Enhanced search tool not available, using fallback")
+                return []
+                
+        except Exception as e:
+            logger.error(f"Enhanced search with confidence failed: {e}")
+            return []
 
     def execute_task(self, task: str, context: str = "", **kwargs) -> str:
         """Execute research task with enhanced context-aware capabilities."""
