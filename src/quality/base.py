@@ -8,9 +8,9 @@ with the EditorAgent's built-in quality assessment.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, List
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class QualityMetrics:
     overall_score: float = 0.0
     word_count: int = 0
     issues: List[str] = None
-    
+
     def __post_init__(self):
         if self.issues is None:
             self.issues = []
@@ -46,32 +46,49 @@ class QualityResult:
     passes_gate: bool = False
     gate_id: str = "basic_quality"
     recommendations: List[str] = None
-    
+
     def __post_init__(self):
         if self.recommendations is None:
             self.recommendations = []
 
 
+@dataclass
+class QualityReport:
+    """Comprehensive quality report for content evaluation."""
+    content_id: str
+    evaluation_time: str
+    quality_result: QualityResult
+    validator_used: str = "default"
+    metadata: Dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = {}
+
+
 class QualityAssuranceSystem:
     """Quality assurance system for newsletter content."""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.validators = []
-    
+
     def add_validator(self, validator):
         """Add a validator to the system."""
         self.validators.append(validator)
-    
-    def evaluate_content(self, content: str, gate_id: str = "basic_quality") -> QualityResult:
+
+    def evaluate_content(
+            self,
+            content: str,
+            gate_id: str = "basic_quality") -> QualityResult:
         """Evaluate content quality using all registered validators."""
         try:
             from ..agents.editing import EditorAgent
             editor = EditorAgent()
-            
+
             # Use EditorAgent's built-in quality validation
             result = editor.validate_content_quality(content)
-            
+
             # Create metrics
             metrics = QualityMetrics(
                 readability_score=result.get('readability_score', 0.0),
@@ -82,11 +99,11 @@ class QualityAssuranceSystem:
                 word_count=result.get('word_count', 0),
                 issues=result.get('issues', [])
             )
-            
+
             # Determine status
             passes_gate = result.get('passes_quality_gate', False)
             status = QualityStatus.PASSED if passes_gate else QualityStatus.FAILED
-            
+
             return QualityResult(
                 status=status,
                 metrics=metrics,
@@ -94,7 +111,7 @@ class QualityAssuranceSystem:
                 gate_id=gate_id,
                 recommendations=result.get('recommendations', [])
             )
-        
+
         except Exception as e:
             self.logger.error(f"Error in quality evaluation: {e}")
             metrics = QualityMetrics(
@@ -112,28 +129,28 @@ class QualityAssuranceSystem:
 
 class SimpleQualityValidator:
     """Simple quality validator that delegates to EditorAgent methods."""
-    
+
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
-    def evaluate_content(self, content: str, gate_id: str = "basic_quality") -> Dict[str, Any]:
+
+    def evaluate_content(self, content: str,
+                         gate_id: str = "basic_quality") -> Dict[str, Any]:
         """Simple content evaluation using basic quality checks."""
         try:
             from ..agents.editing import EditorAgent
             editor = EditorAgent()
-            
+
             # Use EditorAgent's built-in quality validation
             result = editor.validate_content_quality(content)
-            
+
             # Convert to simple format
             return {
-                'status': 'passed' if result.get('passes_quality_gate', False) else 'failed',
-                'score': result.get('quality_score', 0.0),
-                'passes_gate': result.get('passes_quality_gate', False),
-                'issues': result.get('recommendations', []),
-                'gate_id': gate_id
-            }
-        
+                'status': 'passed' if result.get(
+                    'passes_quality_gate', False) else 'failed', 'score': result.get(
+                    'quality_score', 0.0), 'passes_gate': result.get(
+                    'passes_quality_gate', False), 'issues': result.get(
+                    'recommendations', []), 'gate_id': gate_id}
+
         except Exception as e:
             self.logger.error(f"Error in quality evaluation: {e}")
             return {
@@ -149,6 +166,7 @@ class SimpleQualityValidator:
 _simple_validator = SimpleQualityValidator()
 
 
-def evaluate_content(content: str, gate_id: str = "basic_quality") -> Dict[str, Any]:
+def evaluate_content(
+        content: str, gate_id: str = "basic_quality") -> Dict[str, Any]:
     """Simple function interface for content evaluation."""
     return _simple_validator.evaluate_content(content, gate_id)

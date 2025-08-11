@@ -5,11 +5,12 @@ Generates Python code examples and snippets for open source AI tools
 
 import logging
 import re
-from typing import Dict, List, Any, Optional, Tuple
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
 
 class CodeType(Enum):
     """Types of code examples to generate"""
@@ -18,6 +19,7 @@ class CodeType(Enum):
     IMPLEMENTATION = "implementation"
     COMPARISON = "comparison"
     OPTIMIZATION = "optimization"
+
 
 @dataclass
 class CodeExample:
@@ -32,9 +34,10 @@ class CodeExample:
     explanation: str
     output_example: Optional[str] = None
 
+
 class AIMLCodeGenerator:
     """Generate Python code examples for AI/ML tools and frameworks"""
-    
+
     def __init__(self):
         self.supported_frameworks = {
             "pytorch": self._generate_pytorch_example,
@@ -44,22 +47,22 @@ class AIMLCodeGenerator:
             "pandas": self._generate_pandas_example,
             "numpy": self._generate_numpy_example,
         }
-        
-    def generate_code_example(self, topic: str, framework: str, 
-                            code_type: CodeType = CodeType.BASIC_EXAMPLE,
-                            complexity: str = "beginner") -> CodeExample:
+
+    def generate_code_example(self, topic: str, framework: str,
+                              code_type: CodeType = CodeType.BASIC_EXAMPLE,
+                              complexity: str = "beginner") -> CodeExample:
         """Generate a code example for a specific topic and framework"""
-        
+
         if framework not in self.supported_frameworks:
             raise ValueError(f"Framework {framework} not supported")
-        
+
         generator_func = self.supported_frameworks[framework]
         return generator_func(topic, code_type, complexity)
-    
-    def _generate_pytorch_example(self, topic: str, code_type: CodeType, 
-                                complexity: str) -> CodeExample:
+
+    def _generate_pytorch_example(self, topic: str, code_type: CodeType,
+                                  complexity: str) -> CodeExample:
         """Generate PyTorch code examples"""
-        
+
         if "neural network" in topic.lower():
             return self._pytorch_neural_network_example(complexity)
         elif "transformer" in topic.lower():
@@ -68,10 +71,10 @@ class AIMLCodeGenerator:
             return self._pytorch_training_example(complexity)
         else:
             return self._pytorch_basic_example(topic, complexity)
-    
+
     def _pytorch_neural_network_example(self, complexity: str) -> CodeExample:
         """Generate PyTorch neural network example"""
-        
+
         if complexity == "beginner":
             code = '''import torch
 import torch.nn as nn
@@ -84,7 +87,7 @@ class SimpleNN(nn.Module):
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(hidden_size, output_size)
-    
+
     def forward(self, x):
         out = self.fc1(x)
         out = self.relu(out)
@@ -100,14 +103,14 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 print(f"Model architecture: {model}")
 print(f"Number of parameters: {sum(p.numel() for p in model.parameters())}")'''
-            
+
             explanation = """This example demonstrates a basic neural network in PyTorch:
 - We define a simple feedforward neural network with one hidden layer
 - The model inherits from nn.Module, which is the base class for all neural network modules
 - The forward method defines how data flows through the network
 - We use ReLU activation function and CrossEntropyLoss for classification
 - Adam optimizer is used for training with a learning rate of 0.001"""
-            
+
             return CodeExample(
                 title="Simple Neural Network in PyTorch",
                 description="A basic feedforward neural network for classification tasks",
@@ -115,16 +118,21 @@ print(f"Number of parameters: {sum(p.numel() for p in model.parameters())}")'''
                 language="python",
                 framework="pytorch",
                 complexity=complexity,
-                dependencies=["torch", "torch.nn", "torch.optim"],
-                explanation=explanation
-            )
-        
+                dependencies=[
+                    "torch",
+                    "torch.nn",
+                    "torch.optim"],
+                explanation=explanation)
+
         # Add more complexity levels as needed
         return self._pytorch_basic_example("neural network", complexity)
-    
-    def _pytorch_basic_example(self, topic: str, complexity: str) -> CodeExample:
+
+    def _pytorch_basic_example(
+            self,
+            topic: str,
+            complexity: str) -> CodeExample:
         """Generate basic PyTorch example"""
-        
+
         code = '''import torch
 import torch.nn as nn
 
@@ -142,7 +150,7 @@ x.requires_grad_(True)
 z = x.sum()
 z.backward()
 print(f"Gradients: {x.grad}")'''
-        
+
         return CodeExample(
             title=f"Basic PyTorch Example - {topic}",
             description=f"Introduction to PyTorch tensors and operations for {topic}",
@@ -153,11 +161,11 @@ print(f"Gradients: {x.grad}")'''
             dependencies=["torch"],
             explanation="This example shows basic PyTorch tensor operations and gradient computation."
         )
-    
-    def _generate_tensorflow_example(self, topic: str, code_type: CodeType, 
-                                   complexity: str) -> CodeExample:
+
+    def _generate_tensorflow_example(self, topic: str, code_type: CodeType,
+                                     complexity: str) -> CodeExample:
         """Generate TensorFlow code examples"""
-        
+
         code = '''import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -184,7 +192,7 @@ y_train = tf.random.uniform((1000,), maxval=10, dtype=tf.int32)
 # Train the model
 history = model.fit(x_train, y_train, epochs=5, batch_size=32, validation_split=0.2)
 '''
-        
+
         return CodeExample(
             title=f"TensorFlow Example - {topic}",
             description=f"Building and training a model with TensorFlow for {topic}",
@@ -195,11 +203,11 @@ history = model.fit(x_train, y_train, epochs=5, batch_size=32, validation_split=
             dependencies=["tensorflow", "tensorflow.keras"],
             explanation="This example demonstrates creating, compiling, and training a neural network with TensorFlow."
         )
-    
-    def _generate_huggingface_example(self, topic: str, code_type: CodeType, 
-                                    complexity: str) -> CodeExample:
+
+    def _generate_huggingface_example(self, topic: str, code_type: CodeType,
+                                      complexity: str) -> CodeExample:
         """Generate Hugging Face code examples"""
-        
+
         code = '''from transformers import AutoTokenizer, AutoModel
 import torch
 
@@ -225,7 +233,7 @@ print(f"Output shape: {last_hidden_states.shape}")
 sentence_embedding = last_hidden_states.mean(dim=1)
 print(f"Sentence embedding shape: {sentence_embedding.shape}")
 '''
-        
+
         return CodeExample(
             title=f"Hugging Face Transformers - {topic}",
             description=f"Using pre-trained transformers for {topic}",
@@ -236,11 +244,11 @@ print(f"Sentence embedding shape: {sentence_embedding.shape}")
             dependencies=["transformers", "torch"],
             explanation="This example shows how to use pre-trained BERT model from Hugging Face for text processing."
         )
-    
-    def _generate_sklearn_example(self, topic: str, code_type: CodeType, 
-                                complexity: str) -> CodeExample:
+
+    def _generate_sklearn_example(self, topic: str, code_type: CodeType,
+                                  complexity: str) -> CodeExample:
         """Generate scikit-learn code examples"""
-        
+
         code = '''from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
@@ -270,7 +278,7 @@ print(classification_report(y_test, y_pred))
 feature_importance = model.feature_importances_
 print(f"Top 5 important features: {np.argsort(feature_importance)[-5:]}")
 '''
-        
+
         return CodeExample(
             title=f"Scikit-learn Example - {topic}",
             description=f"Machine learning with scikit-learn for {topic}",
@@ -281,11 +289,11 @@ print(f"Top 5 important features: {np.argsort(feature_importance)[-5:]}")
             dependencies=["scikit-learn", "numpy"],
             explanation="This example demonstrates a complete ML pipeline with scikit-learn including data generation, training, and evaluation."
         )
-    
-    def _generate_pandas_example(self, topic: str, code_type: CodeType, 
-                               complexity: str) -> CodeExample:
+
+    def _generate_pandas_example(self, topic: str, code_type: CodeType,
+                                 complexity: str) -> CodeExample:
         """Generate pandas code examples"""
-        
+
         code = '''import pandas as pd
 import numpy as np
 
@@ -322,7 +330,7 @@ target_analysis = df.groupby('target').agg({
 print("\\nTarget group analysis:")
 print(target_analysis)
 '''
-        
+
         return CodeExample(
             title=f"Pandas Data Analysis - {topic}",
             description=f"Data manipulation and analysis with pandas for {topic}",
@@ -333,11 +341,11 @@ print(target_analysis)
             dependencies=["pandas", "numpy"],
             explanation="This example shows data creation, exploration, preprocessing, and analysis using pandas."
         )
-    
-    def _generate_numpy_example(self, topic: str, code_type: CodeType, 
-                              complexity: str) -> CodeExample:
+
+    def _generate_numpy_example(self, topic: str, code_type: CodeType,
+                                complexity: str) -> CodeExample:
         """Generate numpy code examples"""
-        
+
         code = '''import numpy as np
 
 # Create sample data
@@ -365,7 +373,7 @@ normalized_data = (data - np.mean(data, axis=0)) / np.std(data, axis=0)
 reduced_data = np.dot(normalized_data, eigenvectors[:, :3])
 print(f"Reduced data shape: {reduced_data.shape}")
 '''
-        
+
         return CodeExample(
             title=f"NumPy Numerical Computing - {topic}",
             description=f"Numerical computing with NumPy for {topic}",
@@ -376,10 +384,10 @@ print(f"Reduced data shape: {reduced_data.shape}")
             dependencies=["numpy"],
             explanation="This example demonstrates numerical computing with NumPy including statistics, linear algebra, and dimensionality reduction."
         )
-    
+
     def validate_code(self, code: str) -> Dict[str, Any]:
         """Validate generated code for syntax and best practices"""
-        
+
         validation_result = {
             "syntax_valid": True,
             "has_imports": False,
@@ -388,21 +396,21 @@ print(f"Reduced data shape: {reduced_data.shape}")
             "issues": [],
             "score": 10.0
         }
-        
+
         # Check for imports
         if "import" in code:
             validation_result["has_imports"] = True
         else:
             validation_result["issues"].append("No import statements found")
             validation_result["score"] -= 1.0
-        
+
         # Check for comments
         if "#" in code or '"""' in code:
             validation_result["has_comments"] = True
         else:
             validation_result["issues"].append("No comments found")
             validation_result["score"] -= 1.0
-        
+
         # Basic syntax validation (simplified)
         try:
             compile(code, '<string>', 'exec')
@@ -410,19 +418,19 @@ print(f"Reduced data shape: {reduced_data.shape}")
             validation_result["syntax_valid"] = False
             validation_result["issues"].append(f"Syntax error: {e}")
             validation_result["score"] -= 3.0
-        
+
         return validation_result
-    
+
     def format_code_for_newsletter(self, code_example: CodeExample) -> str:
         """Format code example for newsletter inclusion"""
-        
+
         formatted = f"""
 ## {code_example.title}
 
 {code_example.description}
 
-**Framework:** {code_example.framework}  
-**Complexity:** {code_example.complexity}  
+**Framework:** {code_example.framework}
+**Complexity:** {code_example.complexity}
 **Dependencies:** {', '.join(code_example.dependencies)}
 
 ```python
@@ -433,50 +441,56 @@ print(f"Reduced data shape: {reduced_data.shape}")
 
 {code_example.explanation}
 """
-        
+
         if code_example.output_example:
-            formatted += f"\n### Expected Output\n```\n{code_example.output_example}\n```\n"
-        
+            formatted += f"\n### Expected Output\n```\n{
+                code_example.output_example}\n```\n"
+
         return formatted
-    
+
     def suggest_framework(self, topic: str) -> str:
         """Suggest the most appropriate framework for a topic"""
-        
+
         topic_lower = topic.lower()
-        
+
         # Deep learning patterns
-        if any(keyword in topic_lower for keyword in [
-            "deep learning", "neural network", "cnn", "rnn", "lstm", "transformer"
-        ]):
+        if any(
+            keyword in topic_lower for keyword in [
+                "deep learning",
+                "neural network",
+                "cnn",
+                "rnn",
+                "lstm",
+                "transformer"]):
             return "pytorch"
-        
+
         # NLP patterns
         elif any(keyword in topic_lower for keyword in [
             "nlp", "text", "language", "bert", "gpt", "tokenization"
         ]):
             return "huggingface"
-        
+
         # Traditional ML patterns
         elif any(keyword in topic_lower for keyword in [
             "classification", "regression", "clustering", "ensemble"
         ]):
             return "scikit-learn"
-        
+
         # Data analysis patterns
         elif any(keyword in topic_lower for keyword in [
             "data analysis", "preprocessing", "visualization", "pandas"
         ]):
             return "pandas"
-        
+
         # Numerical computing patterns
         elif any(keyword in topic_lower for keyword in [
             "matrix", "linear algebra", "statistics", "numerical"
         ]):
             return "numpy"
-        
+
         # Default to PyTorch for AI/ML topics
         return "pytorch"
-    
+
     def get_supported_frameworks(self) -> List[str]:
         """Get list of supported frameworks"""
-        return list(self.supported_frameworks.keys()) 
+        return list(self.supported_frameworks.keys())

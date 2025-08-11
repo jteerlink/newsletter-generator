@@ -2,14 +2,16 @@
 RSS feed extractor for news sources
 """
 
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin, urlparse
+
 import feedparser
 import requests
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
-import logging
-from urllib.parse import urljoin, urlparse
-import time
 from fake_useragent import UserAgent
+
 # Handle imports for both direct execution and module import
 try:
     from .config_loader import SourceConfig
@@ -118,8 +120,9 @@ class RSSExtractor:
                 # Check if feed was parsed successfully
                 if feed.bozo and hasattr(feed, "bozo_exception"):
                     logger.warning(
-                        f"RSS parsing warning for {source.name}: {feed.bozo_exception}"
-                    )
+                        f"RSS parsing warning for {
+                            source.name}: {
+                            feed.bozo_exception}")
 
                 articles = []
                 for entry in feed.entries:
@@ -127,7 +130,10 @@ class RSSExtractor:
                     if article:
                         articles.append(article)
 
-                logger.info(f"Extracted {len(articles)} articles from {source.name}")
+                logger.info(
+                    f"Extracted {
+                        len(articles)} articles from {
+                        source.name}")
                 return articles
 
             except Exception as e:
@@ -135,15 +141,20 @@ class RSSExtractor:
                     f"Attempt {attempt + 1} failed for {source.name}: {str(e)}"
                 )
                 if attempt < self.max_retries - 1:
-                    # Exponential backoff: wait longer after each failed attempt (2^attempt seconds)
+                    # Exponential backoff: wait longer after each failed
+                    # attempt (2^attempt seconds)
                     time.sleep(2**attempt)  # Exponential backoff
 
         logger.error(
-            f"Failed to extract from {source.name} after {self.max_retries} attempts"
-        )
+            f"Failed to extract from {
+                source.name} after {
+                self.max_retries} attempts")
         return []
 
-    def _parse_rss_entry(self, entry: Any, source: SourceConfig) -> Optional[Article]:
+    def _parse_rss_entry(
+            self,
+            entry: Any,
+            source: SourceConfig) -> Optional[Article]:
         """Parse a single RSS entry into an Article"""
         try:
             title = getattr(entry, "title", "").strip()
@@ -172,13 +183,16 @@ class RSSExtractor:
                 from bs4 import BeautifulSoup
 
                 description = (
-                    BeautifulSoup(description, "html.parser").get_text().strip()
-                )
+                    BeautifulSoup(
+                        description,
+                        "html.parser").get_text().strip())
             published = None
             if hasattr(entry, "published_parsed") and entry.published_parsed:
-                published = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                published = datetime(
+                    *entry.published_parsed[:6], tzinfo=timezone.utc)
             elif hasattr(entry, "updated_parsed") and entry.updated_parsed:
-                published = datetime(*entry.updated_parsed[:6], tzinfo=timezone.utc)
+                published = datetime(
+                    *entry.updated_parsed[:6], tzinfo=timezone.utc)
             tags = []
             if hasattr(entry, "tags"):
                 tags = [tag.term for tag in entry.tags if hasattr(tag, "term")]
@@ -186,11 +200,17 @@ class RSSExtractor:
             language = getattr(entry, "language", None)
             media_urls = []
             if hasattr(entry, "media_content"):
-                media_urls = [m.get("url") for m in entry.media_content if "url" in m]
+                media_urls = [m.get("url")
+                              for m in entry.media_content if "url" in m]
             word_count = len(description.split()) if description else None
             canonical_url = (
-                getattr(entry, "id", None) if getattr(entry, "id", None) else url
-            )
+                getattr(
+                    entry,
+                    "id",
+                    None) if getattr(
+                    entry,
+                    "id",
+                    None) else url)
             updated_at = published
             return Article(
                 title=title,
@@ -212,7 +232,10 @@ class RSSExtractor:
                 updated_at=updated_at,
             )
         except Exception as e:
-            logger.error(f"Error parsing RSS entry from {source.name}: {str(e)}")
+            logger.error(
+                f"Error parsing RSS entry from {
+                    source.name}: {
+                    str(e)}")
             return Article(
                 title=getattr(entry, "title", "ERROR"),
                 url=getattr(entry, "link", ""),
@@ -247,7 +270,9 @@ class RSSExtractor:
                 # Add delay between requests to be respectful
                 time.sleep(1)
 
-        logger.info(f"Total articles extracted from RSS sources: {len(all_articles)}")
+        logger.info(
+            f"Total articles extracted from RSS sources: {
+                len(all_articles)}")
         return all_articles
 
     def extract_recent_articles(
@@ -263,9 +288,8 @@ class RSSExtractor:
             if article.published and article.published > cutoff_time
         ]
 
-        logger.info(
-            f"Found {len(recent_articles)} recent articles (last {hours_back} hours)"
-        )
+        logger.info(f"Found {len(recent_articles)
+                             } recent articles (last {hours_back} hours)")
         return recent_articles
 
 
@@ -297,7 +321,7 @@ def main():
 
     # Show some examples
     for i, article in enumerate(articles[:5]):
-        print(f"\n{i+1}. {article.title}")
+        print(f"\n{i + 1}. {article.title}")
         print(f"   Source: {article.source}")
         print(f"   URL: {article.url}")
         print(f"   Published: {article.published}")

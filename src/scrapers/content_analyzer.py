@@ -1,11 +1,11 @@
 # src/scrapers/content_analyzer.py
-import re
 import hashlib
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timezone
-import logging
-from urllib.parse import urlparse
 import json
+import logging
+import re
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +18,12 @@ class ContentAnalyzer:
     """
 
     def __init__(self):
-        # Quality scoring weights for each factor (tuned based on project needs)
+        # Quality scoring weights for each factor (tuned based on project
+        # needs)
         self.quality_weights = {
             "word_count": 0.3,      # Heavier weight for content length
             "readability": 0.1,     # Lower weight for readability
-            "source_reliability": 0.15, # Trust in the source
+            "source_reliability": 0.15,  # Trust in the source
             "freshness": 0.15,      # Recency of content
             "completeness": 0.3,    # How complete the content/metadata is
         }
@@ -89,7 +90,8 @@ class ContentAnalyzer:
             "News": ["announcement", "news", "update", "release", "launch"],
         }
 
-    def analyze_content(self, content: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def analyze_content(self, content: str,
+                        metadata: Dict[str, Any]) -> Dict[str, Any]:
         """
         Comprehensive content analysis including quality scoring, categorization, and metadata enrichment.
         """
@@ -117,15 +119,19 @@ class ContentAnalyzer:
         analysis["tags"] = self._extract_tags(content, metadata)
 
         # Quality scoring
-        analysis["source_reliability"] = self._assess_source_reliability(metadata)
+        analysis["source_reliability"] = self._assess_source_reliability(
+            metadata)
         analysis["freshness_score"] = self._calculate_freshness(metadata)
-        analysis["completeness_score"] = self._assess_completeness(content, metadata)
+        analysis["completeness_score"] = self._assess_completeness(
+            content, metadata)
         analysis["quality_score"] = self._calculate_quality_score(analysis)
 
         # Metadata enrichment
-        analysis["enriched_metadata"] = self._enrich_metadata(metadata, analysis)
+        analysis["enriched_metadata"] = self._enrich_metadata(
+            metadata, analysis)
         # Ensure analyzed_at is present at the top level
-        analysis["analyzed_at"] = analysis["enriched_metadata"].get("analyzed_at")
+        analysis["analyzed_at"] = analysis["enriched_metadata"].get(
+            "analyzed_at")
 
         return analysis
 
@@ -181,7 +187,8 @@ class ContentAnalyzer:
         """Generate hash for content deduplication."""
         return hashlib.md5(content.encode("utf-8")).hexdigest()
 
-    def _categorize_content(self, content: str, metadata: Dict[str, Any]) -> str:
+    def _categorize_content(
+            self, content: str, metadata: Dict[str, Any]) -> str:
         """Categorize content based on keywords and metadata."""
         content_lower = content.lower()
 
@@ -197,7 +204,10 @@ class ContentAnalyzer:
 
         return "General"
 
-    def _extract_tags(self, content: str, metadata: Dict[str, Any]) -> List[str]:
+    def _extract_tags(self,
+                      content: str,
+                      metadata: Dict[str,
+                                     Any]) -> List[str]:
         """Extract relevant tags from content and metadata."""
         tags = set()
 
@@ -206,7 +216,7 @@ class ContentAnalyzer:
             if isinstance(metadata["tags"], str):
                 try:
                     tags.update(json.loads(metadata["tags"]))
-                except:
+                except BaseException:
                     tags.add(metadata["tags"])
             elif isinstance(metadata["tags"], list):
                 tags.update(metadata["tags"])
@@ -270,7 +280,8 @@ class ContentAnalyzer:
             logger.warning(f"Error calculating freshness: {e}")
             return 0.5
 
-    def _assess_completeness(self, content: str, metadata: Dict[str, Any]) -> float:
+    def _assess_completeness(
+            self, content: str, metadata: Dict[str, Any]) -> float:
         """Assess content completeness based on various factors."""
         score = 0.0
 
@@ -285,7 +296,8 @@ class ContentAnalyzer:
             score += 0.2
 
         # Description present: +0.2
-        if metadata.get("description") and len(metadata["description"].strip()) > 0:
+        if metadata.get("description") and len(
+                metadata["description"].strip()) > 0:
             score += 0.2
 
         # Word count: +0.2 for >100, +0.1 for >50
@@ -308,15 +320,17 @@ class ContentAnalyzer:
         word_count_score = min(1.0, analysis["word_count"] / 1000.0)
         score += word_count_score * self.quality_weights["word_count"]
         # Readability score
-        score += analysis["readability_score"] * self.quality_weights["readability"]
+        score += analysis["readability_score"] * \
+            self.quality_weights["readability"]
         # Source reliability
-        score += (
-            analysis["source_reliability"] * self.quality_weights["source_reliability"]
-        )
+        score += (analysis["source_reliability"] *
+                  self.quality_weights["source_reliability"])
         # Freshness
-        score += analysis["freshness_score"] * self.quality_weights["freshness"]
+        score += analysis["freshness_score"] * \
+            self.quality_weights["freshness"]
         # Completeness
-        score += analysis["completeness_score"] * self.quality_weights["completeness"]
+        score += analysis["completeness_score"] * \
+            self.quality_weights["completeness"]
         # Cap score for very short content (<20 words)
         # This prevents high scores for trivial/insufficient content
         if analysis["word_count"] < 20:
@@ -349,7 +363,10 @@ class ContentAnalyzer:
 
         return enriched
 
-    def detect_duplicates(self, content_hash: str, existing_hashes: List[str]) -> bool:
+    def detect_duplicates(
+            self,
+            content_hash: str,
+            existing_hashes: List[str]) -> bool:
         """Check if content is a duplicate based on hash."""
         return content_hash in existing_hashes
 

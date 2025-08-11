@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from src.tools.tools import (
     search_web, search_web_with_alternatives, search_knowledge_base,
-    AgenticSearchTool, AVAILABLE_TOOLS
+    AVAILABLE_TOOLS
 )
 from src.core.exceptions import SearchError
 import os
@@ -65,31 +65,24 @@ class TestSearchWeb:
 class TestSearchWebWithAlternatives:
     """Test search_web_with_alternatives function."""
     
-    @patch('src.tools.tools.AgenticSearchTool')
-    def test_search_with_alternatives_success(self, mock_agentic):
+    @patch('src.tools.tools.search_web')
+    def test_search_with_alternatives_success(self, mock_search_web):
         """Test successful search with alternatives."""
-        mock_agentic_instance = Mock()
-        mock_agentic_instance.run.return_value = "Comprehensive search results about AI"
-        mock_agentic.return_value = mock_agentic_instance
+        mock_search_web.return_value = "Comprehensive search results about AI"
         
         result = search_web_with_alternatives("AI trends", max_results=5)
         
         assert "Comprehensive search results" in result
         assert "AI" in result
-        mock_agentic_instance.run.assert_called_once()
     
-    def test_search_with_alternatives_parameters(self):
+    @patch('src.tools.tools.search_web')
+    def test_search_with_alternatives_parameters(self, mock_search_web):
         """Test search with alternatives parameter handling."""
-        with patch('src.tools.tools.AgenticSearchTool') as mock_agentic:
-            mock_agentic_instance = Mock()
-            mock_agentic_instance.run.return_value = "Test results"
-            mock_agentic.return_value = mock_agentic_instance
-            
-            result = search_web_with_alternatives("test query", fallback_queries=["backup1", "backup2"])
-            
-            assert "Test results" in result
-            # Verify the tool was called with correct parameters
-            mock_agentic_instance.run.assert_called_once()
+        mock_search_web.return_value = "Test results"
+        
+        result = search_web_with_alternatives("test query", fallback_queries=["backup1", "backup2"])
+        
+        assert "Test results" in result
 
 class TestSearchKnowledgeBase:
     """Test knowledge base search functionality."""
@@ -107,54 +100,6 @@ class TestSearchKnowledgeBase:
         
         assert "not yet implemented" in result
         # Should handle the n_results parameter gracefully
-
-class TestAgenticSearchTool:
-    """Test agentic search tool functionality."""
-    
-    def test_agentic_tool_initialization(self):
-        """Test agentic search tool initialization."""
-        tool = AgenticSearchTool()
-        
-        assert tool.max_iterations == 3
-        assert tool.max_results_per_search == 5
-        assert hasattr(tool, 'run')
-        assert hasattr(tool, '_evaluate_search_results')
-    
-    def test_agentic_search_success(self):
-        """Test successful agentic search."""
-        tool = AgenticSearchTool()
-        
-        with patch('src.tools.tools.search_web') as mock_search:
-            mock_search.return_value = "Search results about AI"
-            
-            result = tool.run("AI trends")
-            
-            assert "Search results" in result
-            assert "AI" in result
-    
-    def test_agentic_search_iteration_limit(self):
-        """Test agentic search with iteration limit."""
-        tool = AgenticSearchTool(max_iterations=1)
-        
-        with patch('src.tools.tools.search_web') as mock_search:
-            mock_search.return_value = "Initial results"
-            
-            result = tool.run("test query")
-            
-            # Should stop after max_iterations
-            assert mock_search.call_count <= 1
-    
-    def test_result_evaluation(self):
-        """Test search result evaluation."""
-        tool = AgenticSearchTool()
-        
-        # Test with good results
-        good_results = "Comprehensive analysis with multiple sources and detailed information"
-        assert tool._evaluate_search_results(good_results) > 0.7
-        
-        # Test with poor results
-        poor_results = "Basic information"
-        assert tool._evaluate_search_results(poor_results) < 0.5
 
 class TestAvailableTools:
     """Test available tools registry."""

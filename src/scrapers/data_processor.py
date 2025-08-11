@@ -2,28 +2,30 @@
 Data processing and storage utilities
 """
 
-import json
+import sys
 import csv
-import pandas as pd
-from typing import List, Dict, Any, Optional
-from datetime import datetime, timezone
-import logging
-from pathlib import Path
-import sqlite3
-from urllib.parse import urlparse
 import hashlib
+import json
+import logging
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
+import pandas as pd
+
 # Handle imports for both direct execution and module import
 try:
-    from .rss_extractor import Article
     from .content_analyzer import ContentAnalyzer
+    from .rss_extractor import Article
 except ImportError:
-    from rss_extractor import Article
     from content_analyzer import ContentAnalyzer
+    from rss_extractor import Article
 # Handle storage import
 VectorStore = None
 # Try adding repo root to path and importing
-import sys
-from pathlib import Path
+
 # Navigate to repo root (from scrapers/data_processor.py -> repo_root)
 repo_root = Path(__file__).resolve().parent.parent.parent
 if str(repo_root) not in sys.path:
@@ -69,7 +71,8 @@ class DataProcessor:
                 logger.warning(f"Failed to initialize VectorStore: {e}")
                 self.vector_store = None
         else:
-            logger.warning("VectorStore not available - ChromaDB functionality disabled")
+            logger.warning(
+                "VectorStore not available - ChromaDB functionality disabled")
             self.vector_store = None
 
         # Database setup - use the existing database location
@@ -155,7 +158,8 @@ class DataProcessor:
                 pass
 
             try:
-                cursor.execute("ALTER TABLE articles ADD COLUMN analyzed_at TIMESTAMP")
+                cursor.execute(
+                    "ALTER TABLE articles ADD COLUMN analyzed_at TIMESTAMP")
             except sqlite3.OperationalError:
                 pass
 
@@ -244,7 +248,9 @@ class DataProcessor:
                     results["sources"][article.source] = 1
 
             except Exception as e:
-                logger.error(f"Error processing article '{article.title}': {e}")
+                logger.error(
+                    f"Error processing article '{
+                        article.title}': {e}")
                 results["errors"] += 1
 
         return results
@@ -266,9 +272,8 @@ class DataProcessor:
         }
 
         # Get content for analysis
-        content = (
-            getattr(article, "raw_content", "") or article.description or article.title
-        )
+        content = (getattr(article, "raw_content", "")
+                   or article.description or article.title)
 
         # Analyze content
         analysis = self.content_analyzer.analyze_content(content, metadata)
@@ -279,9 +284,15 @@ class DataProcessor:
         )
 
         if is_duplicate:
-            logger.debug(f"Duplicate detected: {article.title} | Hash: {analysis['content_hash']}")
+            logger.debug(
+                f"Duplicate detected: {
+                    article.title} | Hash: {
+                    analysis['content_hash']}")
         else:
-            logger.debug(f"New article: {article.title} | Hash: {analysis['content_hash']}")
+            logger.debug(
+                f"New article: {
+                    article.title} | Hash: {
+                    analysis['content_hash']}")
 
         if is_duplicate:
             return False, analysis
@@ -293,7 +304,8 @@ class DataProcessor:
             cursor = conn.cursor()
 
             # Check if article already exists by URL
-            cursor.execute("SELECT id FROM articles WHERE url_hash = ?", (url_hash,))
+            cursor.execute(
+                "SELECT id FROM articles WHERE url_hash = ?", (url_hash,))
             if cursor.fetchone():
                 return False, analysis  # Article already exists
 
@@ -301,9 +313,9 @@ class DataProcessor:
             cursor.execute(
                 """
                 INSERT INTO articles (
-                    url_hash, title, url, description, published, source, 
-                    category, tags, extracted_at, content_hash, raw_content, author, language, 
-                    fetch_status, error_message, source_type, media_urls, word_count, 
+                    url_hash, title, url, description, published, source,
+                    category, tags, extracted_at, content_hash, raw_content, author, language,
+                    fetch_status, error_message, source_type, media_urls, word_count,
                     canonical_url, updated_at, processed, quality_score, readability_score,
                     source_reliability, freshness_score, completeness_score, analyzed_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -347,18 +359,21 @@ class DataProcessor:
                 "title": article.title,
                 "source": article.source,
                 "category": analysis["category"],
-                "tags": json.dumps(analysis["tags"]),  # Serialize tags as JSON string
+                # Serialize tags as JSON string
+                "tags": json.dumps(analysis["tags"]),
                 "published": str(article.published) if article.published else None,
                 "quality_score": analysis["quality_score"],
                 "content_hash": analysis["content_hash"],
             }
-            logger.debug(f"Calling add_document with content length: {len(content)}, metadata: {chroma_metadata}")
+            logger.debug(f"Calling add_document with content length: {
+                         len(content)}, metadata: {chroma_metadata}")
             try:
                 self.vector_store.add_document(content, chroma_metadata)
             except Exception as e:
                 logger.warning(f"Failed to add document to VectorStore: {e}")
         else:
-            logger.debug("VectorStore not available - skipping ChromaDB storage")
+            logger.debug(
+                "VectorStore not available - skipping ChromaDB storage")
         return True, analysis
 
     def _get_existing_content_hashes(self) -> List[str]:
@@ -394,7 +409,7 @@ class DataProcessor:
                 if article_dict["tags"]:
                     try:
                         article_dict["tags"] = json.loads(article_dict["tags"])
-                    except:
+                    except BaseException:
                         article_dict["tags"] = []
                 else:
                     article_dict["tags"] = []
@@ -421,7 +436,7 @@ class DataProcessor:
                 if article_dict["tags"]:
                     try:
                         article_dict["tags"] = json.loads(article_dict["tags"])
-                    except:
+                    except BaseException:
                         article_dict["tags"] = []
                 else:
                     article_dict["tags"] = []
@@ -437,7 +452,7 @@ class DataProcessor:
             # Get quality score statistics
             cursor.execute(
                 """
-                SELECT 
+                SELECT
                     COUNT(*) as total,
                     AVG(quality_score) as avg_quality,
                     MIN(quality_score) as min_quality,
@@ -465,13 +480,15 @@ class DataProcessor:
     def store_article(self, article: Article) -> bool:
         """Store article in database, return True if new article"""
         url_hash = self._generate_url_hash(article.url)
-        content_hash = self._generate_content_hash(article.title + article.description)
+        content_hash = self._generate_content_hash(
+            article.title + article.description)
 
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
 
             # Check if article already exists
-            cursor.execute("SELECT id FROM articles WHERE url_hash = ?", (url_hash,))
+            cursor.execute(
+                "SELECT id FROM articles WHERE url_hash = ?", (url_hash,))
             if cursor.fetchone():
                 return False  # Article already exists
 
@@ -479,7 +496,7 @@ class DataProcessor:
             cursor.execute(
                 """
                 INSERT INTO articles (
-                    url_hash, title, url, description, published, source, 
+                    url_hash, title, url, description, published, source,
                     category, tags, extracted_at, content_hash, raw_content, author, language, fetch_status, error_message, source_type, media_urls, word_count, canonical_url, updated_at, processed
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -561,7 +578,7 @@ class DataProcessor:
                 if article_dict["tags"]:
                     try:
                         article_dict["tags"] = json.loads(article_dict["tags"])
-                    except:
+                    except BaseException:
                         article_dict["tags"] = []
                 else:
                     article_dict["tags"] = []
@@ -610,7 +627,10 @@ class DataProcessor:
         logger.info(f"Exported {len(articles)} articles to {filepath}")
         return str(filepath)
 
-    def export_to_excel(self, filename: Optional[str] = None, **filters) -> str:
+    def export_to_excel(
+            self,
+            filename: Optional[str] = None,
+            **filters) -> str:
         """Export articles to Excel file"""
         articles = self.get_articles(**filters)
 
@@ -636,12 +656,16 @@ class DataProcessor:
             df.to_excel(writer, sheet_name="Articles", index=False)
 
             # Summary by source
-            source_summary = df.groupby("source").size().reset_index(name="count")
-            source_summary.to_excel(writer, sheet_name="By Source", index=False)
+            source_summary = df.groupby(
+                "source").size().reset_index(name="count")
+            source_summary.to_excel(
+                writer, sheet_name="By Source", index=False)
 
             # Summary by category
-            category_summary = df.groupby("category").size().reset_index(name="count")
-            category_summary.to_excel(writer, sheet_name="By Category", index=False)
+            category_summary = df.groupby(
+                "category").size().reset_index(name="count")
+            category_summary.to_excel(
+                writer, sheet_name="By Category", index=False)
 
         logger.info(f"Exported {len(articles)} articles to {filepath}")
         return str(filepath)
@@ -670,7 +694,7 @@ class DataProcessor:
             # Recent articles (last 24 hours)
             cursor.execute(
                 """
-                SELECT COUNT(*) FROM articles 
+                SELECT COUNT(*) FROM articles
                 WHERE published >= datetime('now', '-1 day')
             """
             )
@@ -685,7 +709,9 @@ class DataProcessor:
             return {
                 "total_articles": total_articles,
                 "recent_articles_24h": recent_articles,
-                "date_range": {"earliest": date_range[0], "latest": date_range[1]},
+                "date_range": {
+                    "earliest": date_range[0],
+                    "latest": date_range[1]},
                 "by_source": by_source,
                 "by_category": by_category,
             }
@@ -699,9 +725,9 @@ class DataProcessor:
             cursor.execute(
                 """
                 SELECT content_hash, COUNT(*) as count, MIN(id) as keep_id
-                FROM articles 
+                FROM articles
                 WHERE content_hash IS NOT NULL
-                GROUP BY content_hash 
+                GROUP BY content_hash
                 HAVING COUNT(*) > 1
             """
             )
@@ -713,7 +739,7 @@ class DataProcessor:
                 # Delete all but the first occurrence
                 cursor.execute(
                     """
-                    DELETE FROM articles 
+                    DELETE FROM articles
                     WHERE content_hash = ? AND id != ?
                 """,
                     (content_hash, keep_id),
@@ -735,7 +761,7 @@ class DataProcessor:
 
             cursor.execute(
                 """
-                DELETE FROM articles 
+                DELETE FROM articles
                 WHERE published < datetime('now', '-{} days')
             """.format(
                     days_to_keep
@@ -747,8 +773,7 @@ class DataProcessor:
 
             if deleted_count > 0:
                 logger.info(
-                    f"Removed {deleted_count} articles older than {days_to_keep} days"
-                )
+                    f"Removed {deleted_count} articles older than {days_to_keep} days")
 
             return deleted_count
 
@@ -759,7 +784,8 @@ class ReportGenerator:
     def __init__(self, data_processor: DataProcessor):
         self.data_processor = data_processor
 
-    def generate_daily_report(self, date: Optional[datetime] = None) -> Dict[str, Any]:
+    def generate_daily_report(
+            self, date: Optional[datetime] = None) -> Dict[str, Any]:
         """Generate daily summary report"""
         if not date:
             date = datetime.now(timezone.utc)
@@ -793,15 +819,20 @@ class ReportGenerator:
             category = article["category"]
 
             stats["by_source"][source] = stats["by_source"].get(source, 0) + 1
-            stats["by_category"][category] = stats["by_category"].get(category, 0) + 1
+            stats["by_category"][category] = stats["by_category"].get(
+                category, 0) + 1
 
         # Sort by count
         stats["by_source"] = dict(
-            sorted(stats["by_source"].items(), key=lambda x: x[1], reverse=True)
-        )
+            sorted(
+                stats["by_source"].items(),
+                key=lambda x: x[1],
+                reverse=True))
         stats["by_category"] = dict(
-            sorted(stats["by_category"].items(), key=lambda x: x[1], reverse=True)
-        )
+            sorted(
+                stats["by_category"].items(),
+                key=lambda x: x[1],
+                reverse=True))
 
         # Top articles (by recency and relevance)
         stats["top_articles"] = [
@@ -882,4 +913,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

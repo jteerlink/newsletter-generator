@@ -213,6 +213,9 @@ def setup_logging():
 def mock_env_vars():
     """Mock environment variables for testing."""
     env_vars = {
+        "LLM_PROVIDER": "nvidia",
+        "NVIDIA_API_KEY": "test-nvidia-api-key",
+        "NVIDIA_MODEL": "openai/gpt-oss-20b",
         "OLLAMA_MODEL": "deepseek-r1",
         "OLLAMA_BASE_URL": "http://localhost:11434",
         "SERPER_API_KEY": "test_api_key",

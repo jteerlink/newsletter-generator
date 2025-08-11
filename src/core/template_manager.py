@@ -4,11 +4,12 @@ Provides specialized templates for different newsletter types and content framew
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
 
 class NewsletterType(Enum):
     """Types of newsletters supported by the template system"""
@@ -17,6 +18,7 @@ class NewsletterType(Enum):
     PRODUCT_REVIEW = "product_review"
     RESEARCH_SUMMARY = "research_summary"
     TUTORIAL_GUIDE = "tutorial_guide"
+
 
 @dataclass
 class TemplateSection:
@@ -27,6 +29,7 @@ class TemplateSection:
     word_count_target: int
     required_elements: List[str]
     optional_elements: List[str]
+
 
 @dataclass
 class NewsletterTemplate:
@@ -39,17 +42,19 @@ class NewsletterTemplate:
     total_word_target: int
     special_instructions: List[str]
 
+
 class AIMLTemplateManager:
     """Manages AI/ML focused newsletter templates and content frameworks"""
-    
+
     def __init__(self):
         self.templates = self._initialize_templates()
         self.content_frameworks = self._initialize_content_frameworks()
-    
-    def _initialize_templates(self) -> Dict[NewsletterType, NewsletterTemplate]:
+
+    def _initialize_templates(
+            self) -> Dict[NewsletterType, NewsletterTemplate]:
         """Initialize all AI/ML newsletter templates"""
         templates = {}
-        
+
         # Technical Deep-Dive Template
         templates[NewsletterType.TECHNICAL_DEEP_DIVE] = NewsletterTemplate(
             name="AI/ML Technical Deep-Dive",
@@ -145,7 +150,7 @@ class AIMLTemplateManager:
                 "Include references to papers and resources"
             ]
         )
-        
+
         # Trend Analysis Template
         templates[NewsletterType.TREND_ANALYSIS] = NewsletterTemplate(
             name="AI/ML Trend Analysis",
@@ -241,7 +246,7 @@ class AIMLTemplateManager:
                 "Include references to credible sources and research"
             ]
         )
-        
+
         # Product Review Template
         templates[NewsletterType.PRODUCT_REVIEW] = NewsletterTemplate(
             name="AI/ML Product Review",
@@ -337,9 +342,9 @@ class AIMLTemplateManager:
                 "Include relevant benchmarks and performance data"
             ]
         )
-        
+
         return templates
-    
+
     def _initialize_content_frameworks(self) -> Dict[str, Dict[str, Any]]:
         """Initialize content frameworks for common AI/ML newsletter sections"""
         return {
@@ -408,69 +413,86 @@ class AIMLTemplateManager:
                 ]
             }
         }
-    
-    def get_template(self, template_type: NewsletterType) -> NewsletterTemplate:
+
+    def get_template(
+            self,
+            template_type: NewsletterType) -> NewsletterTemplate:
         """Get a specific newsletter template"""
         return self.templates.get(template_type)
-    
+
     def get_available_templates(self) -> List[NewsletterTemplate]:
         """Get all available templates"""
         return list(self.templates.values())
-    
+
     def suggest_template(self, topic: str) -> NewsletterType:
         """Suggest the most appropriate template for a given topic"""
         topic_lower = topic.lower()
-        
+
         # AI/ML pattern matching for template suggestion
-        if any(keyword in topic_lower for keyword in [
-            "deep learning", "neural network", "machine learning", "ai architecture",
-            "transformer", "model training", "technical analysis", "algorithm",
-            "implementation", "architecture", "system design"
-        ]):
+        if any(
+            keyword in topic_lower for keyword in [
+                "deep learning",
+                "neural network",
+                "machine learning",
+                "ai architecture",
+                "transformer",
+                "model training",
+                "technical analysis",
+                "algorithm",
+                "implementation",
+                "architecture",
+                "system design"]):
             return NewsletterType.TECHNICAL_DEEP_DIVE
-        
+
         elif any(keyword in topic_lower for keyword in [
             "trend", "future", "emerging", "prediction", "market", "industry",
             "analysis", "forecast", "outlook", "development"
         ]):
             return NewsletterType.TREND_ANALYSIS
-        
+
         elif any(keyword in topic_lower for keyword in [
             "tool", "framework", "library", "review", "comparison", "evaluation",
             "product", "platform", "service", "solution"
         ]):
             return NewsletterType.PRODUCT_REVIEW
-        
+
         elif any(keyword in topic_lower for keyword in [
             "research", "study", "paper", "academic", "findings", "breakthrough",
             "discovery", "investigation", "analysis", "results"
         ]):
             return NewsletterType.RESEARCH_SUMMARY
-        
+
         elif any(keyword in topic_lower for keyword in [
             "tutorial", "guide", "how-to", "implementation", "step-by-step",
             "walkthrough", "example", "demonstration", "hands-on"
         ]):
             return NewsletterType.TUTORIAL_GUIDE
-        
+
         # Default to technical deep dive for AI/ML topics
         return NewsletterType.TECHNICAL_DEEP_DIVE
-    
+
     def get_content_framework(self, framework_name: str) -> Dict[str, Any]:
         """Get a specific content framework"""
         return self.content_frameworks.get(framework_name)
-    
-    def generate_template_prompt(self, template: NewsletterTemplate, topic: str) -> str:
+
+    def generate_template_prompt(
+            self,
+            template: NewsletterTemplate,
+            topic: str) -> str:
         """Generate a detailed prompt based on a template"""
         prompt_parts = [
-            f"Create a comprehensive {template.name} newsletter about '{topic}' for {template.target_audience}.",
-            f"\nNewsletter Description: {template.description}",
-            f"\nTarget Word Count: {template.total_word_target} words",
-            "\nSTRUCTURE YOUR NEWSLETTER WITH THE FOLLOWING SECTIONS:"
-        ]
-        
+            f"Create a comprehensive {
+                template.name} newsletter about '{topic}' for {
+                template.target_audience}.",
+            f"\nNewsletter Description: {
+                template.description}",
+            f"\nTarget Word Count: {
+                template.total_word_target} words",
+            "\nSTRUCTURE YOUR NEWSLETTER WITH THE FOLLOWING SECTIONS:"]
+
         for i, section in enumerate(template.sections, 1):
-            prompt_parts.append(f"\n{i}. **{section.name}** ({section.word_count_target} words)")
+            prompt_parts.append(
+                f"\n{i}. **{section.name}** ({section.word_count_target} words)")
             prompt_parts.append(f"   {section.description}")
             prompt_parts.append("   Content Guidelines:")
             for guideline in section.content_guidelines:
@@ -482,18 +504,22 @@ class AIMLTemplateManager:
                 prompt_parts.append("   Optional Elements:")
                 for element in section.optional_elements:
                     prompt_parts.append(f"   • {element}")
-        
+
         prompt_parts.append("\nSPECIAL INSTRUCTIONS:")
         for instruction in template.special_instructions:
             prompt_parts.append(f"• {instruction}")
-        
-        prompt_parts.append("\nWrite in flowing narrative prose, avoiding bullet points in the final content.")
-        prompt_parts.append("Include specific examples, code snippets, and practical insights throughout.")
-        prompt_parts.append("Ensure technical accuracy while maintaining accessibility for the target audience.")
-        
+
+        prompt_parts.append(
+            "\nWrite in flowing narrative prose, avoiding bullet points in the final content.")
+        prompt_parts.append(
+            "Include specific examples, code snippets, and practical insights throughout.")
+        prompt_parts.append(
+            "Ensure technical accuracy while maintaining accessibility for the target audience.")
+
         return "\n".join(prompt_parts)
-    
-    def validate_template_content(self, content: str, template: NewsletterTemplate) -> Dict[str, Any]:
+
+    def validate_template_content(
+            self, content: str, template: NewsletterTemplate) -> Dict[str, Any]:
         """Validate content against template requirements"""
         validation_results = {
             "template_compliance": True,
@@ -501,18 +527,24 @@ class AIMLTemplateManager:
             "recommendations": [],
             "section_analysis": {}
         }
-        
+
         # Basic word count validation
         word_count = len(content.split())
-        target_range = (template.total_word_target * 0.8, template.total_word_target * 1.2)
-        
+        target_range = (
+            template.total_word_target * 0.8,
+            template.total_word_target * 1.2)
+
         if word_count < target_range[0]:
-            validation_results["issues"].append(f"Content too short: {word_count} words (target: {template.total_word_target})")
+            validation_results["issues"].append(
+                f"Content too short: {word_count} words (target: {
+                    template.total_word_target})")
             validation_results["template_compliance"] = False
         elif word_count > target_range[1]:
-            validation_results["issues"].append(f"Content too long: {word_count} words (target: {template.total_word_target})")
+            validation_results["issues"].append(
+                f"Content too long: {word_count} words (target: {
+                    template.total_word_target})")
             validation_results["template_compliance"] = False
-        
+
         # Check for required elements in each section
         for section in template.sections:
             section_analysis = {
@@ -520,7 +552,7 @@ class AIMLTemplateManager:
                 "missing_elements": [],
                 "suggestions": []
             }
-            
+
             for element in section.required_elements:
                 # Simple keyword-based checking - could be enhanced with NLP
                 if element.lower() in content.lower():
@@ -528,10 +560,13 @@ class AIMLTemplateManager:
                 else:
                     section_analysis["missing_elements"].append(element)
                     validation_results["template_compliance"] = False
-            
+
             if section_analysis["missing_elements"]:
-                validation_results["issues"].append(f"Missing required elements in {section.name}: {section_analysis['missing_elements']}")
-            
+                validation_results["issues"].append(
+                    f"Missing required elements in {
+                        section.name}: {
+                        section_analysis['missing_elements']}")
+
             validation_results["section_analysis"][section.name] = section_analysis
-        
-        return validation_results 
+
+        return validation_results

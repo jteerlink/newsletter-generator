@@ -1,0 +1,20 @@
+{
+  "versions": [
+    {
+      "version_id": "backup_20250811_085540_673031",
+      "timestamp": "2025-08-11T08:55:40.673232",
+      "description": "Test backup 1",
+      "metadata": {},
+      "checksum": "057294e4aa96116568ee41bb830bed668b1e42cd76301e3c8a6247f504b72434",
+      "size_bytes": 182
+    },
+    {
+      "version_id": "backup_20250811_085540_673444",
+      "timestamp": "2025-08-11T08:55:40.673607",
+      "description": "Test backup 2",
+      "metadata": {},
+      "checksum": "03cd4decf57d3181154396929f049130adec0deae10ce3ade6f3d9ec7e8e0a32",
+      "size_bytes": 182
+    }
+  ]
+}

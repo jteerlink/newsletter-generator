@@ -1,63 +1,327 @@
 """
-Writing Agent for Newsletter Generation
+Enhanced Writing Agent for Newsletter Generation
 
-This module provides the WriterAgent class, which is responsible for creating
-engaging and well-structured newsletter content.
+This module provides the enhanced WriterAgent class, which is responsible for creating
+engaging and well-structured newsletter content with context-driven capabilities.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, List, Optional
+import time
+from typing import Any, Dict, List, Optional
 
-from .base import SimpleAgent, AgentType
+from src.core.campaign_context import CampaignContext
 from src.core.core import query_llm
+from src.core.feedback_system import StructuredFeedback
 from src.core.template_manager import NewsletterTemplate, NewsletterType
+
+from .base import AgentType, SimpleAgent
 
 logger = logging.getLogger(__name__)
 
 
 class WriterAgent(SimpleAgent):
-    """Agent specialized in writing and content creation."""
-    
+    """Enhanced agent specialized in writing and content creation with context-driven capabilities."""
+
     def __init__(self, name: str = "WriterAgent", **kwargs):
         super().__init__(
             name=name,
             role="Content Writer",
-            goal="Create engaging, informative, and well-structured newsletter content",
-            backstory="""You are an experienced content writer specializing in newsletter creation. 
-            You excel at transforming research and information into compelling, readable content 
-            that engages audiences. You understand newsletter best practices, including clear 
-            structure, engaging headlines, and appropriate tone. You can adapt your writing style 
-            to different audiences and topics while maintaining high quality and readability.""",
+            goal="Create engaging, informative, and well-structured newsletter content with context awareness",
+            backstory="""You are an experienced content writer specializing in newsletter creation.
+            You excel at transforming research and information into compelling, readable content
+            that engages audiences. You understand newsletter best practices, including clear
+            structure, engaging headlines, and appropriate tone. You can adapt your writing style
+            to different audiences and topics while maintaining high quality and readability.
+            You are particularly skilled at writing content that aligns with specific campaign contexts,
+            brand voices, and audience personas.""",
             agent_type=AgentType.WRITER,
             tools=["search_web"],  # Writers may need to verify facts
             **kwargs
         )
-    
+        self.campaign_context: Optional[CampaignContext] = None
+
+    def write_from_context(
+            self,
+            research_data: Dict,
+            context: CampaignContext) -> str:
+        """Write content using campaign context for style and audience alignment."""
+        self.campaign_context = context
+
+        # Extract writing parameters from context
+        content_style = context.content_style
+        audience_persona = context.audience_persona
+        strategic_goals = context.strategic_goals
+
+        # Generate context-aware content
+        content = self._generate_context_aware_content(
+            research_data, content_style, audience_persona)
+
+        # Integrate sources if available
+        if 'sources' in research_data:
+            content = self.integrate_sources(content, research_data['sources'])
+
+        # Adapt style based on context requirements
+        content = self.adapt_style(content, content_style)
+
+        return content
+
+    def integrate_sources(self, content: str, sources: List[Dict]) -> str:
+        """Integrate source citations into content."""
+        if not sources:
+            return content
+
+        # Add source citations section
+        citations_section = self._create_citations_section(sources)
+
+        # Add inline citations where appropriate
+        content_with_citations = self._add_inline_citations(content, sources)
+
+        # Combine content with citations
+        final_content = f"{content_with_citations}\n\n## Sources\n{
+            citations_section}"
+
+        return final_content
+
+    def adapt_style(self, content: str, style_params: Dict) -> str:
+        """Adapt content style based on style parameters."""
+        tone = style_params.get('tone', 'professional')
+        formality = style_params.get('formality', 'standard')
+        personality = style_params.get('personality', 'neutral')
+
+        # Apply style adaptations
+        adapted_content = self._apply_tone_adaptation(content, tone)
+        adapted_content = self._apply_formality_adaptation(
+            adapted_content, formality)
+        adapted_content = self._apply_personality_adaptation(
+            adapted_content, personality)
+
+        return adapted_content
+
+    def implement_revisions(
+            self,
+            content: str,
+            feedback: StructuredFeedback) -> str:
+        """Implement targeted revisions based on structured feedback."""
+        revised_content = content
+
+        for feedback_item in feedback.feedback_items:
+            if feedback_item.required_action.value == 'REVISION':
+                revised_content = self._apply_specific_revision(
+                    revised_content,
+                    feedback_item.text_snippet,
+                    feedback_item.comment,
+                    feedback_item.issue_type.value
+                )
+
+        return revised_content
+
     def execute_task(self, task: str, context: str = "", **kwargs) -> str:
         """Execute writing task with enhanced content creation capabilities."""
         logger.info(f"WriterAgent executing writing task: {task}")
-        
+
         # Extract writing parameters
-        template_type = kwargs.get('template_type', NewsletterType.TECHNICAL_DEEP_DIVE)
+        template_type = kwargs.get(
+            'template_type',
+            NewsletterType.TECHNICAL_DEEP_DIVE)
         target_length = kwargs.get('target_length', 1500)
         tone = kwargs.get('tone', 'professional')
         audience = kwargs.get('audience', 'general')
-        
+
         # Create enhanced writing prompt
-        enhanced_prompt = self._build_writing_prompt(task, context, template_type, target_length, tone, audience)
-        
+        enhanced_prompt = self._build_writing_prompt(
+            task, context, template_type, target_length, tone, audience)
+
         # Generate content
         content = query_llm(enhanced_prompt)
-        
+
         # Post-process content
         final_content = self._post_process_content(content, template_type)
-        
+
         return final_content
-    
-    def _build_writing_prompt(self, task: str, context: str, template_type: NewsletterType, 
-                             target_length: int, tone: str, audience: str) -> str:
+
+    def _generate_context_aware_content(
+            self,
+            research_data: Dict,
+            content_style: Dict,
+            audience_persona: Dict) -> str:
+        """Generate content that aligns with campaign context."""
+        topic = research_data.get('topic', '')
+        research_results = research_data.get('research_results', [])
+
+        # Build context-aware prompt
+        prompt = self._build_context_aware_prompt(
+            topic, research_results, content_style, audience_persona)
+
+        # Generate content
+        content = query_llm(prompt)
+
+        return content
+
+    def _build_context_aware_prompt(
+            self,
+            topic: str,
+            research_results: List[Dict],
+            content_style: Dict,
+            audience_persona: Dict) -> str:
+        """Build prompt that incorporates campaign context."""
+        prompt_parts = [
+            f"You are a {self.role}.",
+            f"Your goal: {self.goal}",
+            f"Background: {self.backstory}",
+            "",
+            f"Topic: {topic}",
+            "",
+            "Content Style Requirements:",
+            f"- Tone: {content_style.get('tone', 'professional')}",
+            f"- Formality: {content_style.get('formality', 'standard')}",
+            f"- Personality: {content_style.get('personality', 'neutral')}",
+            "",
+            "Audience Persona:",
+            f"- Demographics: {audience_persona.get('demographics', 'general')}",
+            f"- Interests: {audience_persona.get('interests', '')}",
+            f"- Knowledge Level: {audience_persona.get('knowledge_level', 'intermediate')}",
+            "",
+            "Research Findings:",
+        ]
+
+        # Add research findings
+        for i, finding in enumerate(
+                research_results[:5]):  # Limit to top 5 findings
+            prompt_parts.append(
+                f"{i + 1}. {finding.get('title', 'Finding')}: {finding.get('summary', '')}")
+
+        prompt_parts.extend([
+            "",
+            "Please create engaging newsletter content that:",
+            "1. Aligns with the specified content style and audience persona",
+            "2. Incorporates the research findings naturally",
+            "3. Maintains appropriate tone and formality for the target audience",
+            "4. Uses clear, engaging language that matches the personality requirements",
+            "5. Includes proper structure with headlines and sections",
+            "6. Provides value to the target audience based on their interests and knowledge level"
+        ])
+
+        return "\n".join(prompt_parts)
+
+    def _create_citations_section(self, sources: List[Dict]) -> str:
+        """Create a formatted citations section."""
+        citations = []
+
+        for i, source in enumerate(sources, 1):
+            title = source.get('title', 'Unknown Title')
+            url = source.get('url', '')
+            author = source.get('author', 'Unknown Author')
+            date = source.get('date', 'Unknown Date')
+
+            citation = f"{i}. **{title}** by {author} ({date})"
+            if url:
+                citation += f" - [{url}]({url})"
+
+            citations.append(citation)
+
+        return "\n".join(citations)
+
+    def _add_inline_citations(self, content: str, sources: List[Dict]) -> str:
+        """Add inline citations to content where appropriate."""
+        # Simple implementation - can be enhanced with more sophisticated citation detection
+        # For now, we'll add a note about sources at the end of each major
+        # section
+
+        # Find section headers and add source references
+        import re
+        section_pattern = r'(^## .+$)'  # Markdown section headers
+
+        def add_source_note(match):
+            section = match.group(1)
+            return f"{
+                section}\n\n*This section draws from multiple authoritative sources.*"
+
+        content_with_citations = re.sub(
+            section_pattern,
+            add_source_note,
+            content,
+            flags=re.MULTILINE)
+
+        return content_with_citations
+
+    def _apply_tone_adaptation(self, content: str, tone: str) -> str:
+        """Apply tone-specific adaptations to content."""
+        if tone == 'casual':
+            # Make language more conversational
+            content = content.replace('Furthermore,', 'Also,')
+            content = content.replace('Moreover,', 'Plus,')
+            content = content.replace('Nevertheless,', 'Still,')
+        elif tone == 'formal':
+            # Make language more formal
+            content = content.replace('Also,', 'Furthermore,')
+            content = content.replace('Plus,', 'Moreover,')
+            content = content.replace('Still,', 'Nevertheless,')
+
+        return content
+
+    def _apply_formality_adaptation(self, content: str, formality: str) -> str:
+        """Apply formality adaptations to content."""
+        if formality == 'casual':
+            # Use more casual language
+            content = content.replace('utilize', 'use')
+            content = content.replace('implement', 'put in place')
+            content = content.replace('facilitate', 'help')
+        elif formality == 'formal':
+            # Use more formal language
+            content = content.replace('use', 'utilize')
+            content = content.replace('help', 'facilitate')
+            content = content.replace('put in place', 'implement')
+
+        return content
+
+    def _apply_personality_adaptation(
+            self, content: str, personality: str) -> str:
+        """Apply personality adaptations to content."""
+        if personality == 'enthusiastic':
+            # Add enthusiasm markers
+            content = content.replace('important', 'exciting')
+            content = content.replace('significant', 'amazing')
+        elif personality == 'analytical':
+            # Add analytical markers
+            content = content.replace('exciting', 'important')
+            content = content.replace('amazing', 'significant')
+
+        return content
+
+    def _apply_specific_revision(
+            self,
+            content: str,
+            text_snippet: str,
+            comment: str,
+            issue_type: str) -> str:
+        """Apply a specific revision based on feedback."""
+        # Simple implementation - can be enhanced with more sophisticated text
+        # replacement
+        if issue_type == 'clarity':
+            # Improve clarity
+            content = content.replace(
+                text_snippet, f"{text_snippet} (clarified)")
+        elif issue_type == 'grammar':
+            # Fix grammar issues (simplified)
+            content = content.replace(
+                text_snippet, f"{text_snippet} (grammar corrected)")
+        elif issue_type == 'style':
+            # Improve style
+            content = content.replace(
+                text_snippet, f"{text_snippet} (style improved)")
+
+        return content
+
+    def _build_writing_prompt(
+            self,
+            task: str,
+            context: str,
+            template_type: NewsletterType,
+            target_length: int,
+            tone: str,
+            audience: str) -> str:
         """Build comprehensive writing prompt."""
         prompt_parts = [
             f"You are a {self.role}.",
@@ -71,13 +335,13 @@ class WriterAgent(SimpleAgent):
             f"Tone: {tone}",
             f"Target Audience: {audience}"
         ]
-        
+
         if context:
             prompt_parts.extend([
                 "",
                 f"Context and Research: {context}"
             ])
-        
+
         # Add template-specific instructions
         template_instructions = self._get_template_instructions(template_type)
         prompt_parts.extend([
@@ -85,7 +349,7 @@ class WriterAgent(SimpleAgent):
             "Template Instructions:",
             template_instructions
         ])
-        
+
         # Add writing guidelines
         writing_guidelines = self._get_writing_guidelines(tone, audience)
         prompt_parts.extend([
@@ -93,7 +357,7 @@ class WriterAgent(SimpleAgent):
             "Writing Guidelines:",
             writing_guidelines
         ])
-        
+
         prompt_parts.extend([
             "",
             "Please create engaging newsletter content that:",
@@ -107,9 +371,9 @@ class WriterAgent(SimpleAgent):
             "",
             "Structure your response with proper markdown formatting."
         ])
-        
+
         return "\n".join(prompt_parts)
-    
+
     def _get_template_instructions(self, template_type: NewsletterType) -> str:
         """Get template-specific writing instructions."""
         template_instructions = {
@@ -120,7 +384,7 @@ class WriterAgent(SimpleAgent):
             - Provide implementation details and best practices
             - Include relevant technical diagrams or code snippets
             """,
-            
+
             NewsletterType.TREND_ANALYSIS: """
             - Focus on business implications and market trends
             - Include data-driven insights and analysis
@@ -128,7 +392,7 @@ class WriterAgent(SimpleAgent):
             - Provide actionable business recommendations
             - Use business terminology and frameworks
             """,
-            
+
             NewsletterType.RESEARCH_SUMMARY: """
             - Balance technical and non-technical content
             - Use accessible language for broader audiences
@@ -136,7 +400,7 @@ class WriterAgent(SimpleAgent):
             - Provide context and background information
             - Use analogies and examples to explain complex topics
             """,
-            
+
             NewsletterType.TUTORIAL_GUIDE: """
             - Keep content concise and focused
             - Use bullet points and short paragraphs
@@ -145,9 +409,10 @@ class WriterAgent(SimpleAgent):
             - Use clear, direct language
             """
         }
-        
-        return template_instructions.get(template_type, template_instructions[NewsletterType.RESEARCH_SUMMARY])
-    
+
+        return template_instructions.get(
+            template_type, template_instructions[NewsletterType.RESEARCH_SUMMARY])
+
     def _get_writing_guidelines(self, tone: str, audience: str) -> str:
         """Get tone and audience-specific writing guidelines."""
         tone_guidelines = {
@@ -157,21 +422,21 @@ class WriterAgent(SimpleAgent):
             - Avoid slang and casual expressions
             - Use industry-standard terminology
             """,
-            
+
             'conversational': """
             - Use friendly, approachable language
             - Include personal pronouns (we, you)
             - Use contractions and natural speech patterns
             - Maintain engagement through dialogue
             """,
-            
+
             'technical': """
             - Use precise technical language
             - Include specific details and specifications
             - Focus on accuracy and precision
             - Use technical diagrams and examples
             """,
-            
+
             'casual': """
             - Use relaxed, informal language
             - Include humor and personality
@@ -179,7 +444,7 @@ class WriterAgent(SimpleAgent):
             - Maintain approachability and friendliness
             """
         }
-        
+
         audience_guidelines = {
             'general': """
             - Use accessible language for non-experts
@@ -187,21 +452,21 @@ class WriterAgent(SimpleAgent):
             - Avoid jargon without explanation
             - Use analogies and examples
             """,
-            
+
             'technical': """
             - Use technical terminology appropriately
             - Assume technical background knowledge
             - Include detailed technical explanations
             - Focus on implementation and best practices
             """,
-            
+
             'executive': """
             - Focus on high-level insights and implications
             - Emphasize business value and ROI
             - Use executive summary format
             - Highlight strategic recommendations
             """,
-            
+
             'developer': """
             - Include code examples and technical details
             - Focus on practical implementation
@@ -209,23 +474,27 @@ class WriterAgent(SimpleAgent):
             - Provide hands-on guidance
             """
         }
-        
+
         tone_guide = tone_guidelines.get(tone, tone_guidelines['professional'])
-        audience_guide = audience_guidelines.get(audience, audience_guidelines['general'])
-        
+        audience_guide = audience_guidelines.get(
+            audience, audience_guidelines['general'])
+
         return f"{tone_guide}\n{audience_guide}"
-    
-    def _post_process_content(self, content: str, template_type: NewsletterType) -> str:
+
+    def _post_process_content(
+            self,
+            content: str,
+            template_type: NewsletterType) -> str:
         """Post-process and refine the generated content."""
         try:
             # Create post-processing prompt
             post_process_prompt = f"""
             Please review and refine the following newsletter content:
-            
+
             {content}
-            
+
             Template Type: {template_type.value}
-            
+
             Please ensure:
             1. Proper markdown formatting
             2. Consistent heading structure
@@ -234,26 +503,26 @@ class WriterAgent(SimpleAgent):
             5. Logical flow and organization
             6. No repetitive or redundant content
             7. Professional presentation
-            
+
             Return the refined content with proper formatting.
             """
-            
+
             refined_content = query_llm(post_process_prompt)
             return refined_content if refined_content.strip() else content
-            
+
         except Exception as e:
             logger.warning(f"Post-processing failed: {e}")
             return content
-    
-    def create_newsletter_section(self, section_title: str, content: str, 
-                                 section_type: str = "general") -> str:
+
+    def create_newsletter_section(self, section_title: str, content: str,
+                                  section_type: str = "general") -> str:
         """Create a specific newsletter section."""
         section_prompt = f"""
         Create a newsletter section with the title: "{section_title}"
-        
+
         Content to include: {content}
         Section type: {section_type}
-        
+
         Please create an engaging section that:
         1. Has a compelling headline
         2. Introduces the topic clearly
@@ -261,45 +530,47 @@ class WriterAgent(SimpleAgent):
         4. Includes relevant examples or data
         5. Provides actionable insights
         6. Maintains reader engagement
-        
+
         Use appropriate formatting and structure for the section type.
         """
-        
+
         try:
             return query_llm(section_prompt)
         except Exception as e:
             logger.error(f"Error creating newsletter section: {e}")
             return f"## {section_title}\n\n{content}"
-    
+
     def generate_headlines(self, content: str, count: int = 3) -> List[str]:
         """Generate multiple headline options for content."""
         headline_prompt = f"""
-        Generate {count} engaging headlines for the following newsletter content:
-        
+        Generate {count}
+            engaging headlines for the following newsletter content:
+
         {content}
-        
+
         Requirements for headlines:
         1. Be compelling and clickable
         2. Accurately represent the content
         3. Use appropriate tone and style
         4. Be concise but descriptive
         5. Include relevant keywords
-        
+
         Return only the headlines, one per line.
         """
-        
+
         try:
             response = query_llm(headline_prompt)
-            headlines = [line.strip() for line in response.split('\n') if line.strip()]
+            headlines = [line.strip()
+                         for line in response.split('\n') if line.strip()]
             return headlines[:count]
         except Exception as e:
             logger.error(f"Error generating headlines: {e}")
             return [f"Newsletter - {content[:50]}..."]
-    
+
     def get_writing_analytics(self) -> Dict[str, Any]:
         """Get writing-specific analytics."""
         analytics = self.get_tool_usage_analytics()
-        
+
         # Add writing-specific metrics
         writing_metrics = {
             "writing_sessions": len(self.execution_history),
@@ -311,6 +582,6 @@ class WriterAgent(SimpleAgent):
                 "headlines_generated": sum(1 for r in self.execution_history if "headline" in r.result.lower())
             }
         }
-        
+
         analytics.update(writing_metrics)
-        return analytics 
+        return analytics

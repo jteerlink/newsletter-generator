@@ -12,7 +12,7 @@ This project is an advanced AI-powered multi-agent system designed to automate h
 
 ### **Advanced AI System**
 - **Hierarchical Multi-Agent Architecture**: ManagerAgent orchestrates specialized agents for research, writing, editing, and quality control
-- **Local LLM Integration**: Ollama with llama3, gemma3n, and deepseek-r1 models
+- **Flexible LLM Integration**: Support for Ollama (local) and NVIDIA Cloud API providers
 - **Agentic RAG**: Enhanced retrieval-augmented generation for technical accuracy
 - **Content Format Optimizer**: Mobile-first optimization for technical newsletters
 - **Crawl4AI Integration**: Modern web scraping with intelligent content extraction
@@ -84,34 +84,66 @@ pip install -r requirements.txt
 pip install -r streamlit/requirements.txt  # For web interface
 ```
 
-**Install Ollama:**
-- Install [Ollama](https://ollama.com/) and start the server:
-  ```bash
-  ollama serve
-  ```
+### 2. LLM Provider Setup
 
-### 2. Model Setup
-Pull the required models:
+Choose your preferred LLM provider:
+
+#### Option A: Ollama (Local, Default)
 ```bash
-ollama pull deepseek-r1     # Primary model for content generation
-ollama pull gemma3n         # Secondary model for analysis
-ollama pull deepseek-r1     # Advanced model for deep-dive content
+# Install Ollama from https://ollama.com/
+ollama serve
+
+# Pull the required model
+ollama pull deepseek-r1
+```
+
+#### Option B: NVIDIA Cloud API
+```bash
+# Get API key from https://build.nvidia.com/
+# Set environment variable:
+export NVIDIA_API_KEY="your-api-key-here"
+```
+
+Create `.env` file:
+```env
+# NVIDIA is the default provider
+LLM_PROVIDER=nvidia
+
+# NVIDIA Cloud API Configuration
+NVIDIA_API_KEY=your-nvidia-api-key-here
+NVIDIA_MODEL=openai/gpt-oss-20b
 ```
 
 ### 3. Configuration
-Create a `.env` file in the project root:
+
+Generate configuration template:
+```bash
+python src/core/llm_cli.py env-template
+```
+
+Or manually create `.env` file:
 ```ini
-# Ollama Models
+# LLM Provider Configuration (NVIDIA is now the default)
+LLM_PROVIDER=nvidia  # primary: nvidia, fallback: ollama
+
+# Ollama Configuration (if using ollama)
 OLLAMA_MODEL=deepseek-r1
-OLLAMA_MODEL_GEMMA3N=gemma3n
-OLLAMA_MODEL_DEEPSEEK_R1=deepseek-r1
+OLLAMA_BASE_URL=http://localhost:11434
 
-# CrewAI Search (optional but recommended)
+# NVIDIA Configuration (if using nvidia)
+NVIDIA_API_KEY=your-nvidia-api-key-here
+NVIDIA_MODEL=openai/gpt-oss-20b
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+
+# LLM Settings
+LLM_TIMEOUT=30
+LLM_MAX_RETRIES=3
+LLM_TEMPERATURE=1.0
+LLM_TOP_P=1.0
+LLM_MAX_TOKENS=4096
+
+# Search API (optional but recommended)
 SERPER_API_KEY=your-serper-api-key-here
-
-# Other API keys (optional)
-OPENAI_API_KEY=your-openai-key-here
-GROQ_API_KEY=your-groq-key-here
 ```
 
 **To get a Serper API key:**
@@ -121,10 +153,20 @@ GROQ_API_KEY=your-groq-key-here
 4. Free tier includes 2,500 searches per month
 
 ### 4. Verify Installation
-Test the environment setup:
+
+Check LLM provider status:
 ```bash
-cd dev
-python demo_crewai_serper_tool.py
+python src/core/llm_cli.py status
+```
+
+Test LLM provider:
+```bash
+python src/core/llm_cli.py test
+```
+
+Run comprehensive diagnostics:
+```bash
+python src/core/llm_cli.py doctor
 ```
 
 ### 5. Launch the Web Interface
@@ -160,6 +202,20 @@ python src/main.py "AI and Machine Learning"
 python src/main.py --help
 ```
 
+### LLM Provider Management
+
+Switch between providers:
+```bash
+# Switch to NVIDIA Cloud API
+python src/core/llm_cli.py switch nvidia
+
+# Switch back to Ollama
+python src/core/llm_cli.py switch ollama
+
+# Check current provider status
+python src/core/llm_cli.py status
+```
+
 ### Development & Testing
 ```bash
 # Run comprehensive test suite
@@ -173,6 +229,9 @@ python dev/benchmark.py
 
 # Test specific components
 python dev/test_phase4.py  # Quality assurance testing
+
+# Test LLM provider
+python src/core/llm_cli.py test
 ```
 
 ## 🏗️ System Architecture

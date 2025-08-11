@@ -122,9 +122,22 @@ setup-pre-commit:
 check-system:
 	@echo "Checking system requirements..."
 	@python -c "import sys; print(f'Python version: {sys.version}')"
-	@python -c "import ollama; print('Ollama: Available')" 2>/dev/null || echo "Ollama: Not available"
+	@python src/core/llm_cli.py doctor 2>/dev/null || echo "LLM Provider validation failed"
 	@python -c "import streamlit; print('Streamlit: Available')" 2>/dev/null || echo "Streamlit: Not available"
 	@python -c "import crewai; print('CrewAI: Available')" 2>/dev/null || echo "CrewAI: Not available"
+
+# NVIDIA pipeline tests
+test-nvidia:
+	@echo "Testing NVIDIA pipeline configuration..."
+	python tests/test_nvidia_default.py
+
+# Test all pipelines
+test-pipelines:
+	@echo "Testing all LLM pipelines..."
+	@echo "1. Testing NVIDIA (default)..."
+	@LLM_PROVIDER=nvidia pytest tests/core/test_nvidia_integration.py -v
+	@echo "2. Testing Ollama (fallback)..."
+	@LLM_PROVIDER=ollama pytest tests/core/test_core.py -v
 
 # Performance testing
 test-performance:

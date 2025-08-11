@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import requests
 from src.tools.tools import search_web, search_knowledge_base
-from src.scrapers.crawl4ai_web_scraper import Crawl4AIScraper
+from src.scrapers.crawl4ai_web_scraper import Crawl4AiWebScraper as Crawl4AIScraper
 
 class TestSearchAPIIntegration:
     """Test search API integrations."""

@@ -15,9 +15,28 @@ for path in [DATA_PATH, LOGS_PATH]:
     path.mkdir(exist_ok=True)
 
 # LLM Configuration
-DEFAULT_LLM_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "nvidia")
+
+# Ollama Configuration
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "deepseek-r1")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
+# NVIDIA Cloud Configuration
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+NVIDIA_MODEL = os.getenv("NVIDIA_MODEL", "openai/gpt-oss-20b")
+NVIDIA_BASE_URL = os.getenv(
+    "NVIDIA_BASE_URL",
+    "https://integrate.api.nvidia.com/v1")
+
+# LLM Settings (applies to all providers)
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "30"))
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))
+LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "1.0"))
+LLM_TOP_P = float(os.getenv("LLM_TOP_P", "1.0"))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "4096"))
+
+# Backward compatibility
+DEFAULT_LLM_MODEL = OLLAMA_MODEL
 
 # Search Configuration
 DEFAULT_SEARCH_RESULTS = int(os.getenv("DEFAULT_SEARCH_RESULTS", "5"))
@@ -77,7 +96,7 @@ SUPPORTED_EXTENSIONS = {
 # Content Types
 CONTENT_TYPES = {
     "newsletter": "newsletter",
-    "article": "article", 
+    "article": "article",
     "summary": "summary",
     "analysis": "analysis",
     "tutorial": "tutorial"
@@ -111,4 +130,4 @@ API_CONFIG = {
     "timeout": 30,
     "max_retries": 3,
     "rate_limit": 100  # requests per minute
-} 
+}

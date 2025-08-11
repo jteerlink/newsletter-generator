@@ -2,10 +2,11 @@
 Configuration loader for news sources
 """
 
-import yaml
-from typing import Dict, List, Any
-from pathlib import Path
 import logging
+from pathlib import Path
+from typing import Any, Dict, List
+
+import yaml
 
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,7 +28,10 @@ class SourceConfig:
         self.feed = config_dict.get("feed")
 
     def __repr__(self):
-        return f"SourceConfig(name='{self.name}', type='{self.type}', category='{self.category}')"
+        return f"SourceConfig(name='{
+            self.name}', type='{
+            self.type}', category='{
+            self.category}')"
 
 
 class ConfigLoader:
@@ -43,9 +47,8 @@ class ConfigLoader:
             if alt_path.exists():
                 path = alt_path
             else:
-                raise FileNotFoundError(
-                    f"Could not find sources.yaml at '{config_path}' or '{alt_path}'. Current working directory: {Path.cwd()}"
-                )
+                raise FileNotFoundError(f"Could not find sources.yaml at '{config_path}' or '{
+                    alt_path}'. Current working directory: {Path.cwd()}")
         self.config_path = path
         self.sources = []
         self.load_config()
@@ -59,7 +62,8 @@ class ConfigLoader:
             raw_sources = config.get("sources", [])
             self.sources = [SourceConfig(source) for source in raw_sources]
 
-            logger.info(f"Loaded {len(self.sources)} sources from {self.config_path}")
+            logger.info(f"Loaded {len(self.sources)} sources from {
+                        self.config_path}")
 
         except FileNotFoundError:
             logger.error(f"Configuration file not found: {self.config_path}")
@@ -112,7 +116,8 @@ class ConfigLoader:
         # Category breakdown
         categories = {}
         for source in self.get_active_sources():
-            categories[source.category] = categories.get(source.category, 0) + 1
+            categories[source.category] = categories.get(
+                source.category, 0) + 1
 
         print(f"\nBy category:")
         for category, count in sorted(categories.items()):

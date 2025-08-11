@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import argparse
-import sys
 import os
+import sys
 
-from src.storage import get_db_collection, add_text_to_db
+from src.storage import add_text_to_db, get_db_collection
 
 
 def main():
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     print(f"Number of documents: {collection.count()}")
     results = collection.get()
     for i, doc in enumerate(results.get("documents", [])):
-        print(f"\nDocument {i+1}:")
+        print(f"\nDocument {i + 1}:")
         print(f"ID: {results['ids'][i]}")
         print(f"Metadata: {results['metadatas'][i]}")
         print(f"Document: {doc[:200]}{'...' if len(doc) > 200 else ''}")
