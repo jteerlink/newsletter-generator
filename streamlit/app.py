@@ -60,6 +60,16 @@ st.markdown("""
         max-width: 100% !important;
     }
     
+    /* Modern glassmorphism background */
+    .stApp {
+        background: linear-gradient(135deg, 
+            rgba(0,63,92,0.05) 0%, 
+            rgba(47,75,124,0.05) 25%,
+            rgba(255,166,0,0.05) 50%,
+            rgba(212,80,135,0.05) 75%,
+            rgba(102,81,145,0.05) 100%);
+    }
+    
     /* Modern header */
     .system-header {
         background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
@@ -115,13 +125,14 @@ st.markdown("""
     }
     
     .feature-card {
-        background: white;
-        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
         padding: 2rem;
         text-align: center;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border: 1px solid rgba(255,255,255,0.2);
         position: relative;
         overflow: hidden;
     }
@@ -137,9 +148,10 @@ st.markdown("""
     }
     
     .feature-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.2);
-        border: 2px solid var(--orange);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 60px rgba(255,166,0,0.15);
+        border: 1px solid rgba(255,166,0,0.3);
+        background: rgba(255, 255, 255, 0.98);
     }
     
     .feature-card h3 {
@@ -157,74 +169,15 @@ st.markdown("""
     
     /* Pipeline selector */
     .pipeline-selector {
-        background: white;
-        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
         padding: 2rem;
         margin: 2rem 0;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        border: 2px solid var(--background);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
     }
     
-    .pipeline-option {
-        background: linear-gradient(135deg, var(--background) 0%, #E9ECEF 100%);
-        border: 2px solid transparent;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    
-    .pipeline-option.active {
-        border-color: var(--orange);
-        background: linear-gradient(135deg, var(--orange) 0%, var(--orange-light) 100%);
-        color: white;
-        box-shadow: 0 6px 20px rgba(255,166,0,0.3);
-    }
-    
-    .pipeline-option:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    }
-    
-    /* Content pillar cards */
-    .pillar-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .pillar-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border: 2px solid transparent;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-    
-    .pillar-card.news {
-        border-left: 4px solid var(--red);
-    }
-    
-    .pillar-card.tools {
-        border-left: 4px solid var(--orange);
-    }
-    
-    .pillar-card.deep-dive {
-        border-left: 4px solid var(--accent-blue);
-    }
-    
-    .pillar-card.active {
-        border-color: var(--orange);
-        background: linear-gradient(135deg, rgba(255,166,0,0.1) 0%, rgba(255,166,0,0.05) 100%);
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(255,166,0,0.2);
-    }
     
     /* Modern buttons */
     .stButton > button {
@@ -232,71 +185,129 @@ st.markdown("""
         color: white;
         border: none;
         padding: 1rem 2rem;
-        border-radius: 12px;
+        border-radius: 16px;
         font-weight: 600;
         font-size: 1.1rem;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-        box-shadow: 0 4px 15px rgba(255,166,0,0.3);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        border: 1px solid transparent;
+        box-shadow: 0 8px 25px rgba(255,166,0,0.25);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stButton > button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .stButton > button:hover::before {
+        left: 100%;
     }
     
     .stButton > button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(255,166,0,0.4);
-        border: 2px solid var(--orange);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(255,166,0,0.3);
+        border: 1px solid rgba(255,255,255,0.3);
     }
     
     .stButton > button:active {
-        transform: translateY(-1px);
+        transform: translateY(-2px) scale(1.01);
     }
     
     /* Form inputs */
     .stSelectbox > div > div,
     .stTextInput > div > div,
     .stTextArea > div > div {
-        background: white;
-        border-radius: 12px;
-        border: 2px solid var(--background);
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
     
     .stSelectbox > div > div:hover,
     .stTextInput > div > div:hover,
     .stTextArea > div > div:hover {
+        border-color: rgba(255,166,0,0.3);
+        box-shadow: 0 8px 30px rgba(255,166,0,0.1);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-2px);
+    }
+    
+    .stSelectbox > div > div:focus-within,
+    .stTextInput > div > div:focus-within,
+    .stTextArea > div > div:focus-within {
         border-color: var(--orange);
-        box-shadow: 0 4px 15px rgba(255,166,0,0.1);
+        box-shadow: 0 0 0 3px rgba(255,166,0,0.1);
+        background: white;
     }
     
     /* Quality metrics */
     .quality-metrics {
-        background: white;
-        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
         padding: 2rem;
         margin: 2rem 0;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
     }
     
     .metric-card {
         background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--accent-blue) 100%);
         color: white;
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1.5rem;
         margin: 1rem 0;
         text-align: center;
-        box-shadow: 0 4px 15px rgba(47,75,124,0.3);
+        box-shadow: 0 8px 25px rgba(47,75,124,0.25);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: subtle-pulse 3s ease-in-out infinite;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(47,75,124,0.3);
+    }
+    
+    @keyframes subtle-pulse {
+        0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.3; }
+        50% { transform: scale(1.1) rotate(180deg); opacity: 0.6; }
     }
     
     .metric-value {
         font-size: 2.5rem;
         font-weight: 900;
         margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
     }
     
     .metric-label {
         font-size: 1rem;
         opacity: 0.9;
         font-weight: 500;
+        position: relative;
+        z-index: 1;
     }
     
     /* Status indicators */
@@ -344,28 +355,92 @@ st.markdown("""
         border-radius: 10px;
     }
     
+    /* Modern loading animation */
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        margin: 2rem 0;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255,166,0,0.2);
+        border-top: 4px solid var(--orange);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+    
+    .loading-dots {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    
+    .loading-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--orange);
+        animation: bounce 1.4s ease-in-out infinite both;
+    }
+    
+    .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+    .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes bounce {
+        0%, 80%, 100% { 
+            transform: scale(0.8);
+            opacity: 0.5;
+        } 
+        40% { 
+            transform: scale(1.2);
+            opacity: 1;
+        }
+    }
+    
     /* Tabs */
     .stTabs [data-baseweb="tab-list"] {
-        background: var(--background);
-        border-radius: 12px;
+        background: rgba(248,249,250,0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
         padding: 0.5rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
     }
     
     .stTabs [data-baseweb="tab"] {
-        background: white;
-        border-radius: 8px;
+        background: rgba(255,255,255,0.7);
+        border-radius: 12px;
         margin: 0.2rem;
         font-weight: 600;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
     }
     
     .stTabs [data-baseweb="tab"]:hover {
-        background: var(--orange);
-        color: white;
+        background: rgba(255,166,0,0.1);
+        color: var(--orange);
+        border: 1px solid rgba(255,166,0,0.2);
+        transform: translateY(-1px);
     }
     
     .stTabs [aria-selected="true"] {
         background: var(--orange) !important;
         color: white !important;
+        box-shadow: 0 4px 15px rgba(255,166,0,0.3);
+        transform: translateY(-2px);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -377,8 +452,6 @@ if 'generation_stats' not in st.session_state:
     st.session_state.generation_stats = None
 if 'is_generating' not in st.session_state:
     st.session_state.is_generating = False
-if 'selected_pillar' not in st.session_state:
-    st.session_state.selected_pillar = 'news_breakthroughs'
 if 'quality_metrics' not in st.session_state:
     st.session_state.quality_metrics = None
 
@@ -386,8 +459,22 @@ def create_system_header():
     """Create the modern system header"""
     st.markdown("""
     <div class="system-header">
-        <h1>🚀 Newsletter System</h1>
-        <p>AI-powered newsletter generation with hierarchical deep-dive analysis</p>
+        <h1>🚀 Newsletter Generator</h1>
+        <p>AI-powered newsletter creation with intelligent content generation</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+def create_loading_animation(message="Generating newsletter..."):
+    """Create modern loading animation"""
+    return st.markdown(f"""
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <h3 style="color: var(--secondary-blue); margin: 0;">{message}</h3>
+        <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -396,88 +483,32 @@ def create_feature_overview():
     st.markdown("""
     <div class="feature-grid">
         <div class="feature-card">
-            <h3>🔬 Deep Dive Analysis</h3>
-            <p>Comprehensive 4,000+ word technical articles with research, analysis, and expert insights. Weekly in-depth exploration of complex topics.</p>
+            <h3>🤖 AI-Powered Generation</h3>
+            <p>Advanced language models create high-quality newsletter content tailored to your audience and focus area.</p>
         </div>
         <div class="feature-card">
-            <h3>🤖 Hierarchical Execution</h3>
-            <p>ManagerAgent orchestrates specialized agents for research, writing, and editing. Coordinated workflow ensures high-quality output.</p>
+            <h3>🎯 Targeted Content</h3>
+            <p>Choose your content focus area for personalized newsletters that match your audience's interests and expertise level.</p>
         </div>
         <div class="feature-card">
             <h3>📊 Quality Assurance</h3>
-            <p>Real-time quality monitoring with technical accuracy validation, mobile readability scoring, and performance analytics.</p>
+            <p>Built-in quality monitoring with technical accuracy validation, readability scoring, and content optimization.</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-def create_pipeline_overview():
-    """Create pipeline overview interface"""
+def create_setup_explanation():
+    """Create friendly setup explanation"""
     st.markdown("""
     <div class="pipeline-selector">
-        <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">🔬 Deep Dive Pipeline</h2>
-        <p style="color: var(--text-light); margin-bottom: 2rem;">Comprehensive newsletter generation with hierarchical agent execution</p>
+        <h2 style="color: var(--secondary-blue); margin-bottom: 1rem;">🚀 Ready to Create Your Newsletter?</h2>
+        <p style="color: var(--text-dark); font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+            Getting started is easy! Just fill out the configuration below with your preferences. 
+            Choose your content focus, add a topic, select your audience, and we'll handle the rest. 
+            The AI will generate a personalized newsletter that matches your specifications perfectly! ✨
+        </p>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="pipeline-option active">
-        <h3>🔬 Deep Dive Pipeline</h3>
-        <p><strong>Target:</strong> 4,000+ words • <strong>Format:</strong> Comprehensive</p>
-        <p><strong>Content:</strong> Technical analysis, research, expert insights</p>
-        <p><strong>Generation Time:</strong> ~15 minutes</p>
-        <p><strong>Agents:</strong> Manager → Planner → Research → Writer → Editor</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-def create_content_pillar_selector():
-    """Create content pillar selection interface"""
-    st.markdown("""
-    <div class="pipeline-selector">
-        <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">📚 Content Pillar Selection</h2>
-        <p style="color: var(--text-light); margin-bottom: 2rem;">Select your newsletter's focus area for targeted content generation</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3, gap="medium")
-    
-    with col1:
-        news_active = "active" if st.session_state.selected_pillar == 'news_breakthroughs' else ""
-        if st.button("📰 News & Breakthroughs", key="news_btn", use_container_width=True):
-            st.session_state.selected_pillar = 'news_breakthroughs'
-            st.rerun()
-        
-        st.markdown(f"""
-        <div class="pillar-card news {news_active}">
-            <h4>📰 News & Breakthroughs</h4>
-            <p>Latest industry developments, research findings, and technical breakthroughs</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        tools_active = "active" if st.session_state.selected_pillar == 'tools_tutorials' else ""
-        if st.button("🛠️ Tools & Tutorials", key="tools_btn", use_container_width=True):
-            st.session_state.selected_pillar = 'tools_tutorials'
-            st.rerun()
-        
-        st.markdown(f"""
-        <div class="pillar-card tools {tools_active}">
-            <h4>🛠️ Tools & Tutorials</h4>
-            <p>AI/ML tools, frameworks, practical guides, and implementation tutorials</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        deep_active = "active" if st.session_state.selected_pillar == 'deep_dives' else ""
-        if st.button("🔬 Deep Dives & Analysis", key="analysis_btn", use_container_width=True):
-            st.session_state.selected_pillar = 'deep_dives'
-            st.rerun()
-        
-        st.markdown(f"""
-        <div class="pillar-card deep-dive {deep_active}">
-            <h4>🔬 Deep Dives & Analysis</h4>
-            <p>Comprehensive technical analysis, research surveys, and expert insights</p>
-        </div>
-        """, unsafe_allow_html=True)
 
 def create_configuration_panel():
     """Create configuration panel for newsletter settings"""
@@ -491,6 +522,22 @@ def create_configuration_panel():
     col1, col2 = st.columns(2, gap="large")
     
     with col1:
+        # Content focus selection
+        focus_options = [
+            "General Tech News",
+            "AI/ML Developments", 
+            "Software Engineering",
+            "Data Science",
+            "Industry Analysis"
+        ]
+        
+        content_focus = st.selectbox(
+            "🎯 Content Focus",
+            focus_options,
+            index=1,  # Default to AI/ML
+            help="Choose the primary focus area for your newsletter content"
+        )
+        
         topic = st.text_input(
             "📝 Newsletter Topic",
             placeholder="Enter your newsletter topic...",
@@ -512,22 +559,15 @@ def create_configuration_panel():
             audience_options,
             help="Select your target audience for content optimization"
         )
-        
+    
+    with col2:
         word_count = st.slider(
             "📊 Target Word Count",
             min_value=1000,
             max_value=5000,
-            value=4000,
+            value=3000,
             step=250,
             help="Target word count for the newsletter"
-        )
-    
-    with col2:
-        priority = st.selectbox(
-            "🎯 Priority Level",
-            ["High", "Medium", "Low"],
-            index=1,
-            help="Priority level for content generation"
         )
         
         special_requirements = st.multiselect(
@@ -547,10 +587,10 @@ def create_configuration_panel():
         )
     
     return {
+        'content_focus': content_focus,
         'topic': topic,
         'audience': audience,
         'word_count': word_count,
-        'priority': priority,
         'special_requirements': special_requirements,
         'quality_threshold': quality_threshold
     }
@@ -629,7 +669,7 @@ def generate_newsletter(config: Dict[str, Any]):
             try:
                 ready, validation_report = quality_system.validate_newsletter_ready_for_publish(
                     generation_result,
-                    'deep_dive'  # Only deep dive pipeline now
+                    'standard'  # Standard newsletter pipeline
                 )
                 
                 quality_metrics_obj = validation_report.get('quality_metrics')
@@ -723,11 +763,8 @@ def main():
     # Feature overview
     create_feature_overview()
     
-    # Pipeline overview
-    create_pipeline_overview()
-    
-    # Content pillar selection
-    create_content_pillar_selector()
+    # Setup explanation
+    create_setup_explanation()
     
     # Configuration panel
     config = create_configuration_panel()
@@ -745,14 +782,21 @@ def main():
             if config['topic']:
                 st.session_state.is_generating = True
                 
-                with st.spinner("Generating newsletter..."):
-                    result = generate_newsletter(config)
-                    
-                    if result:
-                        st.session_state.newsletter_output = result
-                        st.success("Newsletter generated successfully!")
-                    else:
-                        st.error("Failed to generate newsletter. Please try again.")
+                # Show modern loading animation
+                loading_placeholder = st.empty()
+                with loading_placeholder:
+                    create_loading_animation("🤖 Executing hierarchical generation...")
+                
+                result = generate_newsletter(config)
+                
+                # Clear loading animation
+                loading_placeholder.empty()
+                
+                if result:
+                    st.session_state.newsletter_output = result
+                    st.success("✅ Newsletter generated successfully!")
+                else:
+                    st.error("❌ Failed to generate newsletter. Please try again.")
                 
                 st.session_state.is_generating = False
                 st.rerun()

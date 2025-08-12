@@ -1,0 +1,188 @@
+# Section-Aware Newsletter Generation Configuration
+# This file contains all configuration settings for the section-aware newsletter generation system
+
+# Prompt Configuration
+prompts:
+  default_tone: "professional"
+  default_technical_level: "intermediate"
+  default_word_count: 3000
+  include_examples: false
+  include_citations: false
+  
+  # Word count distribution across sections (should sum to ~1.0)
+  section_word_multipliers:
+    introduction: 0.15  # 15% of total word count
+    news: 0.20          # 20% of total word count
+    analysis: 0.35      # 35% of total word count
+    tutorial: 0.25      # 25% of total word count
+    conclusion: 0.05    # 5% of total word count
+  
+  # Audience-specific customizations
+  audience_customizations:
+    "AI/ML Engineers":
+      technical_level: "expert"
+      include_examples: true
+      focus_areas: ["implementation", "performance", "scalability"]
+    
+    "Data Scientists":
+      technical_level: "expert"
+      include_citations: true
+      focus_areas: ["methodology", "analysis", "validation"]
+    
+    "Software Developers":
+      technical_level: "intermediate"
+      include_examples: true
+      focus_areas: ["practical_implementation", "code_examples", "best_practices"]
+    
+    "Business Professionals":
+      technical_level: "beginner"
+      include_citations: false
+      focus_areas: ["business_impact", "strategic_implications", "roi"]
+    
+    "Research Community":
+      technical_level: "expert"
+      include_citations: true
+      focus_areas: ["methodology", "experimental_results", "theoretical_foundations"]
+
+# Quality Assessment Configuration
+quality:
+  global_quality_threshold: 0.8
+  
+  # Section-specific quality thresholds
+  section_thresholds:
+    introduction: 0.8
+    news: 0.75
+    analysis: 0.85
+    tutorial: 0.8
+    conclusion: 0.7
+  
+  # Section-specific quality dimension weights
+  section_weights:
+    introduction:
+      clarity: 1.5
+      relevance: 1.5
+      completeness: 1.0
+      accuracy: 1.0
+      engagement: 2.0      # High weight for introduction engagement
+      structure: 1.0
+      consistency: 1.0
+      readability: 1.0
+    
+    news:
+      clarity: 1.5
+      relevance: 1.8
+      completeness: 1.0
+      accuracy: 2.0        # High weight for news accuracy
+      engagement: 1.2
+      structure: 1.0
+      consistency: 1.0
+      readability: 1.0
+    
+    analysis:
+      clarity: 1.5
+      relevance: 1.0
+      completeness: 1.8
+      accuracy: 2.0        # High weight for analysis accuracy
+      engagement: 1.0
+      structure: 1.2
+      consistency: 1.0
+      readability: 1.0
+    
+    tutorial:
+      clarity: 2.0         # High weight for tutorial clarity
+      relevance: 1.0
+      completeness: 1.8
+      accuracy: 1.5
+      engagement: 1.0
+      structure: 1.5       # High weight for tutorial structure
+      consistency: 1.0
+      readability: 1.0
+    
+    conclusion:
+      clarity: 1.2
+      relevance: 1.0
+      completeness: 1.8    # High weight for conclusion completeness
+      accuracy: 1.0
+      engagement: 1.5      # High weight for conclusion engagement
+      structure: 1.0
+      consistency: 1.0
+      readability: 1.0
+  
+  # Readability scoring parameters
+  readability_config:
+    target_flesch_score: 60.0     # College level reading
+    max_sentence_length: 25       # Words per sentence
+    max_paragraph_length: 150     # Words per paragraph
+    preferred_syllables_per_word: 1.5
+
+# Refinement Process Configuration
+refinement:
+  max_iterations: 3
+  quality_improvement_threshold: 0.05
+  
+  # Quality thresholds for each refinement pass
+  pass_thresholds:
+    structure: 0.7
+    content: 0.8
+    style: 0.85
+    technical: 0.9
+    final: 0.95
+  
+  # Section-specific refinement strategies (order matters)
+  section_strategies:
+    introduction: ["engagement", "clarity", "structure"]
+    news: ["accuracy", "relevance", "structure"] 
+    analysis: ["accuracy", "completeness", "clarity"]
+    tutorial: ["clarity", "structure", "completeness"]
+    conclusion: ["completeness", "engagement", "clarity"]
+  
+  # Timeout settings (in seconds)
+  timeout_settings:
+    per_section: 120      # Maximum time per section refinement
+    total_process: 600    # Maximum time for entire refinement process
+    llm_request: 30       # Maximum time per LLM request
+
+# Continuity Validation Configuration
+continuity:
+  transition_quality_threshold: 0.6
+  style_consistency_threshold: 0.7
+  redundancy_threshold: 0.7
+  
+  # Style analysis parameters
+  style_analysis:
+    formality_variance_threshold: 0.05
+    technical_density_variance_threshold: 0.03
+    sentence_length_variance_threshold: 5.0
+    pronoun_ratio_variance_threshold: 0.02
+  
+  # Transition scoring weights
+  transition_weights:
+    explicit_indicators: 0.3           # Weight for transition words/phrases
+    contextual_appropriateness: 0.4    # Weight for context-appropriate transitions
+    logical_flow: 0.2                  # Weight for logical connection
+    topic_continuity: 0.1              # Weight for topic consistency
+  
+  # Issue severity classification thresholds
+  severity_thresholds:
+    low: 0.3
+    medium: 0.6
+    high: 0.8
+    critical: 0.9
+
+# System Configuration
+system:
+  log_level: "INFO"
+  enable_metrics: true
+  enable_caching: true
+  cache_ttl: 3600                    # Cache time-to-live in seconds
+  max_concurrent_operations: 3       # Maximum concurrent processing operations
+  enable_performance_monitoring: true
+
+# Feature Flags
+features:
+  section_aware_prompts: true        # Enable section-aware prompt generation
+  multi_pass_refinement: true       # Enable multi-pass refinement system
+  quality_metrics: true             # Enable section-level quality metrics
+  continuity_validation: true       # Enable continuity validation
+  performance_optimization: true    # Enable performance optimizations
+  advanced_analytics: false         # Enable advanced analytics (future feature)
