@@ -34,25 +34,18 @@ __all__ = [
     'WorkflowPlan'
 ]
 
-# Legacy aliases for backward compatibility
-ResearchAgent = ResearchAgent
-WriterAgent = WriterAgent
-EditorAgent = EditorAgent
-ManagerAgent = ManagerAgent
+def create_agent(agent_type: str) -> SimpleAgent:
+    """Factory for tests expecting this convenience creator."""
+    at = agent_type.lower()
+    if at == 'research':
+        return ResearchAgent()
+    if at == 'writer':
+        return WriterAgent()
+    if at == 'editor':
+        return EditorAgent()
+    if at == 'manager':
+        return ManagerAgent()
+    raise ValueError(f"Unknown agent type: {agent_type}")
 
-# Legacy classes for backward compatibility (to be refactored in future phases)
-
-
-class PlannerAgent(SimpleAgent):
-    """Legacy PlannerAgent for backward compatibility."""
-
-    def __init__(self, **kwargs):
-        super().__init__(
-            name=kwargs.get(
-                'name',
-                'PlannerAgent'),
-            role="Content Planner",
-            goal="Plan and structure newsletter content",
-            backstory="You are an experienced content planner specializing in newsletter strategy.",
-            agent_type=AgentType.MANAGER,
-            **kwargs)
+def get_available_agent_types() -> List[str]:
+    return ['research', 'writer', 'editor', 'manager']

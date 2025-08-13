@@ -14,9 +14,9 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.core.campaign_context import CampaignContext
-from src.core.core import query_llm
+import src.core.core as core
 from src.core.research_strategy import IntelligentResearchOrchestrator
-from src.tools.tools import search_knowledge_base, search_web
+import src.tools.tools as tools
 from src.tools.enhanced_search import EnhancedSearchTool
 from src.tools.query_refinement import get_query_refinement_engine
 
@@ -267,7 +267,7 @@ class ResearchAgent(SimpleAgent):
         # Execute verification searches
         verification_results = []
         for query in verification_queries:
-            search_results = search_web(query)
+            search_results = tools.search_web(query)
             verification_results.extend(
                 self._analyze_verification_results_enhanced(
                     search_results, claim))
@@ -347,7 +347,7 @@ class ResearchAgent(SimpleAgent):
                 task, campaign_context)
             return json.dumps(research_results, indent=2)
 
-        # Fall back to standard research
+        # Fall back to standard research (ensure tool calls for tests)
         knowledge_results = self._generate_knowledge_based_research(
             task, context)
         web_results = self._execute_web_research(task, context)
@@ -375,7 +375,7 @@ class ResearchAgent(SimpleAgent):
             """
 
             # Use knowledge base search
-            knowledge_results = search_knowledge_base(task)
+            knowledge_results = tools.search_knowledge_base(task)
 
             if knowledge_results and knowledge_results.strip():
                 return f"Knowledge Base Research:\n{knowledge_results}"
@@ -395,7 +395,7 @@ class ResearchAgent(SimpleAgent):
             web_results = []
             for query in search_queries:
                 try:
-                    result = search_web(query)
+                    result = tools.search_web(query)
                     if result and result.strip():
                         web_results.append(
                             f"Search Query: {query}\nResults:\n{result}")
@@ -428,7 +428,7 @@ class ResearchAgent(SimpleAgent):
         """
 
         try:
-            response = query_llm(query_generation_prompt)
+            response = core.query_llm(query_generation_prompt)
             queries = [line.strip()
                        for line in response.split('\n') if line.strip()]
 
@@ -475,7 +475,7 @@ class ResearchAgent(SimpleAgent):
         """
 
         try:
-            return query_llm(synthesis_prompt)
+            return core.query_llm(synthesis_prompt)
         except Exception as e:
             logger.error(f"Error synthesizing research results: {e}")
             return f"""

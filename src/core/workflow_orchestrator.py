@@ -7,6 +7,7 @@ context awareness, execution state management, and iterative refinement.
 """
 
 import logging
+import os
 import time
 import uuid
 from dataclasses import dataclass
@@ -17,6 +18,10 @@ from src.agents.editing import EditorAgent
 from src.agents.management import ManagerAgent
 from src.agents.research import ResearchAgent
 from src.agents.writing import WriterAgent
+from src.agents.technical_accuracy_agent import TechnicalAccuracyAgent
+from src.agents.readability_agent import ReadabilityAgent
+from src.agents.continuity_manager_agent import ContinuityManagerAgent
+from .agent_coordinator import AgentCoordinator, AgentExecutionSpec
 
 from .campaign_context import CampaignContext
 from .config_manager import ConfigManager
@@ -87,7 +92,11 @@ class WorkflowOrchestrator:
                 'manager': ManagerAgent(name="WorkflowManager"),
                 'researcher': ResearchAgent(name="ResearchAgent"),
                 'writer': WriterAgent(name="WriterAgent"),
-                'editor': EditorAgent(name="EditorAgent")
+                'editor': EditorAgent(name="EditorAgent"),
+                # Phase 2 specialized agents
+                'technical_accuracy': TechnicalAccuracyAgent(),
+                'readability': ReadabilityAgent(),
+                'continuity_manager': ContinuityManagerAgent(),
             }
             logger.info("Agents initialized successfully")
         except Exception as e:
@@ -145,16 +154,39 @@ class WorkflowOrchestrator:
             phase_results['writing'] = writing_result
             logger.info("Writing phase completed")
 
-            # Refinement Phase
+            # Refinement Phase (pre-multi-agent)
             self.execution_state.update_phase('refinement')
             refinement_result = self._execute_refinement_loop(
                 writing_result['content'])
             phase_results['refinement'] = refinement_result
             logger.info("Refinement phase completed")
 
+            # Phase 2: Multi-Agent Specialized Validation and Optimization (feature-flagged)
+            if os.getenv('ENABLE_PHASE2', '1') == '1':
+                self.execution_state.update_phase('multi_agent_validation')
+                multi_agent_results = self._execute_multi_agent_phase(
+                    refinement_result.final_content,
+                    writing_result,
+                )
+                phase_results['multi_agent'] = multi_agent_results
+            else:
+                multi_agent_results = {'final_content': refinement_result.final_content}
+
             # Phase 4: Finalize workflow
+            # Prefer multi-agent improved content if available
+            final_improved = multi_agent_results.get('final_content', refinement_result.final_content)
             final_content = self._finalize_workflow(
-                refinement_result, output_format)
+                RefinementResult(
+                    final_content=final_improved,
+                    final_score=refinement_result.final_score,
+                    revision_cycles=refinement_result.revision_cycles,
+                    improvement_history=refinement_result.improvement_history,
+                    quality_metrics=refinement_result.quality_metrics,
+                    learning_data=refinement_result.learning_data,
+                    status=refinement_result.status,
+                ),
+                output_format,
+            )
 
             # Phase 5: Generate learning data and update context
             learning_data = self._generate_learning_data(
@@ -200,6 +232,173 @@ class WorkflowOrchestrator:
     def _load_campaign_context(self, context_id: str) -> CampaignContext:
         """Load campaign context from configuration manager."""
         return self.config_manager.load_campaign_context(context_id)
+
+    def _execute_multi_agent_phase(self, content: str, writing_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute Phase 2 specialized agents with coordination and fallbacks."""
+        try:
+            coordinator = AgentCoordinator(
+                agents={k: v for k, v in self.agents.items() if k in (
+                    'technical_accuracy', 'readability', 'continuity_manager')}
+            )
+
+            # Build metadata for continuity (if sections are available later, they can be passed here)
+            # Derive sections from content for continuity manager
+            derived_sections = self._derive_sections_from_content(content)
+            metadata: Dict[str, Any] = {
+                'sections': derived_sections,
+                'writing': writing_result,
+            }
+
+            base_context = self._build_processing_context(content, metadata)
+
+            specs = [
+                AgentExecutionSpec(name='technical_accuracy', agent=self.agents['technical_accuracy'], depends_on=[]),
+                AgentExecutionSpec(name='readability', agent=self.agents['readability'], depends_on=['technical_accuracy']),
+                AgentExecutionSpec(name='continuity_manager', agent=self.agents['continuity_manager'], depends_on=['readability']),
+            ]
+
+            # Try best-effort parallel aggregator to allow independent improvements
+            results = coordinator.execute_parallel_best_effort(specs, base_context)
+
+            # Choose best improved content if any agent produced it
+            final_content = content
+            for key in ['technical_accuracy', 'readability', 'continuity_manager']:
+                agent_dict = results.get(key)
+                if agent_dict and isinstance(agent_dict, dict):
+                    improved = agent_dict.get('processed_content')
+                    if improved and isinstance(improved, str) and len(improved.strip()) > 0:
+                        final_content = improved
+
+            # Compile Phase 2 metrics
+            metrics = self._extract_phase2_metrics(results)
+
+            return {
+                **results,
+                'final_content': final_content,
+                'metrics': metrics,
+            }
+        except Exception as e:
+            logger.error(f"Multi-agent phase failed: {e}")
+            return {
+                'error': str(e),
+                'final_content': content,
+            }
+
+    def _build_processing_context(self, content: str, metadata: Dict[str, Any]):
+        from src.agents.base_agent import ProcessingContext, ProcessingMode
+        # Map campaign context fields when available
+        audience = None
+        technical_level = None
+        if self.campaign_context:
+            audience = self.campaign_context.audience_persona.get('demographics', None)
+            technical_level = self.campaign_context.content_style.get('technical_level', None)
+
+        # Optional fast mode for Phase 2
+        processing_mode = ProcessingMode.FULL if os.getenv('PHASE2_FAST', '0') != '1' else ProcessingMode.FAST
+
+        return ProcessingContext(
+            content=content,
+            section_type='analysis',
+            audience=audience,
+            technical_level=technical_level,
+            word_count_target=len(content.split()),
+            processing_mode=processing_mode,
+            metadata=metadata,
+        )
+
+    def _derive_sections_from_content(self, content: str) -> Dict[str, str]:
+        """Heuristically derive sections from markdown headings for continuity analysis."""
+        try:
+            from src.core.section_aware_prompts import SectionType
+        except Exception:
+            # Fallback keys as strings
+            SectionType = None
+
+        sections: Dict[str, str] = {}
+        # Split by h2 headers and label common section names
+        import re
+        parts = re.split(r"^##\s+(.+)$", content, flags=re.MULTILINE)
+        if len(parts) <= 1:
+            # No headers; return intro and conclusion slices
+            head = "\n".join(content.splitlines()[:80])
+            tail = "\n".join(content.splitlines()[-80:])
+            if SectionType:
+                sections[SectionType.INTRODUCTION] = head
+                sections[SectionType.CONCLUSION] = tail
+            else:
+                sections['introduction'] = head
+                sections['conclusion'] = tail
+            return sections
+
+        # parts layout: [pre, header1, body1, header2, body2, ...]
+        preface = parts[0].strip()
+        if preface:
+            if SectionType:
+                sections[SectionType.INTRODUCTION] = preface
+            else:
+                sections['introduction'] = preface
+        for i in range(1, len(parts), 2):
+            title = parts[i].strip().lower()
+            body = parts[i+1].strip() if i+1 < len(parts) else ''
+            key = 'analysis'
+            if any(k in title for k in ['intro', 'welcome']):
+                key = 'introduction'
+            elif 'tutorial' in title or 'how to' in title:
+                key = 'tutorial'
+            elif 'news' in title or 'updates' in title:
+                key = 'news'
+            elif 'conclusion' in title or 'summary' in title:
+                key = 'conclusion'
+            if SectionType:
+                from_map = {
+                    'introduction': SectionType.INTRODUCTION,
+                    'analysis': SectionType.ANALYSIS,
+                    'tutorial': SectionType.TUTORIAL,
+                    'news': SectionType.NEWS,
+                    'conclusion': SectionType.CONCLUSION,
+                }
+                sec_key = from_map.get(key, SectionType.ANALYSIS)
+            else:
+                sec_key = key
+            prev = sections.get(sec_key, '')
+            sections[sec_key] = (prev + ("\n\n" if prev else "") + body) if body else prev
+        return sections
+
+    def _extract_phase2_metrics(self, results: Dict[str, Any]) -> Dict[str, Any]:
+        """Aggregate key metrics from specialized agents for reporting and KPIs."""
+        metrics: Dict[str, Any] = {}
+        try:
+            tech = results.get('technical_accuracy') or {}
+            read = results.get('readability') or {}
+            cont = results.get('continuity_manager') or {}
+
+            # Technical Accuracy
+            if isinstance(tech, dict):
+                metrics['technical_accuracy_confidence'] = tech.get('confidence_score')
+                metrics['technical_quality_score'] = tech.get('quality_score')
+
+            # Readability
+            if isinstance(read, dict):
+                metrics['readability_score'] = read.get('quality_score')
+                rm = ((read.get('metadata') or {}).get('readability_metrics') or {})
+                if rm:
+                    metrics['avg_sentence_length'] = rm.get('avg_sentence_length')
+                    metrics['avg_syllables_per_word'] = rm.get('avg_syllables_per_word')
+
+            # Continuity
+            if isinstance(cont, dict):
+                cr = ((cont.get('metadata') or {}).get('continuity_report') or {})
+                if cr:
+                    metrics['continuity_overall'] = cr.get('overall')
+                    metrics['continuity_transition_quality'] = cr.get('transition_quality')
+                    metrics['continuity_style_consistency'] = cr.get('style_consistency')
+
+            # Coordinator summary
+            metrics['agent_errors'] = len(results.get('__errors__', []))
+        except Exception:
+            # Keep metrics optional and non-fatal
+            pass
+        return metrics
 
     def _execute_research_phase(self, topic: str) -> Dict[str, Any]:
         """Execute the research phase."""

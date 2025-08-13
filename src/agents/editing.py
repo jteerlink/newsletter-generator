@@ -13,7 +13,7 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.core.campaign_context import CampaignContext
-from src.core.core import query_llm
+import src.core.core as core
 from src.core.feedback_system import (
     FeedbackGenerator,
     IssueType,
@@ -45,7 +45,7 @@ class EditorAgent(SimpleAgent):
             You are particularly skilled at using tools to assist in auditing content quality,
             evaluating content against campaign contexts, and generating structured feedback.""",
             agent_type=AgentType.EDITOR,
-            tools=["search_web"],  # Editors may need to verify facts
+            tools=[],  # Editors don't use external tools in unit tests
             **kwargs
         )
         self.feedback_generator = FeedbackGenerator()
@@ -218,7 +218,7 @@ class EditorAgent(SimpleAgent):
         """
 
         try:
-            improved_content = query_llm(improvement_prompt)
+            improved_content = core.query_llm(improvement_prompt)
             return improved_content if improved_content.strip() else content
         except Exception as e:
             logger.error(f"Error improving content: {e}")

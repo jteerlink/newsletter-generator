@@ -12,7 +12,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from src.core.campaign_context import CampaignContext
-from src.core.core import query_llm
+import src.core.core as core
 from src.core.feedback_system import StructuredFeedback
 from src.core.template_manager import NewsletterTemplate, NewsletterType
 from src.core.code_generator import AIMLCodeGenerator, CodeType
@@ -147,7 +147,7 @@ class WriterAgent(SimpleAgent):
             task, context, template_type, target_length, tone, audience)
 
         # Generate content
-        content = query_llm(enhanced_prompt)
+        content = core.query_llm(enhanced_prompt)
 
         # Post-process content
         final_content = self._post_process_content(content, template_type)
@@ -168,7 +168,7 @@ class WriterAgent(SimpleAgent):
             topic, research_results, content_style, audience_persona)
 
         # Generate content
-        content = query_llm(prompt)
+        content = core.query_llm(prompt)
 
         return content
 
@@ -520,7 +520,7 @@ class WriterAgent(SimpleAgent):
             Return the refined content with proper formatting.
             """
 
-            refined_content = query_llm(post_process_prompt)
+            refined_content = core.query_llm(post_process_prompt)
             return refined_content if refined_content.strip() else content
 
         except Exception as e:
@@ -548,7 +548,7 @@ class WriterAgent(SimpleAgent):
         """
 
         try:
-            return query_llm(section_prompt)
+            return core.query_llm(section_prompt)
         except Exception as e:
             logger.error(f"Error creating newsletter section: {e}")
             return f"## {section_title}\n\n{content}"
@@ -572,7 +572,7 @@ class WriterAgent(SimpleAgent):
         """
 
         try:
-            response = query_llm(headline_prompt)
+            response = core.query_llm(headline_prompt)
             headlines = [line.strip()
                          for line in response.split('\n') if line.strip()]
             return headlines[:count]
@@ -654,7 +654,7 @@ class WriterAgent(SimpleAgent):
             Write engaging, informative content that explains the topic thoroughly.
             """
             
-            base_content = query_llm(content_prompt)
+            base_content = core.query_llm(content_prompt)
             
             if not include_code:
                 return base_content

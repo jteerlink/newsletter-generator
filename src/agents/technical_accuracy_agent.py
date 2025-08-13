@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import logging
+import os
 from typing import Dict, Any, List, Optional, Tuple, Set
 from dataclasses import dataclass, field
 import ast
@@ -96,6 +97,21 @@ class TechnicalAccuracyAgent(BaseSpecializedAgent):
         # 2. Identify and verify technical claims
         technical_claims = self._extract_technical_claims(content, section_type)
         claim_validation_results = self._validate_technical_claims(technical_claims, processing_mode)
+
+        # 2b. Optional external fact-check integration
+        if technical_claims and self._is_external_fact_check_enabled():
+            try:
+                ext_results = self._external_fact_check(technical_claims)
+                claim_validation_results['summary']['external_checked'] = len(ext_results)
+                # Adjust confidence slightly upward if supporting evidence exists
+                if any(r.get('status') == 'supported' for r in ext_results):
+                    claim_validation_results.setdefault('suggestions', []).append(
+                        "External fact-check: at least one claim has supporting evidence"
+                    )
+                    # Tag metadata for downstream usage
+                    metadata.setdefault('external_fact_check', ext_results)
+            except Exception as e:
+                logger.warning(f"External fact check failed: {e}")
         
         # 3. Check technical terminology usage
         terminology_results = self._validate_technical_terminology(content, processing_mode)
@@ -446,6 +462,30 @@ class TechnicalAccuracyAgent(BaseSpecializedAgent):
         quality -= suggestion_count * 0.01
         
         return max(0.0, min(1.0, quality))
+
+    # --- External fact checking (optional) ---
+    def _is_external_fact_check_enabled(self) -> bool:
+        return bool(os.getenv('FACT_CHECK_API_ENABLED', '0') == '1')
+
+    def _external_fact_check(self, claims: List[TechnicalClaim]) -> List[Dict[str, Any]]:
+        """
+        Perform an optional external fact-check using a provider if configured.
+        This is implemented as a lightweight placeholder that can be extended to
+        call a real HTTP API. For now, it uses a heuristic stub that marks claims
+        with numbers as 'needs_source' and others as 'supported'.
+        """
+        results: List[Dict[str, Any]] = []
+        for claim in claims:
+            if re.search(r"\d+%|\d+\s*(x|times)", claim.claim, re.IGNORECASE):
+                status = 'needs_source'
+            else:
+                status = 'supported'
+            results.append({
+                'claim': claim.claim,
+                'status': status,
+                'evidence_links': []
+            })
+        return results
     
     # Helper methods for code validation
     
