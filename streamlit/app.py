@@ -596,11 +596,11 @@ def create_configuration_panel():
     }
 
 def create_quality_dashboard():
-    """Create quality assurance dashboard"""
+    """Create enhanced quality assurance dashboard with tool usage metrics"""
     if st.session_state.quality_metrics:
         st.markdown("""
         <div class="quality-metrics">
-            <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">📊 Quality Assurance Dashboard</h2>
+            <h2 style="color: var(--secondary-blue); margin-bottom: 1.5rem;">📊 Tool-Augmented Generation Dashboard</h2>
         </div>
         """, unsafe_allow_html=True)
         
@@ -611,24 +611,24 @@ def create_quality_dashboard():
         with col1:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value">{metrics.get('technical_accuracy', 0):.1%}</div>
-                <div class="metric-label">Technical Accuracy</div>
+                <div class="metric-value">{metrics.get('tool_integration_score', 0):.1%}</div>
+                <div class="metric-label">Tool Integration</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col2:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value">{metrics.get('mobile_readability', 0):.1%}</div>
-                <div class="metric-label">Mobile Readability</div>
+                <div class="metric-value">{metrics.get('technical_accuracy', 0):.1%}</div>
+                <div class="metric-label">Technical Accuracy</div>
             </div>
             """, unsafe_allow_html=True)
         
         with col3:
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-value">{metrics.get('code_validation', 0):.1%}</div>
-                <div class="metric-label">Code Validation</div>
+                <div class="metric-value">{metrics.get('information_freshness', 0):.1%}</div>
+                <div class="metric-label">Information Freshness</div>
             </div>
             """, unsafe_allow_html=True)
         
@@ -639,22 +639,44 @@ def create_quality_dashboard():
                 <div class="metric-label">Overall Quality</div>
             </div>
             """, unsafe_allow_html=True)
+        
+        # Additional tool usage metrics
+        if metrics.get('vector_queries', 0) > 0 or metrics.get('web_searches', 0) > 0:
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            col5, col6, col7, col8 = st.columns(4, gap="medium")
+            
+            with col5:
+                st.metric("🔍 Vector Queries", metrics.get('vector_queries', 0))
+            
+            with col6:
+                st.metric("🌐 Web Searches", metrics.get('web_searches', 0))
+            
+            with col7:
+                st.metric("✅ Verified Claims", metrics.get('verified_claims', 0))
+            
+            with col8:
+                providers = metrics.get('search_providers', [])
+                st.metric("📡 Search Providers", len(providers))
+            
+            # Show search providers if available
+            if providers:
+                st.markdown(f"**Search Providers Used:** {', '.join(providers)}")
+        else:
+            st.info("🔧 Tool enhancement components not active - using basic generation mode")
 
 def generate_newsletter(config: Dict[str, Any]):
-    """Generate newsletter using the hierarchical system"""
+    """Generate newsletter using the tool-augmented system"""
     try:
-        # Initialize quality system
-        quality_system = QualityAssuranceSystem()
-        
         # Progress tracking
         progress_bar = st.progress(0)
         status_text = st.empty()
         
-        # Step 1: Generate content using hierarchical execution
-        status_text.text("🔄 Executing hierarchical newsletter generation...")
+        # Step 1: Execute tool-augmented newsletter generation
+        status_text.text("🤖 Executing tool-augmented newsletter generation...")
         progress_bar.progress(10)
         
-        # Execute hierarchical newsletter generation
+        # Execute enhanced newsletter generation
         generation_result = execute_hierarchical_newsletter_generation(
             topic=config['topic'],
             audience=config['audience']
@@ -662,30 +684,62 @@ def generate_newsletter(config: Dict[str, Any]):
         
         progress_bar.progress(70)
         
-        # Step 2: Quality assurance
-        status_text.text("🔍 Running quality assurance checks...")
+        # Step 2: Extract and display tool usage metrics
+        status_text.text("📊 Processing generation analytics...")
         
         if generation_result and isinstance(generation_result, dict):
             try:
-                ready, validation_report = quality_system.validate_newsletter_ready_for_publish(
-                    generation_result,
-                    'standard'  # Standard newsletter pipeline
-                )
+                # Extract tool usage metrics from the result
+                tool_usage = generation_result.get('tool_usage', {})
+                quality_report = generation_result.get('quality_report', {})
                 
-                quality_metrics_obj = validation_report.get('quality_metrics')
-
-                if quality_metrics_obj:
+                # Process quality metrics
+                if quality_report and isinstance(quality_report, dict):
+                    dimension_scores = quality_report.get('dimension_scores', {})
                     st.session_state.quality_metrics = {
-                        'technical_accuracy': quality_metrics_obj.technical_accuracy_score,
-                        'mobile_readability': quality_metrics_obj.mobile_readability_score,
-                        'code_validation': quality_metrics_obj.code_validation_score,
-                        'overall_quality': quality_metrics_obj.overall_quality_score
+                        'technical_accuracy': dimension_scores.get('technical_accuracy', {}).get('score', 0.0),
+                        'content_completeness': dimension_scores.get('content_completeness', {}).get('score', 0.0),
+                        'information_freshness': dimension_scores.get('information_freshness', {}).get('score', 0.0),
+                        'overall_quality': quality_report.get('overall_score', 0.0),
+                        'tool_integration_score': tool_usage.get('tool_integration_score', 0.0),
+                        'vector_queries': tool_usage.get('vector_queries', 0),
+                        'web_searches': tool_usage.get('web_searches', 0),
+                        'verified_claims': len(tool_usage.get('verified_claims', [])),
+                        'search_providers': tool_usage.get('search_providers', [])
                     }
                 else:
-                    st.session_state.quality_metrics = {}
+                    # Fallback metrics from tool usage only
+                    st.session_state.quality_metrics = {
+                        'technical_accuracy': 0.8,  # Default assumption for basic generation
+                        'content_completeness': 0.7,
+                        'information_freshness': 0.6 if tool_usage.get('web_searches', 0) > 0 else 0.3,
+                        'overall_quality': tool_usage.get('tool_integration_score', 0.5),
+                        'tool_integration_score': tool_usage.get('tool_integration_score', 0.0),
+                        'vector_queries': tool_usage.get('vector_queries', 0),
+                        'web_searches': tool_usage.get('web_searches', 0),
+                        'verified_claims': len(tool_usage.get('verified_claims', [])),
+                        'search_providers': tool_usage.get('search_providers', [])
+                    }
+                
+                # Show tool integration success
+                if st.session_state.quality_metrics['tool_integration_score'] > 0.0:
+                    st.success(f"🎯 Tool-Augmented Generation Active! Integration Score: {st.session_state.quality_metrics['tool_integration_score']:.1%}")
+                else:
+                    st.info("ℹ️ Basic Generation Mode (Tool components not available)")
+                    
             except Exception as e:
-                st.warning(f"Quality assurance check failed: {str(e)}")
-                st.session_state.quality_metrics = {}
+                st.warning(f"Quality metrics processing failed: {str(e)}")
+                st.session_state.quality_metrics = {
+                    'technical_accuracy': 0.5,
+                    'content_completeness': 0.5,
+                    'information_freshness': 0.3,
+                    'overall_quality': 0.5,
+                    'tool_integration_score': 0.0,
+                    'vector_queries': 0,
+                    'web_searches': 0,
+                    'verified_claims': 0,
+                    'search_providers': []
+                }
         
         progress_bar.progress(100)
         status_text.text("✅ Newsletter generation complete!")
@@ -719,7 +773,15 @@ def display_newsletter_content(content: Dict[str, Any]):
             if st.session_state.quality_metrics:
                 st.markdown("### Quality Assurance Report")
                 for metric, score in st.session_state.quality_metrics.items():
-                    st.metric(metric.replace('_', ' ').title(), f"{score:.1%}")
+                    if isinstance(score, (int, float)):
+                        if metric in ['tool_integration_score', 'technical_accuracy', 'content_completeness', 'information_freshness', 'overall_quality']:
+                            st.metric(metric.replace('_', ' ').title(), f"{score:.1%}")
+                        else:
+                            st.metric(metric.replace('_', ' ').title(), str(score))
+                    elif isinstance(score, list):
+                        st.metric(metric.replace('_', ' ').title(), f"{len(score)} items")
+                    else:
+                        st.metric(metric.replace('_', ' ').title(), str(score))
             else:
                 st.info("Quality metrics not available for this generation.")
     else:

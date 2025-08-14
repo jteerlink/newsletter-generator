@@ -35,6 +35,23 @@ atexit.register(logging.shutdown)
 
 logger = logging.getLogger(__name__)
 
+# Import tool usage enhancement components
+try:
+    from src.core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
+    from src.core.information_enricher import InformationEnricher
+    from src.core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
+    from src.core.advanced_quality_gates import AdvancedQualityGate, QualityDimension
+    from src.core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
+    from src.core.tool_cache import get_tool_cache
+    from src.storage import get_storage_provider
+    from src.tools.enhanced_search import MultiProviderSearchEngine
+    from src.core.source_ranker import SourceAuthorityRanker
+    TOOL_USAGE_AVAILABLE = True
+    logger.info("Tool usage enhancement components loaded successfully")
+except ImportError as e:
+    logger.warning(f"Tool usage components not available: {e}")
+    TOOL_USAGE_AVAILABLE = False
+
 # Import enhanced components
 try:
     from src.core.campaign_context import CampaignContext
@@ -140,67 +157,36 @@ def execute_enhanced_newsletter_generation(
 
 def execute_hierarchical_newsletter_generation(
         topic: str, audience: str = "technology professionals") -> Dict[str, Any]:
-    """Execute simplified newsletter generation using direct LLM queries."""
+    """Execute tool-augmented newsletter generation with intelligence enhancement."""
 
     start_time = time.time()
-    logger.info(f"Starting newsletter generation for: {topic}")
+    logger.info(f"Starting tool-augmented newsletter generation for: {topic}")
+    
+    # Initialize tool usage tracking
+    tool_usage_metrics = {
+        'vector_queries': 0,
+        'web_searches': 0,
+        'verified_claims': [],
+        'search_providers': [],
+        'tool_integration_score': 0.0
+    }
 
     try:
-        from src.core.core import query_llm
-
-        # Create a comprehensive prompt for newsletter generation
-        prompt = f"""
-        Write a newsletter about {topic} for {audience}.
-
-        Include:
-        1. Brief introduction
-        2. Key developments and trends
-        3. Technical insights
-        4. Practical implications
-        5. Future outlook
-
-        Make it informative and well-structured for technical professionals.
-        Target length: 800-1500 words.
-        """
-
-        logger.info("Generating newsletter content...")
-        content = query_llm(prompt)
-
-        if not content or len(content) < 100:
-            raise Exception("Generated content is insufficient")
-
-        execution_time = time.time() - start_time
-
-        # Generate output filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_filename = f"newsletter_{topic.replace(' ', '_').lower()}_{
-            timestamp}.md"
-        output_path = os.path.join("output", output_filename)
-
-        # Ensure output directory exists
-        os.makedirs("output", exist_ok=True)
-
-        # Save the newsletter content
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-        logger.info(
-            f"Newsletter generation completed successfully in {
-                execution_time:.2f} seconds")
-
-        return {
-            'success': True,
-            'output_file': output_path,
-            'content': content,
-            'execution_time': execution_time
-        }
+        if TOOL_USAGE_AVAILABLE:
+            from src.enhanced_generation import execute_tool_augmented_generation
+            return execute_tool_augmented_generation(topic, audience, tool_usage_metrics)
+        else:
+            logger.warning("Tool usage components not available, falling back to basic generation")
+            from src.enhanced_generation import execute_basic_generation
+            return execute_basic_generation(topic, audience, tool_usage_metrics)
 
     except Exception as e:
         logger.error(f"Newsletter generation failed: {e}")
         return {
             'success': False,
             'error': str(e),
-            'execution_time': time.time() - start_time
+            'execution_time': time.time() - start_time,
+            'tool_usage': tool_usage_metrics
         }
 
 

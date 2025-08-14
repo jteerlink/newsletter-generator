@@ -237,6 +237,243 @@ class AgentCoordinator:
         }
 
 
-__all__ = ["AgentCoordinator", "AgentExecutionSpec"]
+# Cross-Agent Coordination Patterns (Phase 2 Week 6)
+
+def transfer_research_context(research_results: Dict, writer_agent):
+    """Transfer validated search results and claims to writer."""
+    from src.core.tool_cache import get_tool_cache
+    
+    cache = get_tool_cache()
+    
+    # Extract validated claims and sources
+    validated_claims = research_results.get('validated_claims', [])
+    search_results = research_results.get('search_results', [])
+    vector_context = research_results.get('vector_context', '')
+    
+    # Package coordination data
+    coordination_data = {
+        'validated_claims': validated_claims,
+        'search_results': search_results,
+        'vector_context': vector_context,
+        'research_quality_score': research_results.get('quality_score', 0.0),
+        'research_metadata': {
+            'sources_count': len(search_results),
+            'claims_count': len(validated_claims),
+            'research_timestamp': research_results.get('timestamp'),
+            'research_agent': research_results.get('agent_name', 'ResearchAgent')
+        }
+    }
+    
+    # Share with writer agent
+    cache.share_between_agents(
+        from_agent="ResearchAgent",
+        to_agent=writer_agent.name if hasattr(writer_agent, 'name') else "WriterAgent",
+        data=coordination_data,
+        message_type="research_context",
+        session_id=research_results.get('session_id'),
+        workflow_id=research_results.get('workflow_id')
+    )
+    
+    logger.info(f"Transferred research context: {len(validated_claims)} claims, {len(search_results)} sources")
+    return coordination_data
+
+
+def transfer_content_metadata(content: str, tool_usage: Dict, editor_agent,
+                            writer_agent_name: str = "WriterAgent",
+                            session_id: Optional[str] = None,
+                            workflow_id: Optional[str] = None):
+    """Transfer content with tool usage metadata for validation."""
+    from src.core.tool_cache import get_tool_cache
+    
+    cache = get_tool_cache()
+    
+    # Extract content analysis metadata
+    content_metadata = {
+        'content': content,
+        'content_length': len(content),
+        'tool_usage_metrics': tool_usage,
+        'content_analysis': {
+            'word_count': len(content.split()),
+            'paragraph_count': len([p for p in content.split('\n\n') if p.strip()]),
+            'has_headers': '##' in content or '#' in content,
+            'has_links': '[' in content and '](' in content,
+            'estimated_reading_time': len(content.split()) / 200  # 200 WPM average
+        },
+        'quality_indicators': {
+            'tool_integration': tool_usage.get('vector_queries', 0) > 0,
+            'claim_validation': len(tool_usage.get('verified_claims', [])),
+            'source_diversity': len(set(tool_usage.get('search_providers', [])))
+        },
+        'writer_metadata': {
+            'generation_timestamp': time.time(),
+            'writer_agent': writer_agent_name
+        }
+    }
+    
+    # Share with editor agent
+    cache.share_between_agents(
+        from_agent=writer_agent_name,
+        to_agent=editor_agent.name if hasattr(editor_agent, 'name') else "EditorAgent",
+        data=content_metadata,
+        message_type="content_validation",
+        session_id=session_id,
+        workflow_id=workflow_id
+    )
+    
+    logger.info(f"Transferred content metadata: {len(content)} chars, "
+                f"{tool_usage.get('vector_queries', 0)} vector queries, "
+                f"{len(tool_usage.get('verified_claims', []))} verified claims")
+    return content_metadata
+
+
+def coordinate_iterative_refinement(content: str, agents: List[Any], 
+                                  max_iterations: int = 3,
+                                  quality_threshold: float = 0.8,
+                                  session_id: Optional[str] = None,
+                                  workflow_id: Optional[str] = None) -> Dict[str, Any]:
+    """Coordinate iterative refinement across multiple agents."""
+    from src.core.tool_cache import get_tool_cache
+    
+    cache = get_tool_cache()
+    current_content = content
+    iteration_results = []
+    
+    for iteration in range(max_iterations):
+        logger.info(f"Starting refinement iteration {iteration + 1}/{max_iterations}")
+        
+        iteration_start = time.time()
+        agent_results = {}
+        
+        # Run all agents on current content
+        for agent in agents:
+            try:
+                agent_name = getattr(agent, 'name', agent.__class__.__name__)
+                
+                # Get any pending coordination messages for this agent
+                messages = cache.get_agent_messages(agent_name, clear_after_read=False)
+                
+                # Process content with agent
+                if hasattr(agent, 'process'):
+                    result = agent.process(current_content)
+                elif hasattr(agent, 'execute_task'):
+                    result = agent.execute_task(f"Refine content (iteration {iteration + 1})", current_content)
+                else:
+                    logger.warning(f"Agent {agent_name} has no recognized processing method")
+                    continue
+                
+                agent_results[agent_name] = {
+                    'result': result,
+                    'messages_received': len(messages),
+                    'processing_time': time.time() - iteration_start
+                }
+                
+                # Update content if agent provided improvements
+                if isinstance(result, str) and len(result.strip()) > len(current_content.strip()) * 0.8:
+                    current_content = result
+                elif hasattr(result, 'processed_content') and result.processed_content:
+                    current_content = result.processed_content
+                
+            except Exception as e:
+                logger.error(f"Agent {agent_name} failed in iteration {iteration + 1}: {e}")
+                agent_results[agent_name] = {'error': str(e)}
+        
+        # Evaluate iteration quality
+        iteration_quality = _evaluate_iteration_quality(current_content, agent_results)
+        
+        iteration_result = {
+            'iteration': iteration + 1,
+            'content': current_content,
+            'quality_score': iteration_quality,
+            'agent_results': agent_results,
+            'duration_seconds': time.time() - iteration_start
+        }
+        
+        iteration_results.append(iteration_result)
+        
+        # Cache iteration results
+        cache.cache_analysis_results(
+            f"refinement_iteration_{iteration + 1}",
+            iteration_result,
+            session_id=session_id,
+            workflow_id=workflow_id
+        )
+        
+        # Check if quality threshold is met
+        if iteration_quality >= quality_threshold:
+            logger.info(f"Quality threshold {quality_threshold} met at iteration {iteration + 1}")
+            break
+        
+        # Share iteration results between agents for next iteration
+        for agent in agents:
+            agent_name = getattr(agent, 'name', agent.__class__.__name__)
+            
+            coordination_data = {
+                'iteration_number': iteration + 1,
+                'current_content': current_content,
+                'quality_score': iteration_quality,
+                'peer_results': {k: v for k, v in agent_results.items() if k != agent_name}
+            }
+            
+            cache.share_between_agents(
+                from_agent="IterativeCoordinator",
+                to_agent=agent_name,
+                data=coordination_data,
+                message_type="iteration_feedback",
+                session_id=session_id,
+                workflow_id=workflow_id
+            )
+    
+    return {
+        'final_content': current_content,
+        'iterations': iteration_results,
+        'total_iterations': len(iteration_results),
+        'final_quality_score': iteration_results[-1]['quality_score'] if iteration_results else 0.0,
+        'improvement_achieved': len(iteration_results) > 1,
+        'coordination_metadata': {
+            'agents_involved': [getattr(a, 'name', a.__class__.__name__) for a in agents],
+            'session_id': session_id,
+            'workflow_id': workflow_id
+        }
+    }
+
+
+def _evaluate_iteration_quality(content: str, agent_results: Dict[str, Any]) -> float:
+    """Evaluate the quality of a refinement iteration."""
+    quality_score = 0.5  # Base score
+    
+    # Content length and structure improvements
+    word_count = len(content.split())
+    if word_count > 100:  # Substantial content
+        quality_score += 0.1
+    
+    if '##' in content or '#' in content:  # Has headers
+        quality_score += 0.1
+    
+    if '[' in content and '](' in content:  # Has links
+        quality_score += 0.1
+    
+    # Agent success rate
+    successful_agents = sum(1 for result in agent_results.values() 
+                          if isinstance(result, dict) and 'error' not in result)
+    total_agents = len(agent_results)
+    
+    if total_agents > 0:
+        success_rate = successful_agents / total_agents
+        quality_score += success_rate * 0.2
+    
+    # Processing efficiency (faster is better)
+    avg_processing_time = sum(
+        result.get('processing_time', 0) for result in agent_results.values()
+        if isinstance(result, dict)
+    ) / max(total_agents, 1)
+    
+    if avg_processing_time < 5.0:  # Under 5 seconds average
+        quality_score += 0.1
+    
+    return min(1.0, quality_score)
+
+
+__all__ = ["AgentCoordinator", "AgentExecutionSpec", "transfer_research_context", 
+           "transfer_content_metadata", "coordinate_iterative_refinement"]
 
 

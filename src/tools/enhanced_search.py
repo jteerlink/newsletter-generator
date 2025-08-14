@@ -916,3 +916,220 @@ class EnhancedSearchTool:
                 for r in results[:5]
             ]
         }
+
+
+@dataclass
+class ScoredResult(SearchResult):
+    """SearchResult with additional scoring metadata."""
+    provider_confidence: float
+    fusion_score: float
+    duplicate_count: int = 0
+
+
+class MultiProviderSearchEngine:
+    """Coordinated search across multiple providers with result fusion."""
+    
+    def __init__(self):
+        self.enhanced_search = EnhancedSearchTool()
+        self.provider_weights = {
+            'arxiv': 0.95,      # Highest authority for research
+            'github': 0.85,     # High authority for code
+            'news': 0.70,       # Good for recent developments
+            'duckduckgo': 0.65, # General web search
+            'google': 0.80,     # High authority when available
+            'bing': 0.75        # Good authority when available
+        }
+        
+    def intelligent_search(self, query: str, providers: List[str] = None, 
+                         max_results: int = 10) -> List[ScoredResult]:
+        """Execute search across multiple providers with result fusion."""
+        if providers is None:
+            providers = ['arxiv', 'github', 'news', 'duckduckgo']
+        
+        # Collect results from all providers
+        provider_results = {}
+        
+        for provider in providers:
+            if provider in self.enhanced_search.search_providers:
+                try:
+                    results = self.enhanced_search.search_providers[provider](
+                        query, max_results)
+                    
+                    # Convert to SearchResult objects
+                    search_results = self.enhanced_search._score_results(
+                        results, query, None)
+                    
+                    provider_results[provider] = search_results
+                    logger.info(f"Retrieved {len(search_results)} results from {provider}")
+                    
+                except Exception as e:
+                    logger.warning(f"Provider {provider} search failed: {e}")
+                    provider_results[provider] = []
+        
+        # Fuse results with confidence scoring
+        fused_results = self.confidence_scoring(provider_results, query)
+        
+        # Deduplicate with fusion scoring
+        deduplicated = self.deduplicate_results(fused_results)
+        
+        # Sort by fusion score and return top results
+        return sorted(deduplicated, key=lambda x: x.fusion_score, reverse=True)[:max_results]
+    
+    def confidence_scoring(self, provider_results: Dict[str, List[SearchResult]], 
+                          query: str) -> List[ScoredResult]:
+        """Apply confidence scoring based on source authority."""
+        scored_results = []
+        
+        for provider, results in provider_results.items():
+            provider_weight = self.provider_weights.get(provider, 0.5)
+            
+            for result in results:
+                # Calculate provider-specific confidence
+                provider_confidence = result.confidence_score * provider_weight
+                
+                # Calculate fusion score combining multiple factors
+                fusion_score = self._calculate_fusion_score(
+                    result, provider_confidence, provider_weight)
+                
+                scored_result = ScoredResult(
+                    title=result.title,
+                    url=result.url,
+                    snippet=result.snippet,
+                    source=f"{provider}:{result.source}",
+                    confidence_score=result.confidence_score,
+                    relevance_score=result.relevance_score,
+                    freshness_score=result.freshness_score,
+                    authority_score=result.authority_score,
+                    overall_score=result.overall_score,
+                    metadata=result.metadata,
+                    timestamp=result.timestamp,
+                    provider_confidence=provider_confidence,
+                    fusion_score=fusion_score
+                )
+                
+                scored_results.append(scored_result)
+        
+        return scored_results
+    
+    def deduplicate_results(self, results: List[ScoredResult]) -> List[ScoredResult]:
+        """Remove duplicate information across providers."""
+        # Group by URL first
+        url_groups = {}
+        for result in results:
+            if result.url in url_groups:
+                url_groups[result.url].append(result)
+            else:
+                url_groups[result.url] = [result]
+        
+        deduplicated = []
+        
+        for url, group in url_groups.items():
+            if len(group) == 1:
+                # Single result, no duplication
+                deduplicated.append(group[0])
+            else:
+                # Multiple results for same URL, merge them
+                merged_result = self._merge_duplicate_results(group)
+                deduplicated.append(merged_result)
+        
+        # Also check for content similarity across different URLs
+        final_results = self._remove_content_duplicates(deduplicated)
+        
+        return final_results
+    
+    def _calculate_fusion_score(self, result: SearchResult, 
+                               provider_confidence: float, 
+                               provider_weight: float) -> float:
+        """Calculate fusion score combining multiple factors."""
+        # Base fusion score from original overall score
+        fusion_score = result.overall_score * 0.4
+        
+        # Add provider confidence
+        fusion_score += provider_confidence * 0.3
+        
+        # Add authority and relevance boost
+        fusion_score += result.authority_score * 0.2
+        fusion_score += result.relevance_score * 0.1
+        
+        # Normalize to 0-1 range
+        return min(1.0, fusion_score)
+    
+    def _merge_duplicate_results(self, duplicates: List[ScoredResult]) -> ScoredResult:
+        """Merge multiple results for the same URL."""
+        # Sort by fusion score to get the best version
+        best_result = max(duplicates, key=lambda x: x.fusion_score)
+        
+        # Combine information from all duplicates
+        all_sources = [r.source for r in duplicates]
+        combined_snippets = []
+        
+        for dup in duplicates:
+            if dup.snippet and dup.snippet not in combined_snippets:
+                combined_snippets.append(dup.snippet[:200])
+        
+        # Create merged result
+        merged = ScoredResult(
+            title=best_result.title,
+            url=best_result.url,
+            snippet=" | ".join(combined_snippets[:3]),  # Limit combined snippets
+            source=f"merged:{','.join(set(all_sources))}",
+            confidence_score=max(r.confidence_score for r in duplicates),
+            relevance_score=max(r.relevance_score for r in duplicates),
+            freshness_score=max(r.freshness_score for r in duplicates),
+            authority_score=max(r.authority_score for r in duplicates),
+            overall_score=max(r.overall_score for r in duplicates),
+            metadata=best_result.metadata,
+            timestamp=best_result.timestamp,
+            provider_confidence=max(r.provider_confidence for r in duplicates),
+            fusion_score=max(r.fusion_score for r in duplicates),
+            duplicate_count=len(duplicates) - 1
+        )
+        
+        return merged
+    
+    def _remove_content_duplicates(self, results: List[ScoredResult]) -> List[ScoredResult]:
+        """Remove results with very similar content."""
+        final_results = []
+        
+        for result in results:
+            is_duplicate = False
+            
+            for existing in final_results:
+                similarity = self._calculate_content_similarity(result, existing)
+                if similarity > 0.8:  # 80% similarity threshold
+                    is_duplicate = True
+                    # Keep the higher-scored result
+                    if result.fusion_score > existing.fusion_score:
+                        final_results.remove(existing)
+                        final_results.append(result)
+                    break
+            
+            if not is_duplicate:
+                final_results.append(result)
+        
+        return final_results
+    
+    def _calculate_content_similarity(self, result1: ScoredResult, 
+                                    result2: ScoredResult) -> float:
+        """Calculate content similarity between two results."""
+        # Compare titles and snippets
+        title1_words = set(result1.title.lower().split())
+        title2_words = set(result2.title.lower().split())
+        
+        snippet1_words = set(result1.snippet.lower().split())
+        snippet2_words = set(result2.snippet.lower().split())
+        
+        # Calculate Jaccard similarity for titles
+        title_intersection = len(title1_words.intersection(title2_words))
+        title_union = len(title1_words.union(title2_words))
+        title_similarity = title_intersection / title_union if title_union > 0 else 0
+        
+        # Calculate Jaccard similarity for snippets
+        snippet_intersection = len(snippet1_words.intersection(snippet2_words))
+        snippet_union = len(snippet1_words.union(snippet2_words))
+        snippet_similarity = snippet_intersection / snippet_union if snippet_union > 0 else 0
+        
+        # Weighted average (titles matter more)
+        overall_similarity = (title_similarity * 0.7) + (snippet_similarity * 0.3)
+        
+        return overall_similarity

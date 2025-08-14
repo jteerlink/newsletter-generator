@@ -10,6 +10,10 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any, Dict, List, Optional
+from src.core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_VECTOR_TOP_K
+from src.core.tool_usage_tracker import get_tool_tracker
+from src.core.quality_gates import validate_tool_usage_quality
+from src.storage import get_storage_provider
 
 from src.core.campaign_context import CampaignContext
 import src.core.core as core
@@ -142,6 +146,17 @@ class WriterAgent(SimpleAgent):
         tone = kwargs.get('tone', 'professional')
         audience = kwargs.get('audience', 'general')
 
+        # Optional Phase 1 writer-specific vector enrichment
+        section_contexts = {}
+        if TOOL_ENFORCEMENT_ENABLED:
+            section_contexts = self._gather_section_vector_context(task, template_type)
+            section_chunks: List[str] = []
+            for title, text in section_contexts.items():
+                if text:
+                    section_chunks.append(f"{title} Vector Context:\n{text}")
+            if section_chunks:
+                context = (context + "\n\n" if context else "") + "\n\n".join(section_chunks)
+
         # Create enhanced writing prompt
         enhanced_prompt = self._build_writing_prompt(
             task, context, template_type, target_length, tone, audience)
@@ -152,7 +167,70 @@ class WriterAgent(SimpleAgent):
         # Post-process content
         final_content = self._post_process_content(content, template_type)
 
+        # Phase 1: Apply quality gates with tool usage validation
+        tool_usage_metrics = {
+            "vector_queries": len(section_contexts) if TOOL_ENFORCEMENT_ENABLED else 0,
+            "web_searches": 0,  # Will be incremented by parent class if web search is used
+            "verified_claims": []  # Placeholder for Phase 2 claim validation
+        }
+        
+        quality_result = validate_tool_usage_quality(
+            content=final_content,
+            tool_usage=tool_usage_metrics,
+            agent_type=self.agent_type.value
+        )
+        
+        if not quality_result["ok"]:
+            logger.warning(f"WriterAgent quality gate violations: {quality_result['issues']}")
+            if quality_result["warnings"]:
+                logger.info(f"WriterAgent quality gate warnings: {quality_result['warnings']}")
+        else:
+            logger.info("WriterAgent content passed all quality gates")
+
         return final_content
+
+    def _gather_section_vector_context(self, task: str, template_type: NewsletterType) -> Dict[str, str]:
+        """Gather writer-specific vector context per section (FR1.2)."""
+        tracker = get_tool_tracker()
+        store = get_storage_provider()
+
+        queries: Dict[str, str] = {
+            "Introduction": f"{task} introduction overview context",
+            "Analysis": f"{task} technical analysis documentation details",
+            "Tutorial": f"{task} step-by-step code examples tutorial",
+            "Conclusion": f"{task} industry insights future outlook"
+        }
+
+        # Adjust for template emphasis
+        if template_type == NewsletterType.TUTORIAL_GUIDE:
+            queries["Tutorial"] = f"{task} code examples how-to tutorial best practices"
+        elif template_type == NewsletterType.TECHNICAL_DEEP_DIVE:
+            queries["Analysis"] = f"{task} specifications benchmarks technical docs"
+
+        results: Dict[str, str] = {}
+
+        for section, query_text in queries.items():
+            try:
+                with tracker.track_tool_usage(
+                    tool_name="vector_search",
+                    agent_name=self.name,
+                    workflow_id=self.context.workflow_id,
+                    session_id=self.context.session_id,
+                    input_data={"query": query_text, "top_k": MANDATORY_VECTOR_TOP_K},
+                    context={"integration": "writer_section", "section": section}
+                ):
+                    hits = store.search(query=query_text, top_k=MANDATORY_VECTOR_TOP_K)
+                summarized: List[str] = []
+                for r in hits:
+                    title = getattr(r.metadata, 'title', '') if r.metadata else ''
+                    snippet = (r.content or '')[:200]
+                    summarized.append(f"- {title}: {snippet}")
+                results[section] = "\n".join(summarized) if summarized else ""
+            except Exception as e:
+                logger.warning(f"Writer section vector search failed for {section}: {e}")
+                results[section] = ""
+
+        return results
 
     def _generate_context_aware_content(
             self,

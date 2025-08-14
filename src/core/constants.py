@@ -29,11 +29,17 @@ NVIDIA_BASE_URL = os.getenv(
     "https://integrate.api.nvidia.com/v1")
 
 # LLM Settings (applies to all providers)
-LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "30"))
+# CRITICAL FIX: Increased timeout for comprehensive newsletter generation
+LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "180"))  # Increased from 30s to 3 minutes
 LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "1.0"))
 LLM_TOP_P = float(os.getenv("LLM_TOP_P", "1.0"))
-LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "4096"))
+LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "8192"))  # Increased for longer content
+
+# Generation Timeout Configuration
+GENERATION_TIMEOUT = int(os.getenv("GENERATION_TIMEOUT", "600"))  # 10 minutes for full generation
+CHECKPOINT_TIMEOUT = int(os.getenv("CHECKPOINT_TIMEOUT", "180"))  # 3 minutes per section
+SECTION_GENERATION_TIMEOUT = int(os.getenv("SECTION_GENERATION_TIMEOUT", "120"))  # 2 minutes per section
 
 # Backward compatibility
 DEFAULT_LLM_MODEL = OLLAMA_MODEL
@@ -131,3 +137,22 @@ API_CONFIG = {
     "max_retries": 3,
     "rate_limit": 100  # requests per minute
 }
+
+# Tool Usage Enforcement (Phase 5 - PRD: Mandatory Tool Integration)
+TOOL_ENFORCEMENT_ENABLED = os.getenv("TOOL_ENFORCEMENT_ENABLED", "false").lower() == "true"
+
+# Minimum thresholds for quality gates (non-blocking in Phase 1)
+MIN_VECTOR_QUERIES = int(os.getenv("MIN_VECTOR_QUERIES", "0"))
+MIN_WEB_SEARCHES = int(os.getenv("MIN_WEB_SEARCHES", "0"))
+
+# Default mandatory tools per agent type (can be overridden per-agent)
+MANDATORY_TOOLS = {
+    "research": ["vector_search", "web_search"],
+    "writer": ["vector_search"],
+    "editor": [],
+    "manager": []
+}
+
+# Defaults for tool integration behavior
+MANDATORY_VECTOR_TOP_K = int(os.getenv("MANDATORY_VECTOR_TOP_K", "5"))
+MANDATORY_WEB_MAX_RESULTS = int(os.getenv("MANDATORY_WEB_MAX_RESULTS", "3"))

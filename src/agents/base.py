@@ -18,7 +18,9 @@ from typing import Any, Dict, List, Optional
 from src.core.core import query_llm
 from src.core.exceptions import AgentError
 from src.core.tool_usage_tracker import get_tool_tracker
-from src.tools.tools import AVAILABLE_TOOLS
+from src.core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_TOOLS
+from src.core.tool_integration import ToolIntegrationEngine
+from src.tools.tools import TOOL_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,8 @@ class BaseAgent(ABC):
         agent_type: AgentType,
         tools: Optional[List[str]] = None,
         max_retries: int = 3,
-        timeout: int = 60
+        timeout: int = 60,
+        **kwargs
     ):
         self.name = name
         self.role = role
@@ -86,16 +89,19 @@ class BaseAgent(ABC):
         self.max_retries = max_retries
         self.timeout = timeout
 
-        # Initialize tools
+        # Initialize tools (map names to callables)
         self.available_tools = {
-            name: func for name, func in AVAILABLE_TOOLS.items()
-            if name in self.tools
+            name: func for name, func in TOOL_REGISTRY.items()
+            if name in (self.tools or [])
         }
 
         # Initialize tracking
         self.tool_tracker = get_tool_tracker()
         self.context = AgentContext()
         self.execution_history: List[TaskResult] = []
+        self._tool_integration = ToolIntegrationEngine()
+        # Advisory mandatory tools list (can be used by callers)
+        self.mandatory_tools: List[str] = MANDATORY_TOOLS.get(self.agent_type.value, [])
 
         logger.info(
             f"Initialized agent: {
@@ -234,7 +240,27 @@ class SimpleAgent(BaseAgent):
                     list(
                         self.available_tools.keys())}")
 
-            # Create the prompt for the agent
+            # Pre-task mandatory tool consultation (config-gated)
+            tool_usage_metrics = {"vector_queries": 0, "web_searches": 0}
+            if TOOL_ENFORCEMENT_ENABLED:
+                pre_results = self._tool_integration.mandatory_tool_consultation(
+                    task=task,
+                    agent_type=self.agent_type.value,
+                    agent_name=self.name,
+                    workflow_id=self.context.workflow_id,
+                    session_id=self.context.session_id,
+                )
+                tool_context_chunks = []
+                if pre_results.get('vector_context'):
+                    tool_context_chunks.append("Vector Context:\n" + pre_results['vector_context'])
+                    tool_usage_metrics["vector_queries"] += pre_results.get('vector_queries', 0)
+                if pre_results.get('web_validation'):
+                    tool_context_chunks.append("Web Validation:\n" + pre_results['web_validation'])
+                    tool_usage_metrics["web_searches"] += pre_results.get('web_searches', 0)
+                if tool_context_chunks:
+                    context = (context + "\n\n" if context else "") + "\n\n".join(tool_context_chunks)
+
+            # Create the prompt for the agent (possibly enriched)
             prompt = self._build_prompt(task, context)
             logger.debug(
                 f"Agent {
@@ -273,7 +299,7 @@ class SimpleAgent(BaseAgent):
 
             execution_time = time.time() - start_time
             self._record_execution(
-                task_id, response, execution_time=execution_time)
+                task_id, response, execution_time=execution_time, tool_usage=tool_usage_metrics)
 
             logger.info(
                 f"Agent {
