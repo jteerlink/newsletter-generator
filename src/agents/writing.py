@@ -10,19 +10,19 @@ from __future__ import annotations
 import logging
 import time
 from typing import Any, Dict, List, Optional
-from src.core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_VECTOR_TOP_K
-from src.core.tool_usage_tracker import get_tool_tracker
-from src.core.quality_gates import validate_tool_usage_quality
-from src.storage import get_storage_provider
+from core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_VECTOR_TOP_K
+from core.tool_usage_tracker import get_tool_tracker
+from core.quality_gates import validate_tool_usage_quality
+from storage import get_storage_provider
 
-from src.core.campaign_context import CampaignContext
-import src.core.core as core
-from src.core.feedback_system import StructuredFeedback
-from src.core.template_manager import NewsletterTemplate, NewsletterType
-from src.core.code_generator import AIMLCodeGenerator, CodeType
-from src.tools.syntax_validator import SyntaxValidator, ValidationLevel
-from src.tools.code_executor import SafeCodeExecutor, ExecutionConfig, SecurityLevel
-from src.templates.code_templates import template_library, Framework, TemplateCategory
+from core.campaign_context import CampaignContext
+import core.core as core
+from core.feedback_system import StructuredFeedback
+from core.template_manager import NewsletterTemplate, NewsletterType
+from core.code_generator import AIMLCodeGenerator, CodeType
+from tools.syntax_validator import SyntaxValidator, ValidationLevel
+from tools.code_executor import SafeCodeExecutor, ExecutionConfig, SecurityLevel
+from templates.code_templates import template_library, Framework, TemplateCategory
 
 from .base import AgentType, SimpleAgent
 
@@ -58,6 +58,10 @@ class WriterAgent(SimpleAgent):
             timeout=10.0
         ))
         self.code_templates = template_library
+        
+        # Initialize content expansion capabilities
+        self.content_expander = None  # Will be initialized when needed
+        self.section_orchestrator = None  # Will be initialized when needed
 
     def write_from_context(
             self,
@@ -100,6 +104,21 @@ class WriterAgent(SimpleAgent):
             citations_section}"
 
         return final_content
+    
+    def _initialize_expansion_components(self):
+        """Initialize content expansion components when needed."""
+        if self.content_expander is None:
+            try:
+                from core.content_expansion import IntelligentContentExpander
+                from core.section_expansion import SectionExpansionOrchestrator
+                
+                self.content_expander = IntelligentContentExpander()
+                self.section_orchestrator = SectionExpansionOrchestrator()
+                logger.info("Content expansion components initialized")
+            except ImportError as e:
+                logger.warning(f"Could not initialize expansion components: {e}")
+                self.content_expander = None
+                self.section_orchestrator = None
 
     def adapt_style(self, content: str, style_params: Dict) -> str:
         """Adapt content style based on style parameters."""
@@ -146,6 +165,10 @@ class WriterAgent(SimpleAgent):
         tone = kwargs.get('tone', 'professional')
         audience = kwargs.get('audience', 'general')
 
+        # Initialize content expansion components if needed
+        if kwargs.get('enable_expansion', False):
+            self._initialize_expansion_components()
+        
         # Optional Phase 1 writer-specific vector enrichment
         section_contexts = {}
         if TOOL_ENFORCEMENT_ENABLED:
@@ -503,6 +526,936 @@ class WriterAgent(SimpleAgent):
 
         return template_instructions.get(
             template_type, template_instructions[NewsletterType.RESEARCH_SUMMARY])
+    
+    def write_with_template_compliance(self, task: str, template: NewsletterTemplate, 
+                                     context: str = "", **kwargs) -> Dict[str, Any]:
+        """Write content with strict template compliance and section-by-section generation."""
+        logger.info(f"Writing with template compliance: {template.name}")
+        
+        # Extract code generation settings
+        enable_code_generation = kwargs.get('enable_code_generation', False)
+        audience = kwargs.get('audience', 'technical')
+        tone = kwargs.get('tone', 'professional')
+        
+        logger.info(f"Code generation enabled: {enable_code_generation}")
+        
+        try:
+            # Initialize tracking
+            section_results = {}
+            total_words = 0
+            overall_quality_score = 0.0
+            code_examples_count = 0
+            
+            # Generate content section by section
+            for i, section in enumerate(template.sections):
+                logger.info(f"Generating section {i+1}/{len(template.sections)}: {section.name}")
+                
+                # Build section-specific prompt
+                section_prompt = self._build_section_prompt(
+                    task, section, context, kwargs.get('tone', 'professional')
+                )
+                
+                # Generate section content
+                section_content = core.query_llm(section_prompt)
+                
+                # Enhanced word count validation and adjustment
+                section_words = len(section_content.split())
+                target_words = section.word_count_target
+                min_words = int(target_words * 0.8)  # 80% of target minimum
+                max_words = int(target_words * 1.2)  # 120% of target maximum
+                
+                # Enhanced multi-stage length adjustment with semantic understanding
+                adjustment_iterations = 0
+                max_adjustments = 3  # Increased for better precision
+                
+                while adjustment_iterations < max_adjustments and (section_words < min_words or section_words > max_words):
+                    current_compliance = section_words / target_words
+                    
+                    if section_words < min_words:
+                        # Semantic-aware expansion targeting
+                        content_analysis = self._analyze_content_context(section_content, section)
+                        
+                        # Calculate optimal expansion based on content density and type
+                        if content_analysis['density_score'] < 0.5:  # Low density content
+                            expansion_multiplier = 1.2  # More aggressive expansion
+                        elif content_analysis['primary_type'] == 'technical':
+                            expansion_multiplier = 1.1  # Moderate expansion for technical content
+                        else:
+                            expansion_multiplier = 1.0  # Standard expansion
+                        
+                        optimal_target = int(target_words * 0.95 * expansion_multiplier)
+                        words_needed = max(50, optimal_target - section_words)
+                        
+                        logger.info(f"Section {section.name} below threshold ({section_words}/{target_words}, {current_compliance:.1%})")
+                        logger.info(f"Content type: {content_analysis['primary_type']}, density: {content_analysis['density_score']:.2f}")
+                        logger.info(f"Semantic-aware expansion: {words_needed} words (multiplier: {expansion_multiplier:.1f})")
+                        
+                        section_content = self._expand_section_content(
+                            section_content, section, words_needed
+                        )
+                        section_words = len(section_content.split())
+                        
+                    elif section_words > max_words:
+                        # Intelligent condensation with content preservation
+                        content_analysis = self._analyze_content_context(section_content, section)
+                        
+                        # Adjust condensation target based on content characteristics
+                        if content_analysis['has_code'] or content_analysis['has_examples']:
+                            optimal_target = int(target_words * 1.1)  # More lenient for code/examples
+                        elif content_analysis['primary_type'] == 'educational':
+                            optimal_target = int(target_words * 1.08)  # Preserve educational content
+                        else:
+                            optimal_target = int(target_words * 1.05)  # Standard condensation
+                        
+                        logger.info(f"Section {section.name} above threshold ({section_words}/{target_words}, {current_compliance:.1%})")
+                        logger.info(f"Content analysis: {content_analysis['analysis_summary']}")
+                        logger.info(f"Intelligent condensation to {optimal_target} words")
+                        
+                        section_content = self._condense_section_content(
+                            section_content, section, optimal_target
+                        )
+                        section_words = len(section_content.split())
+                    
+                    adjustment_iterations += 1
+                    
+                    # Enhanced compliance checking with semantic considerations
+                    new_compliance = section_words / target_words
+                    
+                    # More lenient compliance checking for the last iteration
+                    if adjustment_iterations >= max_adjustments:
+                        acceptable_range = (0.75, 1.25)  # Wider range on final iteration
+                    else:
+                        acceptable_range = (0.8, 1.2)    # Standard range
+                    
+                    if acceptable_range[0] <= new_compliance <= acceptable_range[1]:
+                        logger.info(f"Section {section.name} achieved semantic compliance: {section_words}/{target_words} ({new_compliance:.1%})")
+                        break
+                    elif adjustment_iterations >= max_adjustments:
+                        logger.warning(f"Section {section.name} reached max iterations: {section_words}/{target_words} ({new_compliance:.1%})")
+                
+                # Code example integration for technical sections
+                if enable_code_generation:
+                    section_content, code_added = self._integrate_code_examples_into_section(
+                        section_content, section, task, context, i
+                    )
+                    if code_added:
+                        code_examples_count += 1
+                        section_words = len(section_content.split())  # Recalculate after code addition
+                        logger.info(f"Added code example to {section.name}, new word count: {section_words}")
+                
+                # Final validation
+                final_compliance = section_words / target_words
+                is_compliant = 0.8 <= final_compliance <= 1.2
+                
+                # Store section result with enhanced compliance tracking
+                section_results[section.name] = {
+                    'content': section_content,
+                    'word_count': section_words,
+                    'target_words': target_words,
+                    'compliance': is_compliant,
+                    'compliance_ratio': final_compliance,
+                    'adjustment_iterations': adjustment_iterations,
+                    'quality_elements': self._check_section_elements(section_content, section),
+                    'has_code_examples': enable_code_generation and self._analyze_content_context(section_content, section)['has_code']
+                }
+                
+                total_words += section_words
+                logger.info(f"Section {section.name}: {section_words} words (target: {target_words})")
+            
+            # Combine sections into final content
+            final_content = self._combine_sections(section_results, template)
+            
+            # Calculate overall compliance
+            word_compliance = abs(total_words - template.total_word_target) / template.total_word_target
+            word_compliance_score = max(0.0, 1.0 - word_compliance)
+            
+            section_compliance = sum(1 for s in section_results.values() if s['compliance']) / len(section_results)
+            
+            overall_quality_score = (word_compliance_score * 0.4 + section_compliance * 0.6) * 10
+            
+            logger.info(f"Template compliance complete: {total_words}/{template.total_word_target} words, {overall_quality_score:.1f}/10 quality")
+            
+            return {
+                'content': final_content,
+                'total_words': total_words,
+                'target_words': template.total_word_target,
+                'quality_score': overall_quality_score,
+                'section_results': section_results,
+                'template_compliance': {
+                    'word_compliance': word_compliance_score,
+                    'section_compliance': section_compliance,
+                    'overall_score': overall_quality_score
+                },
+                'code_generation': {
+                    'enabled': enable_code_generation,
+                    'examples_count': code_examples_count,
+                    'sections_with_code': len([r for r in section_results.values() if r.get('has_code_examples', False)])
+                },
+                'template_name': template.name,
+                'template_type': template.type.value
+            }
+            
+        except Exception as e:
+            logger.error(f"Template-compliant writing failed: {e}")
+            # Fallback to standard writing
+            content = self.execute_task(task, context, **kwargs)
+            return {
+                'content': content,
+                'total_words': len(content.split()),
+                'target_words': template.total_word_target,
+                'quality_score': 5.0,  # Neutral score for fallback
+                'section_results': {},
+                'template_compliance': {'error': str(e)},
+                'template_name': template.name,
+                'template_type': template.type.value
+            }
+    
+    def write_with_expansion(self, topic: str, template: NewsletterTemplate, 
+                           research_content: str, target_words: int = None, 
+                           **kwargs) -> Dict[str, Any]:
+        """
+        Enhanced writing method with intelligent content expansion.
+        
+        This method integrates content expansion capabilities to achieve target
+        word counts while maintaining quality and template compliance.
+        """
+        logger.info(f"Starting expanded writing for topic: {topic}")
+        
+        # Initialize expansion components
+        self._initialize_expansion_components()
+        
+        if not self.content_expander:
+            logger.warning("Content expansion not available, falling back to standard writing")
+            return self.write_with_template_compliance(topic, template, research_content, **kwargs)
+        
+        try:
+            # Step 1: Generate base content using standard method
+            base_result = self.write_with_template_compliance(
+                topic, template, research_content, **kwargs
+            )
+            
+            base_content = base_result.get('content', '')
+            base_word_count = base_result.get('total_words', len(base_content.split()))
+            
+            # Step 2: Determine expansion requirements
+            target_word_count = target_words or template.total_word_target
+            words_needed = max(0, target_word_count - base_word_count)
+            
+            if words_needed < 100:  # No significant expansion needed
+                logger.info(f"No expansion needed: {base_word_count}/{target_word_count} words")
+                return base_result
+            
+            logger.info(f"Expanding content: {base_word_count} → {target_word_count} words (+{words_needed})")
+            
+            # Step 3: Execute intelligent content expansion
+            expansion_metadata = {
+                'topic': topic,
+                'template_type': template.type.value,
+                'base_quality_score': base_result.get('quality_score', 7.0),
+                'tool_usage': kwargs.get('tool_usage', {}),
+                'audience': kwargs.get('audience', 'technical'),
+                'tone': kwargs.get('tone', 'professional')
+            }
+            
+            expansion_result = self.content_expander.expand_content(
+                base_content, target_word_count, template.type.value, expansion_metadata
+            )
+            
+            # Step 4: Validate expanded content
+            if expansion_result.success:
+                expanded_content = expansion_result.expanded_content
+                
+                # Update result with expansion metrics
+                enhanced_result = base_result.copy()
+                enhanced_result.update({
+                    'content': expanded_content,
+                    'total_words': expansion_result.final_word_count,
+                    'expansion_metrics': {
+                        'original_words': expansion_result.original_word_count,
+                        'final_words': expansion_result.final_word_count,
+                        'words_added': expansion_result.expansion_achieved,
+                        'target_achievement': expansion_result.target_achievement,
+                        'execution_time': expansion_result.execution_time,
+                        'expansions_applied': len(expansion_result.expansions_applied)
+                    },
+                    'expansion_quality': expansion_result.quality_metrics
+                })
+                
+                logger.info(f"Content expansion successful: {expansion_result.target_achievement:.1%} target achievement")
+                return enhanced_result
+            else:
+                logger.warning(f"Content expansion failed: {expansion_result.error_message}")
+                return base_result
+                
+        except Exception as e:
+            logger.error(f"Enhanced writing with expansion failed: {e}")
+            # Fallback to base result
+            return self.write_with_template_compliance(topic, template, research_content, **kwargs)
+    
+    def expand_section_content(self, section_name: str, content: str, 
+                             target_words: int, template_type: str, 
+                             metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Expand specific section content using section orchestrator.
+        
+        Args:
+            section_name: Name of the section to expand
+            content: Current section content
+            target_words: Target word count for the section
+            template_type: Newsletter template type
+            metadata: Additional context
+            
+        Returns:
+            Dictionary with expanded content and metrics
+        """
+        # Initialize expansion components
+        self._initialize_expansion_components()
+        
+        if not self.section_orchestrator:
+            logger.warning("Section orchestrator not available")
+            return {
+                'content': content,
+                'word_count': len(content.split()),
+                'expansion_applied': False,
+                'error': 'Section orchestrator not available'
+            }
+        
+        try:
+            # Execute section expansion
+            expansion_result = self.section_orchestrator.expand_section(
+                section_name, content, target_words, template_type, metadata
+            )
+            
+            return {
+                'content': expansion_result.expanded_content,
+                'word_count': expansion_result.final_word_count,
+                'expansion_applied': expansion_result.success,
+                'expansion_achieved': expansion_result.expansion_achieved,
+                'quality_score': expansion_result.quality_score,
+                'execution_time': expansion_result.execution_time,
+                'strategy_used': expansion_result.strategy_used.value if expansion_result.strategy_used else None,
+                'error': expansion_result.error_message
+            }
+            
+        except Exception as e:
+            logger.error(f"Section expansion failed: {e}")
+            return {
+                'content': content,
+                'word_count': len(content.split()),
+                'expansion_applied': False,
+                'error': str(e)
+            }
+    
+    def _enhance_section_with_expansion(self, section_content: str, section, 
+                                      target_words: int, template_type: str, 
+                                      metadata: Dict[str, Any]) -> str:
+        """
+        Enhance a section using intelligent expansion if needed.
+        
+        This method is called during template-compliant writing to enhance
+        sections that are below target word counts.
+        """
+        current_words = len(section_content.split())
+        
+        # Only expand if significantly below target
+        if current_words < target_words * 0.8:
+            expansion_metadata = metadata.copy()
+            expansion_metadata.update({
+                'section_type': section.name,
+                'current_word_count': current_words,
+                'target_word_count': target_words
+            })
+            
+            expansion_result = self.expand_section_content(
+                section.name, section_content, target_words, 
+                template_type, expansion_metadata
+            )
+            
+            if expansion_result.get('expansion_applied', False):
+                logger.info(f"Enhanced section {section.name}: {current_words} → {expansion_result['word_count']} words")
+                return expansion_result['content']
+        
+        return section_content
+    
+    def _build_section_prompt(self, task: str, section, context: str, tone: str) -> str:
+        """Build a prompt for generating a specific template section."""
+        prompt = f"""You are writing the "{section.name}" section of a newsletter about: {task}
+
+Section Description: {section.description}
+
+Word Count Target: {section.word_count_target} words (aim for 80-120% of this target)
+
+Content Guidelines:
+{chr(10).join(f"- {guideline}" for guideline in section.content_guidelines)}
+
+Required Elements (must include):
+{chr(10).join(f"- {element}" for element in section.required_elements)}
+
+Optional Elements (include if relevant):
+{chr(10).join(f"- {element}" for element in section.optional_elements)}
+
+Context: {context}
+
+Tone: {tone}
+
+Write ONLY the content for this section. Use clear, engaging prose that matches the specified tone and includes all required elements. Aim for approximately {section.word_count_target} words."""
+        
+        return prompt
+    
+    def _expand_section_content(self, content: str, section, additional_words: int) -> str:
+        """Expand section content with iterative enhancement and targeted word count management."""
+        logger.info(f"Expanding section {section.name} by ~{additional_words} words")
+        
+        current_words = len(content.split())
+        target_words = current_words + additional_words
+        
+        # Iterative expansion with multiple enhancement strategies
+        expanded_content = content
+        attempts = 0
+        max_attempts = 3
+        
+        while attempts < max_attempts:
+            current_word_count = len(expanded_content.split())
+            remaining_words = target_words - current_word_count
+            
+            if remaining_words <= 50:  # Close enough to target
+                break
+                
+            # Choose expansion strategy based on remaining words needed
+            if remaining_words > 200:
+                strategy = "comprehensive"
+            elif remaining_words > 100:
+                strategy = "detailed"
+            else:
+                strategy = "focused"
+            
+            expansion_prompt = self._build_expansion_prompt(
+                expanded_content, section, remaining_words, strategy
+            )
+            
+            try:
+                enhanced_content = core.query_llm(expansion_prompt)
+                
+                # Validate the expansion
+                new_word_count = len(enhanced_content.split())
+                if new_word_count > current_word_count:
+                    expanded_content = enhanced_content
+                    logger.info(f"Expansion iteration {attempts + 1}: {current_word_count} → {new_word_count} words")
+                else:
+                    logger.warning(f"Expansion iteration {attempts + 1} did not increase word count")
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Expansion iteration {attempts + 1} failed: {e}")
+                break
+            
+            attempts += 1
+        
+        final_word_count = len(expanded_content.split())
+        logger.info(f"Section expansion complete: {current_words} → {final_word_count} words (target: {target_words})")
+        
+        return expanded_content
+    
+    def _build_expansion_prompt(self, content: str, section, remaining_words: int, strategy: str) -> str:
+        """Build targeted expansion prompt with context-aware intelligence."""
+        # Analyze content context for intelligent expansion
+        content_analysis = self._analyze_content_context(content, section)
+        
+        base_prompt = f"""The following section content needs to be expanded by approximately {remaining_words} words while maintaining quality and relevance.
+
+Current content:
+{content}
+
+Section guidelines:
+{chr(10).join(f"- {guideline}" for guideline in section.content_guidelines)}
+
+Required elements (ensure these remain):
+{chr(10).join(f"- {element}" for element in section.required_elements)}
+
+Content Analysis:
+{content_analysis['analysis_summary']}
+"""
+        
+        # Context-aware strategy selection
+        if strategy == "comprehensive":
+            strategy_instructions = self._build_comprehensive_expansion(content_analysis, remaining_words)
+        elif strategy == "detailed":
+            strategy_instructions = self._build_detailed_expansion(content_analysis, remaining_words)
+        else:  # focused strategy
+            strategy_instructions = self._build_focused_expansion(content_analysis, remaining_words)
+        
+        return f"""{base_prompt}
+
+{strategy_instructions}
+
+Maintain the same tone and style. Return the expanded version:"""
+    
+    def _analyze_content_context(self, content: str, section) -> dict:
+        """Analyze content context for intelligent expansion decisions."""
+        content_lower = content.lower()
+        words = content.split()
+        sentences = content.split('.')
+        
+        # Technical content indicators
+        technical_terms = ['api', 'algorithm', 'framework', 'implementation', 'architecture', 
+                          'performance', 'optimization', 'deployment', 'integration', 'system']
+        technical_score = sum(1 for term in technical_terms if term in content_lower) / len(technical_terms)
+        
+        # Business content indicators  
+        business_terms = ['market', 'strategy', 'revenue', 'cost', 'roi', 'business', 
+                         'customer', 'value', 'growth', 'opportunity']
+        business_score = sum(1 for term in business_terms if term in content_lower) / len(business_terms)
+        
+        # Educational content indicators
+        educational_terms = ['learn', 'understand', 'explain', 'example', 'tutorial', 
+                           'guide', 'step', 'process', 'method', 'approach']
+        educational_score = sum(1 for term in educational_terms if term in content_lower) / len(educational_terms)
+        
+        # Content structure analysis
+        has_lists = content.count('•') > 0 or content.count('-') > 2
+        has_code = '```' in content or 'code' in content_lower
+        has_examples = 'example' in content_lower or 'instance' in content_lower
+        
+        # Determine primary content type
+        scores = {'technical': technical_score, 'business': business_score, 'educational': educational_score}
+        primary_type = max(scores, key=scores.get)
+        
+        # Content density analysis
+        avg_sentence_length = sum(len(s.split()) for s in sentences if s.strip()) / max(len([s for s in sentences if s.strip()]), 1)
+        density_score = min(1.0, avg_sentence_length / 20)  # Normalize to 0-1
+        
+        return {
+            'primary_type': primary_type,
+            'technical_score': technical_score,
+            'business_score': business_score, 
+            'educational_score': educational_score,
+            'has_lists': has_lists,
+            'has_code': has_code,
+            'has_examples': has_examples,
+            'density_score': density_score,
+            'avg_sentence_length': avg_sentence_length,
+            'analysis_summary': f"Content type: {primary_type} (score: {scores[primary_type]:.2f}), "
+                               f"Density: {density_score:.2f}, Structure: {'Lists' if has_lists else 'Prose'}"
+        }
+    
+    def _build_comprehensive_expansion(self, analysis: dict, remaining_words: int) -> str:
+        """Build comprehensive expansion strategy based on content analysis."""
+        base_instructions = [
+            "- Detailed explanations of key concepts",
+            "- Contextual background information", 
+            "- Industry insights and trends"
+        ]
+        
+        # Add type-specific comprehensive expansion
+        if analysis['primary_type'] == 'technical':
+            base_instructions.extend([
+                "- Technical implementation details and best practices",
+                "- Architecture considerations and design patterns",
+                "- Performance implications and optimization strategies",
+                "- Integration approaches and compatibility factors"
+            ])
+        elif analysis['primary_type'] == 'business':
+            base_instructions.extend([
+                "- Market implications and competitive analysis",
+                "- ROI considerations and value propositions", 
+                "- Strategic recommendations and implementation roadmaps",
+                "- Risk assessment and mitigation strategies"
+            ])
+        else:  # educational
+            base_instructions.extend([
+                "- Step-by-step explanations and learning progressions",
+                "- Multiple examples illustrating different scenarios",
+                "- Common pitfalls and troubleshooting guidance",
+                "- Practice exercises and real-world applications"
+            ])
+        
+        # Add structure-specific enhancements
+        if not analysis['has_examples'] and remaining_words > 150:
+            base_instructions.append("- Multiple concrete examples to illustrate concepts")
+        
+        if not analysis['has_code'] and analysis['technical_score'] > 0.3:
+            base_instructions.append("- Code examples or technical specifications where relevant")
+            
+        expansion_focus = f"Target expansion: {remaining_words} words with comprehensive depth"
+        
+        return f"""Please expand this content comprehensively by adding:
+{chr(10).join(base_instructions)}
+
+{expansion_focus}
+Focus on depth and breadth while maintaining readability."""
+    
+    def _build_detailed_expansion(self, analysis: dict, remaining_words: int) -> str:
+        """Build detailed expansion strategy based on content analysis."""
+        base_instructions = [
+            "- More thorough explanations of existing points",
+            "- Relevant supporting information",
+            "- Practical details and implementation considerations"
+        ]
+        
+        # Type-specific detailed expansion
+        if analysis['primary_type'] == 'technical':
+            base_instructions.extend([
+                "- Technical specifications and configuration details",
+                "- Implementation examples and code snippets"
+            ])
+        elif analysis['primary_type'] == 'business': 
+            base_instructions.extend([
+                "- Market data and industry statistics",
+                "- Business case studies and success stories"
+            ])
+        else:  # educational
+            base_instructions.extend([
+                "- Additional examples to illustrate concepts", 
+                "- Learning aids and memory techniques"
+            ])
+        
+        # Density-based adjustments
+        if analysis['density_score'] < 0.5:  # Low density content
+            base_instructions.append("- Enhanced detail and explanation depth")
+        
+        expansion_focus = f"Target expansion: {remaining_words} words with focused detail enhancement"
+        
+        return f"""Please expand this content with detailed enhancements:
+{chr(10).join(base_instructions)}
+
+{expansion_focus}
+Maintain the current structure while adding substantive detail."""
+    
+    def _build_focused_expansion(self, analysis: dict, remaining_words: int) -> str:
+        """Build focused expansion strategy based on content analysis."""
+        base_instructions = [
+            "- Clarify and elaborate on existing points",
+            "- Include relevant details that support main ideas"
+        ]
+        
+        # Targeted improvements based on analysis
+        if analysis['avg_sentence_length'] > 25:
+            base_instructions.append("- Break down complex sentences for better readability")
+        
+        if not analysis['has_examples'] and remaining_words > 50:
+            base_instructions.append("- Add specific examples where helpful")
+            
+        if analysis['density_score'] > 0.8:  # High density content
+            base_instructions.append("- Add transitional phrases for better flow")
+        
+        expansion_focus = f"Target expansion: {remaining_words} words with precise improvements"
+        
+        return f"""Please expand this content with focused improvements:
+{chr(10).join(base_instructions)}
+
+{expansion_focus}
+Keep expansion targeted and relevant."""
+    
+    def _integrate_code_examples_into_section(self, content: str, section, task: str, context: str, section_index: int) -> tuple[str, bool]:
+        """Integrate code examples into section content based on technical relevance."""
+        try:
+            # Analyze section content to determine if code is appropriate
+            content_analysis = self._analyze_content_context(content, section)
+            
+            # Determine if this section should have code examples
+            should_add_code = self._should_section_have_code(section, content_analysis, section_index)
+            
+            if not should_add_code:
+                return content, False
+            
+            logger.info(f"Adding code example to section: {section.name}")
+            
+            # Generate appropriate code example for this section
+            code_example = self._generate_section_appropriate_code(
+                task, section, content_analysis, section_index
+            )
+            
+            if not code_example:
+                logger.warning(f"Failed to generate code example for {section.name}")
+                return content, False
+            
+            # Integrate code example into content
+            enhanced_content = self._integrate_code_into_content(content, code_example, section)
+            
+            return enhanced_content, True
+            
+        except Exception as e:
+            logger.error(f"Error integrating code into {section.name}: {e}")
+            return content, False
+    
+    def _should_section_have_code(self, section, content_analysis: dict, section_index: int) -> bool:
+        """Determine if a section should have code examples based on multiple factors."""
+        # Technical content score threshold
+        if content_analysis['technical_score'] < 0.3:
+            return False
+        
+        # Section-based rules
+        section_name_lower = section.name.lower()
+        
+        # Sections that typically should have code
+        code_appropriate_sections = [
+            'technical', 'implementation', 'analysis', 'examples', 
+            'practical', 'development', 'coding', 'tutorial'
+        ]
+        
+        # Sections that typically shouldn't have code
+        avoid_code_sections = [
+            'introduction', 'conclusion', 'overview', 'outlook', 
+            'future', 'summary', 'executive'
+        ]
+        
+        # Check if section name suggests code appropriateness
+        has_code_keywords = any(keyword in section_name_lower for keyword in code_appropriate_sections)
+        has_avoid_keywords = any(keyword in section_name_lower for keyword in avoid_code_sections)
+        
+        if has_avoid_keywords:
+            return False
+        
+        if has_code_keywords:
+            return True
+        
+        # For middle sections (typically technical analysis), add code if technical content
+        if 2 <= section_index <= 4 and content_analysis['technical_score'] > 0.5:
+            return True
+        
+        # Section 3 (Deep Technical Analysis) should almost always have code if technical
+        if section_index == 2 and content_analysis['technical_score'] > 0.4:
+            return True
+        
+        return False
+    
+    def _generate_section_appropriate_code(self, task: str, section, content_analysis: dict, section_index: int) -> str:
+        """Generate code example appropriate for the specific section context."""
+        try:
+            # Determine code type based on section and content
+            if section_index <= 1:  # Introduction/Overview
+                code_type = "basic_example"
+            elif section_index == 2:  # Deep Technical Analysis
+                code_type = "implementation_example" 
+            elif section_index == 3:  # Real-World Applications
+                code_type = "usage_example"
+            else:  # Conclusion/Future
+                code_type = "getting_started"
+            
+            # Extract technical topic from task
+            technical_context = self._extract_technical_context(task, content_analysis)
+            
+            # Generate code example
+            code_examples = self.generate_code_examples(
+                topic=technical_context,
+                framework="python",  # Default to Python for technical content
+                complexity="intermediate",
+                count=1
+            )
+            
+            if code_examples and len(code_examples) > 0:
+                return code_examples[0]
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error generating section-appropriate code: {e}")
+            return None
+    
+    def _extract_technical_context(self, task: str, content_analysis: dict) -> str:
+        """Extract specific technical context for code generation."""
+        # Extract key technical terms from the task
+        task_lower = task.lower()
+        
+        # Common technical domains and their code contexts
+        domain_contexts = {
+            'machine learning': 'ML model training and inference',
+            'deep learning': 'neural network implementation',
+            'data science': 'data analysis and visualization', 
+            'web development': 'web application development',
+            'api': 'API development and integration',
+            'database': 'database operations and queries',
+            'microservices': 'microservice architecture',
+            'kubernetes': 'container orchestration',
+            'docker': 'containerization',
+            'react': 'React component development',
+            'python': 'Python application development',
+            'javascript': 'JavaScript programming',
+            'tensorflow': 'TensorFlow model development',
+            'pytorch': 'PyTorch neural networks',
+            'rag': 'Retrieval-Augmented Generation implementation',
+            'llm': 'Large Language Model integration',
+            'agentic': 'AI agent development'
+        }
+        
+        # Find matching context
+        for domain, context in domain_contexts.items():
+            if domain in task_lower:
+                return context
+        
+        # Default technical context
+        return f"Technical implementation for {task}"
+    
+    def _integrate_code_into_content(self, content: str, code_example: str, section) -> str:
+        """Intelligently integrate code example into section content."""
+        # Find optimal insertion point
+        lines = content.split('\n')
+        
+        # Look for good insertion points (after explanatory paragraphs)
+        insertion_point = len(lines)  # Default to end
+        
+        # Try to find a natural break point
+        for i, line in enumerate(lines):
+            # Insert after paragraphs that mention implementation, examples, or technical details
+            if i < len(lines) - 2:  # Not at the very end
+                line_lower = line.lower()
+                if any(keyword in line_lower for keyword in 
+                      ['implementation', 'example', 'consider', 'approach', 'method', 'technique']):
+                    # Check if next line is empty or start of new paragraph
+                    if i + 1 < len(lines) and (lines[i + 1].strip() == '' or lines[i + 1].startswith('##')):
+                        insertion_point = i + 1
+                        break
+        
+        # Insert code example with appropriate formatting
+        code_section = f"\n### Implementation Example\n\n{code_example}\n"
+        
+        # Insert at the determined point
+        if insertion_point < len(lines):
+            lines.insert(insertion_point, code_section)
+        else:
+            lines.append(code_section)
+        
+        return '\n'.join(lines)
+    
+    def _condense_section_content(self, content: str, section, max_words: int) -> str:
+        """Condense section content with intelligent priority-based reduction."""
+        logger.info(f"Condensing section {section.name} to max {max_words} words")
+        
+        current_words = len(content.split())
+        words_to_remove = current_words - max_words
+        
+        if words_to_remove <= 0:
+            return content
+        
+        # Iterative condensation with priority-based reduction
+        condensed_content = content
+        attempts = 0
+        max_attempts = 3
+        
+        while attempts < max_attempts:
+            current_word_count = len(condensed_content.split())
+            remaining_reduction = current_word_count - max_words
+            
+            if remaining_reduction <= 20:  # Close enough to target
+                break
+            
+            # Choose condensation strategy based on reduction needed
+            if remaining_reduction > 200:
+                strategy = "aggressive"
+            elif remaining_reduction > 100:
+                strategy = "moderate"
+            else:
+                strategy = "minimal"
+            
+            condensation_prompt = self._build_condensation_prompt(
+                condensed_content, section, max_words, strategy
+            )
+            
+            try:
+                reduced_content = core.query_llm(condensation_prompt)
+                
+                # Validate the condensation
+                new_word_count = len(reduced_content.split())
+                if new_word_count < current_word_count and new_word_count >= max_words * 0.9:
+                    condensed_content = reduced_content
+                    logger.info(f"Condensation iteration {attempts + 1}: {current_word_count} → {new_word_count} words")
+                else:
+                    logger.warning(f"Condensation iteration {attempts + 1} ineffective")
+                    break
+                    
+            except Exception as e:
+                logger.error(f"Condensation iteration {attempts + 1} failed: {e}")
+                break
+            
+            attempts += 1
+        
+        final_word_count = len(condensed_content.split())
+        logger.info(f"Section condensation complete: {current_words} → {final_word_count} words (target: ≤{max_words})")
+        
+        return condensed_content
+    
+    def _build_condensation_prompt(self, content: str, section, max_words: int, strategy: str) -> str:
+        """Build targeted condensation prompt based on strategy and word count limits."""
+        base_prompt = f"""The following section content needs to be condensed to approximately {max_words} words while retaining all essential information.
+
+Current content:
+{content}
+
+Required elements that MUST be preserved:
+{chr(10).join(f"- {element}" for element in section.required_elements)}
+
+Section guidelines to maintain:
+{chr(10).join(f"- {guideline}" for guideline in section.content_guidelines)}
+"""
+        
+        if strategy == "aggressive":
+            strategy_instructions = """Please condense this content aggressively by:
+- Removing all redundant phrases and repetitive content
+- Combining related points into single sentences
+- Eliminating examples that don't add unique value
+- Using more concise language and shorter sentences
+- Removing transitional phrases and filler words
+- Keeping only the most critical information
+
+Focus on maximum reduction while preserving core meaning."""
+        
+        elif strategy == "moderate":
+            strategy_instructions = """Please condense this content moderately by:
+- Removing redundant phrases and unnecessary elaboration
+- Combining similar points where possible
+- Shortening verbose explanations
+- Using more direct language
+- Eliminating less important details
+- Maintaining key examples and insights
+
+Balance reduction with content quality."""
+        
+        else:  # minimal strategy
+            strategy_instructions = """Please condense this content minimally by:
+- Removing only truly redundant phrases
+- Shortening wordy sentences slightly
+- Eliminating unnecessary filler words
+- Keeping all important content and examples
+- Making small efficiency improvements
+
+Preserve content quality while making targeted reductions."""
+        
+        return f"""{base_prompt}
+
+{strategy_instructions}
+
+Return the condensed version that maintains all required elements:"""
+    
+    def _check_section_elements(self, content: str, section) -> Dict[str, bool]:
+        """Check if section content includes required elements."""
+        elements_found = {}
+        content_lower = content.lower()
+        
+        for element in section.required_elements:
+            # Simple keyword-based detection (could be enhanced with NLP)
+            element_keywords = element.lower().split()
+            found = any(keyword in content_lower for keyword in element_keywords)
+            elements_found[element] = found
+        
+        return elements_found
+    
+    def _combine_sections(self, section_results: Dict, template: NewsletterTemplate) -> str:
+        """Combine individual sections into final newsletter content."""
+        content_parts = []
+        
+        # Add title
+        title = f"# {template.name}\n\n"
+        content_parts.append(title)
+        
+        # Add each section
+        for section in template.sections:
+            if section.name in section_results:
+                section_data = section_results[section.name]
+                content_parts.append(f"## {section.name}\n\n")
+                content_parts.append(section_data['content'])
+                content_parts.append("\n\n")
+        
+        return "".join(content_parts)
 
     def _get_writing_guidelines(self, tone: str, audience: str) -> str:
         """Get tone and audience-specific writing guidelines."""

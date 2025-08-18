@@ -20,8 +20,8 @@ from .base_agent import (
     AgentConfiguration,
     ProcessingMode,
 )
-from src.core.continuity_validator import ContinuityValidator
-from src.core.section_aware_prompts import SectionType
+from core.continuity_validator import ContinuityValidator
+from core.section_aware_prompts import SectionType
 
 logger = logging.getLogger(__name__)
 

@@ -13,15 +13,16 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.agents.base import SimpleAgent
-from src.agents.editing import EditorAgent
-from src.agents.management import ManagerAgent
-from src.agents.research import ResearchAgent
-from src.agents.writing import WriterAgent
-from src.agents.technical_accuracy_agent import TechnicalAccuracyAgent
-from src.agents.readability_agent import ReadabilityAgent
-from src.agents.continuity_manager_agent import ContinuityManagerAgent
+from agents.base import SimpleAgent
+from agents.editing import EditorAgent
+from agents.management import ManagerAgent
+from agents.research import ResearchAgent
+from agents.writing import WriterAgent
+from agents.technical_accuracy_agent import TechnicalAccuracyAgent
+from agents.readability_agent import ReadabilityAgent
+from agents.continuity_manager_agent import ContinuityManagerAgent
 from .agent_coordinator import AgentCoordinator, AgentExecutionSpec
+from core.content_expansion import IntelligentContentExpander
 
 from .campaign_context import CampaignContext
 from .config_manager import ConfigManager
@@ -46,6 +47,7 @@ class WorkflowResult:
     learning_data: Dict[str, Any]
     status: str  # 'completed', 'failed', 'partial'
     code_generation_metrics: Dict[str, Any] = None  # Phase 3: Code generation metrics
+    expansion_metrics: Dict[str, Any] = None  # Phase 1: Content expansion metrics
 
 
 class WorkflowOrchestrator:
@@ -77,12 +79,23 @@ class WorkflowOrchestrator:
         # Phase 3: Add template manager for code generation
         self.template_manager = AIMLTemplateManager()
         
+        # Phase 1 Enhancement: Add content expansion system
+        self.content_expander = None  # Lazy initialization
+        
         # Code generation metrics tracking
         self.code_generation_metrics = {
             'examples_generated': 0,
             'validation_score': 0.0,
             'execution_success_rate': 0.0,
             'frameworks_used': []
+        }
+        
+        # Content expansion metrics tracking
+        self.expansion_metrics = {
+            'expansions_applied': 0,
+            'target_word_compliance': 0.0,
+            'expansion_quality_score': 0.0,
+            'sections_expanded': []
         }
 
     def _initialize_agents(self) -> None:
@@ -147,12 +160,39 @@ class WorkflowOrchestrator:
             phase_results['research'] = research_result
             logger.info("Research phase completed")
 
+            # Template Selection Phase
+            self.execution_state.update_phase('template_selection')
+            template_type = self.template_manager.suggest_template(topic)
+            template = self.template_manager.get_template(template_type)
+            
+            if not template:
+                logger.warning(f"Template {template_type} not available, falling back to TECHNICAL_DEEP_DIVE")
+                template_type = NewsletterType.TECHNICAL_DEEP_DIVE
+                template = self.template_manager.get_template(template_type)
+            
+            logger.info(f"Selected template: {template_type.value} ({template.total_word_target} words)")
+            phase_results['template_selection'] = {
+                'template_type': template_type.value,
+                'target_words': template.total_word_target,
+                'sections': [s.name for s in template.sections]
+            }
+
             # Writing Phase
             self.execution_state.update_phase('writing')
             writing_result = self._execute_writing_phase(
-                research_result, topic)
+                research_result, topic, template_type, template)
             phase_results['writing'] = writing_result
             logger.info("Writing phase completed")
+
+            # Quality Gate Phase
+            self.execution_state.update_phase('quality_validation')
+            quality_result = self._execute_quality_validation(
+                writing_result['content'], {
+                    'template_type': template_type.value,
+                    'target_word_count': template.total_word_target,
+                    'topic': topic
+                }, writing_result)
+            phase_results['quality_validation'] = quality_result
 
             # Refinement Phase (pre-multi-agent)
             self.execution_state.update_phase('refinement')
@@ -205,7 +245,8 @@ class WorkflowOrchestrator:
                 phase_results=phase_results,
                 learning_data=learning_data,
                 status='completed',
-                code_generation_metrics=self.code_generation_metrics.copy()  # Phase 3: Include code metrics
+                code_generation_metrics=self.code_generation_metrics.copy(),  # Phase 3: Include code metrics
+                expansion_metrics=self.expansion_metrics.copy()  # Phase 1: Include expansion metrics
             )
 
             logger.info(
@@ -226,7 +267,8 @@ class WorkflowOrchestrator:
                 phase_results={},
                 learning_data={'error': str(e)},
                 status='failed',
-                code_generation_metrics=self.code_generation_metrics.copy()  # Phase 3: Include code metrics
+                code_generation_metrics=self.code_generation_metrics.copy(),  # Phase 3: Include code metrics
+                expansion_metrics=self.expansion_metrics.copy()  # Phase 1: Include expansion metrics
             )
 
     def _load_campaign_context(self, context_id: str) -> CampaignContext:
@@ -285,7 +327,7 @@ class WorkflowOrchestrator:
             }
 
     def _build_processing_context(self, content: str, metadata: Dict[str, Any]):
-        from src.agents.base_agent import ProcessingContext, ProcessingMode
+        from agents.base_agent import ProcessingContext, ProcessingMode
         # Map campaign context fields when available
         audience = None
         technical_level = None
@@ -309,7 +351,7 @@ class WorkflowOrchestrator:
     def _derive_sections_from_content(self, content: str) -> Dict[str, str]:
         """Heuristically derive sections from markdown headings for continuity analysis."""
         try:
-            from src.core.section_aware_prompts import SectionType
+            from core.section_aware_prompts import SectionType
         except Exception:
             # Fallback keys as strings
             SectionType = None
@@ -483,18 +525,17 @@ class WorkflowOrchestrator:
             }
 
     def _execute_writing_phase(
-            self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:
-        """Execute the writing phase with Phase 3 code generation integration."""
-        logger.info("Starting enhanced writing phase with code generation")
+            self, research_result: Dict[str, Any], topic: str, 
+            template_type: NewsletterType, template) -> Dict[str, Any]:
+        """Execute the enhanced writing phase with content expansion and code generation."""
+        logger.info("Starting enhanced writing phase with content expansion and code generation")
 
         try:
             if 'writer' in self.agents:
                 # Determine if this is a technical topic requiring code examples
                 is_technical = self._is_technical_topic(topic)
                 
-                # Get appropriate template
-                template_type = self.template_manager.suggest_template(topic)
-                template = self.template_manager.get_template(template_type)
+                logger.info(f"Using template: {template_type.value} with {len(template.sections)} sections")
                 
                 if is_technical and template:
                     # Enhanced technical content with code generation
@@ -502,10 +543,17 @@ class WorkflowOrchestrator:
                         research_result, topic, template
                     )
                 else:
-                    # Standard writing workflow
-                    writing_result = self._execute_standard_writing(
-                        research_result, topic
+                    # Template-compliant writing workflow
+                    writer_agent = self.agents['writer']
+                    writing_result = writer_agent.write_with_template_compliance(
+                        topic, template, research_result.get('content', ''),
+                        tone='professional', audience='technical'
                     )
+                
+                # Phase 1 Enhancement: Apply content expansion if needed
+                writing_result = self._apply_content_expansion_if_needed(
+                    writing_result, template, topic, research_result
+                )
 
                 return writing_result
             else:
@@ -551,30 +599,40 @@ class WorkflowOrchestrator:
             Target audience: {self.campaign_context.audience_persona if self.campaign_context else 'technical professionals'}
             """
             
-            content = self.agents['writer'].generate_technical_content_with_code(
-                topic=topic,
-                context=writing_context,
-                include_code=True
+            # Execute template-compliant technical writing with code enhancement
+            writer_agent = self.agents['writer']
+            writing_result = writer_agent.write_with_template_compliance(
+                topic, template, research_result.get('content', ''),
+                tone='technical', audience='technical', enable_code_generation=True
             )
             
-            # Generate additional code examples if needed
-            code_examples = self.agents['writer'].generate_code_examples(
-                topic=topic,
-                count=2
-            )
+            # Extract content and metrics
+            content = writing_result.get('content', '')
             
-            # Track code generation metrics
-            self._update_code_generation_metrics(code_examples)
+            # Generate additional code examples for technical sections
+            if hasattr(writer_agent, 'generate_code_examples'):
+                code_examples = writer_agent.generate_code_examples(topic=topic, count=2)
+                self._update_code_generation_metrics(code_examples)
+            else:
+                code_examples = []
             
-            return {
+            # Merge results with template compliance data
+            result = writing_result.copy()
+            result.update({
                 'status': 'completed',
-                'content': content,
-                'word_count': len(content.split()),
                 'code_examples_count': len(code_examples),
                 'template_used': template.type.value,
                 'technical_enhanced': True,
-                'timestamp': time.time()
-            }
+                'timestamp': time.time(),
+                'tool_usage_metrics': {
+                    'code_generation_enabled': True,
+                    'code_examples_count': len(code_examples),
+                    'template_compliance': writing_result.get('template_compliance', {}),
+                    'section_results': writing_result.get('section_results', {})
+                }
+            })
+            
+            return result
     
     def _execute_standard_writing(
             self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:
@@ -630,6 +688,70 @@ class WorkflowOrchestrator:
         topic_lower = topic.lower()
         return any(keyword in topic_lower for keyword in technical_keywords)
     
+    def _execute_quality_validation(self, content: str, metadata: Dict[str, Any], 
+                                   writing_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute quality validation including template compliance."""
+        try:
+            from .advanced_quality_gates import ConfigurableQualityGate
+            
+            # Initialize quality gate with enforcing level
+            quality_gate = ConfigurableQualityGate(enforcement_level="enforcing")
+            
+            # Add tool usage metrics from writing phase
+            tool_usage = writing_result.get('tool_usage_metrics', {})
+            
+            # Run quality validation
+            quality_report = quality_gate.validate_with_level(
+                content, tool_usage, metadata, "enforcing"
+            )
+            
+            logger.info(f"Quality validation: Overall score {quality_report.overall_score:.2f}")
+            
+            # Check template compliance specifically
+            template_score = quality_report.dimension_scores.get('template_compliance')
+            if template_score:
+                logger.info(f"Template compliance: {template_score.score:.2f}/10.0")
+            
+            # Check if content should be blocked
+            if quality_report.content_blocked:
+                logger.warning("Content blocked by quality gates - initiating remediation")
+                
+                # Generate improvement recommendations
+                recommendations = []
+                for dimension, score in quality_report.dimension_scores.items():
+                    if score.violations:
+                        recommendations.extend(score.recommendations)
+                
+                return {
+                    'passed': False,
+                    'overall_score': quality_report.overall_score,
+                    'blocked': True,
+                    'violations': quality_report.critical_violations,
+                    'recommendations': recommendations[:5],  # Top 5 recommendations
+                    'enforcement_level': quality_report.enforcement_level.value,
+                    'timestamp': time.time()
+                }
+            else:
+                return {
+                    'passed': True,
+                    'overall_score': quality_report.overall_score,
+                    'blocked': False,
+                    'violations': 0,
+                    'recommendations': [],
+                    'enforcement_level': quality_report.enforcement_level.value,
+                    'timestamp': time.time()
+                }
+                
+        except Exception as e:
+            logger.error(f"Quality validation failed: {e}")
+            return {
+                'passed': False,
+                'overall_score': 0.0,
+                'blocked': True,
+                'error': str(e),
+                'timestamp': time.time()
+            }
+    
     def _update_code_generation_metrics(self, code_examples: List[str]) -> None:
         """Update code generation metrics for tracking."""
         if code_examples:
@@ -649,6 +771,128 @@ class WorkflowOrchestrator:
                 elif 'pandas' in example.lower():
                     if 'pandas' not in self.code_generation_metrics['frameworks_used']:
                         self.code_generation_metrics['frameworks_used'].append('pandas')
+    
+    def _get_content_expander(self) -> IntelligentContentExpander:
+        """Get content expander with lazy initialization."""
+        if self.content_expander is None:
+            try:
+                from core.advanced_quality_gates import ConfigurableQualityGate
+                quality_gate = ConfigurableQualityGate("enforcing")
+                self.content_expander = IntelligentContentExpander(quality_gate)
+                logger.info("Content expander initialized successfully")
+            except Exception as e:
+                logger.warning(f"Failed to initialize content expander with quality gate: {e}")
+                self.content_expander = IntelligentContentExpander()
+        
+        return self.content_expander
+    
+    def _apply_content_expansion_if_needed(
+            self, writing_result: Dict[str, Any], template, 
+            topic: str, research_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply content expansion if word count targets aren't met."""
+        try:
+            content = writing_result.get('content', '')
+            current_word_count = len(content.split())
+            target_word_count = template.total_word_target if template else 3000
+            
+            # Check if expansion is needed (less than 85% of target)
+            word_compliance = current_word_count / target_word_count
+            expansion_threshold = 0.85  # 85% compliance threshold
+            
+            logger.info(f"Word count analysis: {current_word_count}/{target_word_count} words ({word_compliance:.1%} compliance)")
+            
+            if word_compliance < expansion_threshold:
+                logger.info(f"Content expansion needed: {word_compliance:.1%} < {expansion_threshold:.1%} threshold")
+                
+                # Apply intelligent content expansion
+                expanded_result = self._execute_content_expansion(
+                    content, target_word_count, template.type.value if template else 'technical_deep_dive',
+                    topic, research_result
+                )
+                
+                if expanded_result.success:
+                    # Update writing result with expanded content
+                    writing_result['content'] = expanded_result.expanded_content
+                    writing_result['word_count'] = expanded_result.final_word_count
+                    writing_result['expansion_applied'] = True
+                    writing_result['expansion_metrics'] = {
+                        'original_words': expanded_result.original_word_count,
+                        'final_words': expanded_result.final_word_count,
+                        'expansion_achieved': expanded_result.expansion_achieved,
+                        'target_achievement': expanded_result.target_achievement,
+                        'quality_score': expanded_result.quality_metrics.get('overall_score', 0.0)
+                    }
+                    
+                    # Update expansion metrics
+                    self._update_expansion_metrics(expanded_result)
+                    
+                    logger.info(f"Content expansion completed: {expanded_result.target_achievement:.1%} target achievement")
+                else:
+                    logger.warning(f"Content expansion failed: {expanded_result.error_message}")
+                    writing_result['expansion_applied'] = False
+                    writing_result['expansion_error'] = expanded_result.error_message
+            else:
+                logger.info(f"Content expansion not needed: {word_compliance:.1%} compliance meets threshold")
+                writing_result['expansion_applied'] = False
+                writing_result['expansion_reason'] = 'threshold_met'
+            
+            return writing_result
+            
+        except Exception as e:
+            logger.error(f"Content expansion failed: {e}")
+            writing_result['expansion_applied'] = False
+            writing_result['expansion_error'] = str(e)
+            return writing_result
+    
+    def _execute_content_expansion(
+            self, content: str, target_words: int, template_type: str,
+            topic: str, research_result: Dict[str, Any]):
+        """Execute intelligent content expansion."""
+        expander = self._get_content_expander()
+        
+        # Prepare metadata for expansion
+        metadata = {
+            'topic': topic,
+            'template_type': template_type,
+            'research_content': research_result.get('content', ''),
+            'campaign_context': self.campaign_context.content_style if self.campaign_context else {},
+            'audience': self.campaign_context.audience_persona if self.campaign_context else {},
+            'tool_usage': {
+                'workflow_id': self.execution_state.workflow_id if self.execution_state else 'unknown',
+                'session_id': self.execution_state.session_id if self.execution_state else 'unknown'
+            }
+        }
+        
+        # Execute content expansion
+        with self.tool_tracker.track_tool_usage(
+            tool_name="intelligent_content_expansion",
+            agent_name="WorkflowOrchestrator",
+            workflow_id=self.execution_state.workflow_id if self.execution_state else 'unknown',
+            session_id=self.execution_state.session_id if self.execution_state else 'unknown',
+            input_data={
+                "current_words": len(content.split()),
+                "target_words": target_words,
+                "template_type": template_type,
+                "topic": topic
+            },
+            context={"phase": "writing", "subphase": "content_expansion"}
+        ):
+            expansion_result = expander.expand_content(
+                content, target_words, template_type, metadata
+            )
+        
+        return expansion_result
+    
+    def _update_expansion_metrics(self, expansion_result) -> None:
+        """Update content expansion metrics for tracking."""
+        self.expansion_metrics['expansions_applied'] += 1
+        self.expansion_metrics['target_word_compliance'] = expansion_result.target_achievement
+        self.expansion_metrics['expansion_quality_score'] = expansion_result.quality_metrics.get('overall_score', 0.0)
+        
+        # Track which sections were expanded
+        for opportunity in expansion_result.expansions_applied:
+            if opportunity.section_name not in self.expansion_metrics['sections_expanded']:
+                self.expansion_metrics['sections_expanded'].append(opportunity.section_name)
 
     def _execute_basic_writing(
             self, research_result: Dict[str, Any], topic: str) -> Dict[str, Any]:

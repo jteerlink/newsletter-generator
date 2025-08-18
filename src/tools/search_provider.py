@@ -206,10 +206,10 @@ class KnowledgeBaseSearchProvider:
         try:
             # Try to import vector database functions
             try:
-                from src.storage import search_vector_db
+                from storage import search_vector_db
             except ImportError:
                 try:
-                    from src.storage import search_vector_db
+                    from storage import search_vector_db
                 except ImportError:
                     logger.warning("Vector database not available")
                     return []
@@ -240,7 +240,7 @@ class KnowledgeBaseSearchProvider:
     def is_available(self) -> bool:
         """Check if knowledge base is available."""
         try:
-            from src.storage import search_vector_db
+            from storage import search_vector_db
             return True
         except ImportError:
             return False

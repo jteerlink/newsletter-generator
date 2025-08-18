@@ -580,10 +580,10 @@ class ToolAugmentedRefinementLoop(SectionAwareRefinementLoop):
         super().__init__(max_iterations)
         
         # Import tool systems
-        from src.core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
-        from src.core.information_enricher import InformationEnricher
-        from src.core.tool_cache import get_tool_cache
-        from src.storage import get_storage_provider
+        from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
+        from core.information_enricher import InformationEnricher
+        from core.tool_cache import get_tool_cache
+        from storage import get_storage_provider
         
         # Initialize tool components
         self.claim_extractor = ClaimExtractor()
@@ -765,7 +765,7 @@ class ToolAugmentedRefinementLoop(SectionAwareRefinementLoop):
                 validation_results = cached_analysis['tool_context']['validation_results']
                 
                 # Rank sources by authority
-                from src.core.source_ranker import SourceAuthorityRanker
+                from core.source_ranker import SourceAuthorityRanker
                 ranker = SourceAuthorityRanker()
                 
                 all_sources = []

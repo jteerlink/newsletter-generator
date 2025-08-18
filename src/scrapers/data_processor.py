@@ -32,8 +32,8 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 try:
-    from src.storage import ChromaStorageProvider
-    from src.storage.base import StorageConfig
+    from storage import ChromaStorageProvider
+    from storage.base import StorageConfig
 except ImportError:
     # Optional dependency - VectorStore functionality will be disabled
     ChromaStorageProvider = None

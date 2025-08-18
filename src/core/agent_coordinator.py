@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.agents.base_agent import (
+from agents.base_agent import (
     BaseSpecializedAgent,
     ProcessingContext,
     ProcessingResult,
@@ -241,7 +241,7 @@ class AgentCoordinator:
 
 def transfer_research_context(research_results: Dict, writer_agent):
     """Transfer validated search results and claims to writer."""
-    from src.core.tool_cache import get_tool_cache
+    from core.tool_cache import get_tool_cache
     
     cache = get_tool_cache()
     
@@ -283,7 +283,7 @@ def transfer_content_metadata(content: str, tool_usage: Dict, editor_agent,
                             session_id: Optional[str] = None,
                             workflow_id: Optional[str] = None):
     """Transfer content with tool usage metadata for validation."""
-    from src.core.tool_cache import get_tool_cache
+    from core.tool_cache import get_tool_cache
     
     cache = get_tool_cache()
     
@@ -332,7 +332,7 @@ def coordinate_iterative_refinement(content: str, agents: List[Any],
                                   session_id: Optional[str] = None,
                                   workflow_id: Optional[str] = None) -> Dict[str, Any]:
     """Coordinate iterative refinement across multiple agents."""
-    from src.core.tool_cache import get_tool_cache
+    from core.tool_cache import get_tool_cache
     
     cache = get_tool_cache()
     current_content = content

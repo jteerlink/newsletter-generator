@@ -14,12 +14,12 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
-from src.core.campaign_context import CampaignContext
-from src.core.config_manager import ConfigManager
-from src.core.core import query_llm
-from src.core.execution_state import ExecutionState
-from src.core.feedback_system import RequiredAction, StructuredFeedback
-from src.core.template_manager import AIMLTemplateManager, NewsletterType
+from core.campaign_context import CampaignContext
+from core.config_manager import ConfigManager
+from core.core import query_llm
+from core.execution_state import ExecutionState
+from core.feedback_system import RequiredAction, StructuredFeedback
+from core.template_manager import AIMLTemplateManager, NewsletterType
 
 from .base import AgentType, SimpleAgent, TaskResult, TaskStatus
 

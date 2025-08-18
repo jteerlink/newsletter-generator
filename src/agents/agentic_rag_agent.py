@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from src.core.core import query_llm
-from src.storage import ChromaStorageProvider
+from core.core import query_llm
+from storage import ChromaStorageProvider
 
 logger = logging.getLogger(__name__)
 

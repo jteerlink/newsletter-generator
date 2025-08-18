@@ -24,9 +24,9 @@ try:
     from .rss_extractor import Article
 except ImportError:
     try:
-        # Try importing from src.scrapers first
-        from src.scrapers.config_loader import SourceConfig
-        from src.scrapers.rss_extractor import Article
+        # Try importing from scrapers first
+        from scrapers.config_loader import SourceConfig
+        from scrapers.rss_extractor import Article
     except ImportError:
         # Fallback to direct imports (for when run directly)
         from config_loader import SourceConfig
@@ -988,7 +988,7 @@ async def main():
             try:
                 from config_loader import ConfigLoader
             except ImportError:
-                from src.scrapers.config_loader import ConfigLoader
+                from scrapers.config_loader import ConfigLoader
 
         config = ConfigLoader("src/sources.yaml")
         sources = config.get_active_sources()[:2]  # Test with first 2 sources

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """CLI utility for managing LLM providers and configuration."""
 
-from src.core.llm_providers import LLMProviderFactory, get_llm_provider
-from src.core.llm_config_validator import get_validator
-from src.core.core import get_llm_provider_info, reconfigure_llm_provider
+from core.llm_providers import LLMProviderFactory, get_llm_provider
+from core.llm_config_validator import get_validator
+from core.core import get_llm_provider_info, reconfigure_llm_provider
 import argparse
 import os
 import sys
@@ -26,7 +26,7 @@ def cmd_test():
 
     try:
         # Import here to avoid circular imports
-        from src.core.core import query_llm
+        from core.core import query_llm
 
         print("Sending test query...")
         response = query_llm(

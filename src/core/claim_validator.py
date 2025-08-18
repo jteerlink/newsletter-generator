@@ -16,8 +16,8 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
-from src.core.tool_usage_tracker import get_tool_tracker
-from src.tools.tools import search_web
+from core.tool_usage_tracker import get_tool_tracker
+from tools.tools import search_web
 
 logger = logging.getLogger(__name__)
 

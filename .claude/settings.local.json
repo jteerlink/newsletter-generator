@@ -5,6 +5,7 @@
       "Bash(python:*)",
       "Bash(find:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

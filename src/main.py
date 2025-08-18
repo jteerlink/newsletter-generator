@@ -37,15 +37,15 @@ logger = logging.getLogger(__name__)
 
 # Import tool usage enhancement components
 try:
-    from src.core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
-    from src.core.information_enricher import InformationEnricher
-    from src.core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
-    from src.core.advanced_quality_gates import AdvancedQualityGate, QualityDimension
-    from src.core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
-    from src.core.tool_cache import get_tool_cache
-    from src.storage import get_storage_provider
-    from src.tools.enhanced_search import MultiProviderSearchEngine
-    from src.core.source_ranker import SourceAuthorityRanker
+    from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
+    from core.information_enricher import InformationEnricher
+    from core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
+    from core.advanced_quality_gates import AdvancedQualityGate, QualityDimension
+    from core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
+    from core.tool_cache import get_tool_cache
+    from storage import get_storage_provider
+    from tools.enhanced_search import MultiProviderSearchEngine
+    from core.source_ranker import SourceAuthorityRanker
     TOOL_USAGE_AVAILABLE = True
     logger.info("Tool usage enhancement components loaded successfully")
 except ImportError as e:
@@ -54,9 +54,9 @@ except ImportError as e:
 
 # Import enhanced components
 try:
-    from src.core.campaign_context import CampaignContext
-    from src.core.config_manager import ConfigManager
-    from src.core.workflow_orchestrator import WorkflowOrchestrator
+    from core.campaign_context import CampaignContext
+    from core.config_manager import ConfigManager
+    from core.workflow_orchestrator import WorkflowOrchestrator
     ENHANCED_MODE = True
     logger.info("Enhanced workflow orchestrator loaded successfully")
 except ImportError as e:
@@ -173,11 +173,11 @@ def execute_hierarchical_newsletter_generation(
 
     try:
         if TOOL_USAGE_AVAILABLE:
-            from src.enhanced_generation import execute_tool_augmented_generation
+            from enhanced_generation import execute_tool_augmented_generation
             return execute_tool_augmented_generation(topic, audience, tool_usage_metrics)
         else:
             logger.warning("Tool usage components not available, falling back to basic generation")
-            from src.enhanced_generation import execute_basic_generation
+            from enhanced_generation import execute_basic_generation
             return execute_basic_generation(topic, audience, tool_usage_metrics)
 
     except Exception as e:

@@ -15,12 +15,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from src.core.core import query_llm
-from src.core.exceptions import AgentError
-from src.core.tool_usage_tracker import get_tool_tracker
-from src.core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_TOOLS
-from src.core.tool_integration import ToolIntegrationEngine
-from src.tools.tools import TOOL_REGISTRY
+from core.core import query_llm
+from core.exceptions import AgentError
+from core.tool_usage_tracker import get_tool_tracker
+from core.constants import TOOL_ENFORCEMENT_ENABLED, MANDATORY_TOOLS
+from core.tool_integration import ToolIntegrationEngine
+from tools.tools import TOOL_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -436,7 +436,7 @@ class SimpleAgent(BaseAgent):
                 self.context.workflow_id}")
 
         # Phase 2.2: Enhanced tool tracking with proper context manager
-        from src.core.tool_usage_tracker import get_tool_tracker
+        from core.tool_usage_tracker import get_tool_tracker
         tool_tracker = get_tool_tracker()
 
         tool_results = []

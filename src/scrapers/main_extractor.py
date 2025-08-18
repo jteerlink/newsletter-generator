@@ -35,14 +35,14 @@ except ImportError:
         from data_processor import DataProcessor, ReportGenerator
         from rss_extractor import RSSExtractor
     except ImportError:
-        from src.scrapers.config_loader import ConfigLoader, SourceConfig
-        from src.scrapers.crawl4ai_web_scraper import (
+        from scrapers.config_loader import ConfigLoader, SourceConfig
+        from scrapers.crawl4ai_web_scraper import (
             Crawl4AiWebScraper,
             SmartCrawl4AiWebScraper,
             WebScraperWrapper,
         )
-        from src.scrapers.data_processor import DataProcessor, ReportGenerator
-        from src.scrapers.rss_extractor import RSSExtractor
+        from scrapers.data_processor import DataProcessor, ReportGenerator
+        from scrapers.rss_extractor import RSSExtractor
 
 # Ensure logs directory exists at repo root
 log_dir = Path(__file__).resolve().parent.parent.parent / "logs"

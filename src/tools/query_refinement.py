@@ -9,7 +9,7 @@ import logging
 import re
 from typing import Dict, List, Optional, Set, Tuple
 
-from src.core.campaign_context import CampaignContext
+from core.campaign_context import CampaignContext
 
 logger = logging.getLogger(__name__)
 

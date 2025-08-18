@@ -13,12 +13,12 @@ import re  # Added for claim extraction
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.core.campaign_context import CampaignContext
-import src.core.core as core
-from src.core.research_strategy import IntelligentResearchOrchestrator
-import src.tools.tools as tools
-from src.tools.enhanced_search import EnhancedSearchTool
-from src.tools.query_refinement import get_query_refinement_engine
+from core.campaign_context import CampaignContext
+import core.core as core
+from core.research_strategy import IntelligentResearchOrchestrator
+import tools.tools as tools
+from tools.enhanced_search import EnhancedSearchTool
+from tools.query_refinement import get_query_refinement_engine
 
 from .base import AgentType, SimpleAgent
 

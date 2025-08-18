@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 # Import the monitoring decorator
-from src.core.generation_monitor import monitor_generation_timeout
+from core.generation_monitor import monitor_generation_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +21,18 @@ logger = logging.getLogger(__name__)
 def execute_tool_augmented_generation(topic: str, audience: str, 
                                     tool_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Execute newsletter generation with full tool usage enhancement and monitoring."""
-    from src.core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
-    from src.core.information_enricher import InformationEnricher
-    from src.core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
-    from src.core.advanced_quality_gates import AdvancedQualityGate
-    from src.core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
-    from src.core.tool_cache import get_tool_cache
-    from src.storage import get_storage_provider
-    from src.tools.enhanced_search import MultiProviderSearchEngine
-    from src.core.source_ranker import SourceAuthorityRanker
-    from src.core.core import query_llm
-    from src.core.generation_monitor import get_generation_monitor, GenerationCheckpoint, GenerationStatus
-    from src.core.template_compliance import validate_newsletter_compliance, ComplianceLevel
+    from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
+    from core.information_enricher import InformationEnricher
+    from core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
+    from core.advanced_quality_gates import AdvancedQualityGate
+    from core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
+    from core.tool_cache import get_tool_cache
+    from storage import get_storage_provider
+    from tools.enhanced_search import MultiProviderSearchEngine
+    from core.source_ranker import SourceAuthorityRanker
+    from core.core import query_llm
+    from core.generation_monitor import get_generation_monitor, GenerationCheckpoint, GenerationStatus
+    from core.template_compliance import validate_newsletter_compliance, ComplianceLevel
     
     start_time = time.time()
     session_id = f"session_{int(time.time())}"
@@ -97,23 +97,49 @@ def execute_tool_augmented_generation(topic: str, audience: str,
         # Multi-provider web search
         search_results = []
         try:
+            # Use correct provider names that match the actual search providers
             search_results = search_engine.intelligent_search(
                 f"{topic} recent developments 2024 2025",
-                providers=['web', 'news', 'academic']
+                providers=['duckduckgo', 'news', 'arxiv']
             )
             tool_usage_metrics['web_searches'] += 1
-            tool_usage_metrics['search_providers'] = ['web', 'news', 'academic']
+            tool_usage_metrics['search_providers'] = ['duckduckgo', 'news', 'arxiv']
             
             # Cache search results
-            tool_cache.cache_search_results(
-                f"{topic} recent developments", [r.content for r in search_results],
-                provider="multi", agent_name="NewsletterGenerator",
-                session_id=session_id, workflow_id=workflow_id
-            )
+            if search_results:
+                tool_cache.cache_search_results(
+                    f"{topic} recent developments", [r.content for r in search_results],
+                    provider="multi", agent_name="NewsletterGenerator",
+                    session_id=session_id, workflow_id=workflow_id
+                )
             
             logger.info(f"Retrieved {len(search_results)} web search results")
         except Exception as e:
-            logger.warning(f"Web search failed: {e}")
+            logger.warning(f"Enhanced web search failed: {e}")
+            
+            # Fallback to basic unified search provider
+            try:
+                from tools.search_provider import get_unified_search_provider
+                fallback_provider = get_unified_search_provider()
+                fallback_results = fallback_provider.search(f"{topic} recent developments 2024 2025", max_results=5)
+                
+                if fallback_results:
+                    # Convert to expected format
+                    search_results = []
+                    for result in fallback_results:
+                        search_results.append(type('SearchResult', (), {
+                            'title': result.title,
+                            'url': result.url, 
+                            'content': result.snippet,
+                            'source': result.source
+                        })())
+                    
+                    tool_usage_metrics['web_searches'] += 1
+                    tool_usage_metrics['search_providers'] = ['unified_fallback']
+                    logger.info(f"Fallback search retrieved {len(search_results)} results")
+                
+            except Exception as e2:
+                logger.error(f"Fallback search also failed: {e2}")
         
         # Complete Phase 1 checkpoint
         research_word_count = len(' '.join([str(r) for r in vector_results + search_results]).split())
@@ -436,7 +462,7 @@ def execute_tool_augmented_generation(topic: str, audience: str,
 def execute_basic_generation(topic: str, audience: str, 
                            tool_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Fallback to basic generation when tool components unavailable."""
-    from src.core.core import query_llm
+    from core.core import query_llm
     import os
     
     start_time = time.time()

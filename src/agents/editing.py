@@ -12,16 +12,16 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.core.campaign_context import CampaignContext
-import src.core.core as core
-from src.core.feedback_system import (
+from core.campaign_context import CampaignContext
+import core.core as core
+from core.feedback_system import (
     FeedbackGenerator,
     IssueType,
     RequiredAction,
     Severity,
     StructuredFeedback,
 )
-from src.core.template_manager import AIMLTemplateManager, NewsletterType
+from core.template_manager import AIMLTemplateManager, NewsletterType
 
 from .base import AgentType, SimpleAgent, TaskResult, TaskStatus
 

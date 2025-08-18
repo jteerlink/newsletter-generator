@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from src.core.campaign_context import CampaignContext
-from src.tools.search_provider import (
+from core.campaign_context import CampaignContext
+from tools.search_provider import (
     SearchQuery,
     SearchResult,
     get_unified_search_provider

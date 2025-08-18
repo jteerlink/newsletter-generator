@@ -19,7 +19,7 @@ import numpy as np
 from chromadb.config import Settings
 from sklearn.cluster import KMeans
 
-from src.core.utils import chunk_text, embed_chunks
+from core.utils import chunk_text, embed_chunks
 
 from .base import (
     DataType,
@@ -51,14 +51,20 @@ class ChromaStorageProvider(StorageProvider):
             import os
             os.makedirs(self.config.db_path, exist_ok=True)
 
-            # Use simple ChromaDB client initialization
+            # Use persistent ChromaDB client initialization
             try:
-                # Try with minimal configuration
-                self.client = chromadb.Client()
-                logger.info("Using ChromaDB Client (in-memory)")
+                # Try persistent client first
+                self.client = chromadb.PersistentClient(path=self.config.db_path)
+                logger.info(f"Using ChromaDB PersistentClient at {self.config.db_path}")
             except Exception as e:
-                logger.error(f"Failed to create ChromaDB client: {e}")
-                return False
+                logger.warning(f"Failed to create persistent ChromaDB client: {e}")
+                try:
+                    # Fallback to in-memory client
+                    self.client = chromadb.Client()
+                    logger.info("Using ChromaDB Client (in-memory)")
+                except Exception as e2:
+                    logger.error(f"Failed to create any ChromaDB client: {e2}")
+                    return False
 
             # Create or get collection
             try:

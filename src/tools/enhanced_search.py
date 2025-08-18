@@ -301,6 +301,7 @@ class NewsAPIProvider:
     def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """Search for recent news articles."""
         if not self.is_available():
+            logger.warning("NewsAPI not available - missing API key")
             return []
         
         try:
@@ -322,6 +323,12 @@ class NewsAPIProvider:
             response.raise_for_status()
             
             data = response.json()
+            
+            # Check for API errors
+            if data.get('status') == 'error':
+                logger.error(f"NewsAPI error: {data.get('message', 'Unknown error')}")
+                return []
+            
             results = []
             
             for article in data.get('articles', []):
@@ -948,6 +955,7 @@ class MultiProviderSearchEngine:
         
         # Collect results from all providers
         provider_results = {}
+        successful_providers = []
         
         for provider in providers:
             if provider in self.enhanced_search.search_providers:
@@ -960,11 +968,39 @@ class MultiProviderSearchEngine:
                         results, query, None)
                     
                     provider_results[provider] = search_results
+                    successful_providers.append(provider)
                     logger.info(f"Retrieved {len(search_results)} results from {provider}")
                     
                 except Exception as e:
                     logger.warning(f"Provider {provider} search failed: {e}")
                     provider_results[provider] = []
+        
+        # If no providers succeeded, try fallback search with unified search provider
+        if not successful_providers:
+            logger.warning("All primary providers failed, trying fallback search")
+            try:
+                from .search_provider import get_unified_search_provider
+                fallback_provider = get_unified_search_provider()
+                fallback_results = fallback_provider.search(query, max_results)
+                
+                if fallback_results:
+                    # Convert to ScoredResult format
+                    scored_fallback = []
+                    for result in fallback_results:
+                        scored_result = ScoredResult(
+                            title=result.title,
+                            url=result.url,
+                            snippet=result.snippet,
+                            source=result.source,
+                            confidence_score=0.7,  # Default confidence
+                            fusion_score=0.7,
+                            provider_scores={'fallback': 0.7}
+                        )
+                        scored_fallback.append(scored_result)
+                    logger.info(f"Retrieved {len(scored_fallback)} results from fallback search")
+                    return scored_fallback[:max_results]
+            except Exception as e:
+                logger.error(f"Fallback search also failed: {e}")
         
         # Fuse results with confidence scoring
         fused_results = self.confidence_scoring(provider_results, query)

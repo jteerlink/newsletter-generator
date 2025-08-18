@@ -19,7 +19,7 @@ except ImportError:
     try:
         from config_loader import SourceConfig
     except ImportError:
-        from src.scrapers.config_loader import SourceConfig
+        from scrapers.config_loader import SourceConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -301,7 +301,7 @@ def main():
         try:
             from config_loader import ConfigLoader
         except ImportError:
-            from src.scrapers.config_loader import ConfigLoader
+            from scrapers.config_loader import ConfigLoader
     from datetime import timedelta
 
     # Load configuration

@@ -346,6 +346,186 @@ class AIMLTemplateManager:
             ]
         )
 
+        # Tutorial Guide Template
+        templates[NewsletterType.TUTORIAL_GUIDE] = NewsletterTemplate(
+            name="AI/ML Tutorial Guide",
+            type=NewsletterType.TUTORIAL_GUIDE,
+            description="Step-by-step tutorial guide for implementing AI/ML concepts with practical examples",
+            target_audience="AI/ML practitioners, developers, and students",
+            sections=[
+                TemplateSection(
+                    name="Introduction & Overview",
+                    description="Introduction to the topic with learning objectives and prerequisites",
+                    content_guidelines=[
+                        "Clearly state what readers will learn",
+                        "List prerequisites and required knowledge",
+                        "Explain why this topic is important and relevant",
+                        "Provide a roadmap of the tutorial content"
+                    ],
+                    word_count_target=400,
+                    required_elements=["learning objectives", "prerequisites", "topic importance"],
+                    optional_elements=["historical context", "use case overview"]
+                ),
+                TemplateSection(
+                    name="Conceptual Foundation",
+                    description="Core concepts and theoretical background explained clearly",
+                    content_guidelines=[
+                        "Break down complex concepts into digestible parts",
+                        "Use analogies and examples to explain abstract concepts",
+                        "Include visual aids and diagrams where helpful",
+                        "Build understanding progressively from basics to advanced"
+                    ],
+                    word_count_target=600,
+                    required_elements=["core concepts", "foundational theory"],
+                    optional_elements=["mathematical background", "comparison with alternatives"]
+                ),
+                TemplateSection(
+                    name="Technical Implementation",
+                    description="Detailed implementation with code examples and explanations",
+                    content_guidelines=[
+                        "Provide complete, working code examples",
+                        "Explain each step of the implementation",
+                        "Include error handling and best practices",
+                        "Show multiple approaches where appropriate",
+                        "Use appropriate AI/ML frameworks (PyTorch, TensorFlow, etc.)"
+                    ],
+                    word_count_target=800,
+                    required_elements=["working code", "step-by-step explanation", "best practices"],
+                    optional_elements=["alternative implementations", "optimization tips"]
+                ),
+                TemplateSection(
+                    name="Practical Examples",
+                    description="Real-world examples and hands-on exercises",
+                    content_guidelines=[
+                        "Provide practical, real-world scenarios",
+                        "Include hands-on exercises with solutions",
+                        "Show common variations and extensions",
+                        "Demonstrate practical applications"
+                    ],
+                    word_count_target=700,
+                    required_elements=["practical examples", "hands-on exercises"],
+                    optional_elements=["extended challenges", "project ideas"]
+                ),
+                TemplateSection(
+                    name="Troubleshooting & Tips",
+                    description="Common issues, debugging tips, and optimization strategies",
+                    content_guidelines=[
+                        "Address common pitfalls and errors",
+                        "Provide debugging strategies and tips",
+                        "Include performance optimization guidance",
+                        "Share lessons learned and best practices"
+                    ],
+                    word_count_target=400,
+                    required_elements=["common issues", "debugging tips"],
+                    optional_elements=["performance optimization", "advanced tips"]
+                ),
+                TemplateSection(
+                    name="Next Steps & Resources",
+                    description="Further learning resources and advanced topics",
+                    content_guidelines=[
+                        "Suggest next steps for continued learning",
+                        "Provide curated list of additional resources",
+                        "Mention advanced topics and extensions",
+                        "Include community resources and support"
+                    ],
+                    word_count_target=300,
+                    required_elements=["next steps", "additional resources"],
+                    optional_elements=["advanced topics", "community links"]
+                )
+            ],
+            total_word_target=3200,
+            special_instructions=[
+                "Focus on practical, hands-on learning",
+                "Include complete, tested code examples",
+                "Use clear, step-by-step explanations",
+                "Make content accessible to beginners while providing depth",
+                "Include troubleshooting and debugging guidance"
+            ]
+        )
+
+        # Research Summary Template  
+        templates[NewsletterType.RESEARCH_SUMMARY] = NewsletterTemplate(
+            name="AI/ML Research Summary",
+            type=NewsletterType.RESEARCH_SUMMARY,
+            description="Comprehensive summary of recent AI/ML research papers and findings",
+            target_audience="AI/ML researchers, practitioners, and academics",
+            sections=[
+                TemplateSection(
+                    name="Research Overview",
+                    description="Introduction to the research area and key findings",
+                    content_guidelines=[
+                        "Introduce the research domain and motivation",
+                        "Summarize key findings and contributions",
+                        "Explain the significance and impact",
+                        "Provide context within the broader field"
+                    ],
+                    word_count_target=400,
+                    required_elements=["research motivation", "key findings", "significance"],
+                    optional_elements=["field context", "historical perspective"]
+                ),
+                TemplateSection(
+                    name="Methodology Analysis",
+                    description="Technical analysis of research methods and approaches",
+                    content_guidelines=[
+                        "Explain research methodologies used",
+                        "Analyze experimental design and setup",
+                        "Discuss data collection and analysis methods",
+                        "Evaluate methodology strengths and limitations"
+                    ],
+                    word_count_target=600,
+                    required_elements=["methodology explanation", "experimental design"],
+                    optional_elements=["methodology comparison", "limitations analysis"]
+                ),
+                TemplateSection(
+                    name="Results & Findings",
+                    description="Detailed analysis of research results and implications",
+                    content_guidelines=[
+                        "Present key results and metrics",
+                        "Analyze statistical significance and validity",
+                        "Discuss practical implications of findings",
+                        "Compare with previous research and baselines"
+                    ],
+                    word_count_target=700,
+                    required_elements=["key results", "statistical analysis", "implications"],
+                    optional_elements=["comparison studies", "validation analysis"]
+                ),
+                TemplateSection(
+                    name="Critical Assessment",
+                    description="Critical evaluation of the research quality and impact",
+                    content_guidelines=[
+                        "Evaluate research quality and rigor",
+                        "Assess reproducibility and generalizability",
+                        "Identify limitations and potential biases",
+                        "Discuss peer review and community reception"
+                    ],
+                    word_count_target=500,
+                    required_elements=["quality assessment", "limitations", "reproducibility"],
+                    optional_elements=["bias analysis", "peer review status"]
+                ),
+                TemplateSection(
+                    name="Future Implications",
+                    description="Analysis of future research directions and applications",
+                    content_guidelines=[
+                        "Identify future research opportunities",
+                        "Discuss potential applications and impact",
+                        "Analyze implications for the field",
+                        "Suggest follow-up research questions"
+                    ],
+                    word_count_target=400,
+                    required_elements=["future research", "applications", "field impact"],
+                    optional_elements=["research questions", "collaboration opportunities"]
+                )
+            ],
+            total_word_target=2600,
+            special_instructions=[
+                "Maintain academic rigor and objectivity",
+                "Include proper citations and references",
+                "Focus on practical implications of research",
+                "Provide critical analysis, not just summary",
+                "Make complex research accessible to practitioners"
+            ]
+        )
+
         return templates
 
     def _initialize_content_frameworks(self) -> Dict[str, Dict[str, Any]]:
