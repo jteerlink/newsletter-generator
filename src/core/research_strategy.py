@@ -12,11 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from core.campaign_context import CampaignContext
-from tools.search_provider import (
-    SearchQuery,
-    SearchResult,
-    get_unified_search_provider
-)
+from tools.search_provider import SearchQuery, SearchResult, get_unified_search_provider
 
 logger = logging.getLogger(__name__)
 

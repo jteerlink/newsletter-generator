@@ -13,7 +13,7 @@ import json
 import logging
 import pickle
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from enum import Enum
 from threading import Lock

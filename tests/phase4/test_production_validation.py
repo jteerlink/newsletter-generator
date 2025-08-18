@@ -7,14 +7,15 @@ This module provides comprehensive validation tests to ensure the tool tracking
 system is ready for production deployment.
 """
 
-import pytest
-import time
 import json
 import os
-from pathlib import Path
-from typing import Dict, List, Any
-
 import sys
+import time
+from pathlib import Path
+from typing import Any, Dict, List
+
+import pytest
+
 sys.path.append('.')
 
 from src.core.tool_usage_tracker import get_tool_tracker

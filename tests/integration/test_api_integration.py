@@ -1,10 +1,13 @@
 """API integration tests for external services."""
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 import requests
-from src.tools.tools import search_web, search_knowledge_base
+
 from src.scrapers.crawl4ai_web_scraper import Crawl4AiWebScraper as Crawl4AIScraper
+from src.tools.tools import search_knowledge_base, search_web
+
 
 class TestSearchAPIIntegration:
     """Test search API integrations."""
@@ -304,7 +307,7 @@ class TestAPIConfiguration:
         """Test API key configuration."""
         # Test that API keys are properly configured
         import os
-        
+
         # Test with missing API key
         if 'SERPER_API_KEY' not in os.environ:
             # Should handle missing API key gracefully

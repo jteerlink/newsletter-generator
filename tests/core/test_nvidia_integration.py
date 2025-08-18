@@ -1,13 +1,14 @@
 """Tests for NVIDIA API integration."""
 
 import os
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import MagicMock, Mock, patch
 
-from src.core.llm_providers import NvidiaProvider, OllamaProvider, LLMProviderFactory
-from src.core.llm_config_validator import LLMConfigValidator
-from src.core.core import query_llm, get_llm_provider_info
+import pytest
+
+from src.core.core import get_llm_provider_info, query_llm
 from src.core.exceptions import LLMError
+from src.core.llm_config_validator import LLMConfigValidator
+from src.core.llm_providers import LLMProviderFactory, NvidiaProvider, OllamaProvider
 
 
 class TestNvidiaProvider:

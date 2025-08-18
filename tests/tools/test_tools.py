@@ -1,13 +1,18 @@
 """Tests for tool functionality."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from src.tools.tools import (
-    search_web, search_web_with_alternatives, search_knowledge_base,
-    AVAILABLE_TOOLS
-)
-from src.core.exceptions import SearchError
 import os
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+from src.core.exceptions import SearchError
+from src.tools.tools import (
+    AVAILABLE_TOOLS,
+    search_knowledge_base,
+    search_web,
+    search_web_with_alternatives,
+)
+
 
 class TestSearchWeb:
     """Test search_web function."""

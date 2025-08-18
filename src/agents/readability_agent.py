@@ -15,11 +15,11 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .base_agent import (
+    AgentConfiguration,
     BaseSpecializedAgent,
     ProcessingContext,
-    ProcessingResult,
-    AgentConfiguration,
     ProcessingMode,
+    ProcessingResult,
 )
 
 logger = logging.getLogger(__name__)

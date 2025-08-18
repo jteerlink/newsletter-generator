@@ -16,8 +16,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from agents.base_agent import (
     BaseSpecializedAgent,
     ProcessingContext,
-    ProcessingResult,
     ProcessingMode,
+    ProcessingResult,
 )
 
 logger = logging.getLogger(__name__)

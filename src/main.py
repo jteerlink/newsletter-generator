@@ -37,15 +37,15 @@ logger = logging.getLogger(__name__)
 
 # Import tool usage enhancement components
 try:
-    from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
-    from core.information_enricher import InformationEnricher
-    from core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
     from core.advanced_quality_gates import AdvancedQualityGate, QualityDimension
+    from core.claim_validator import CitationGenerator, ClaimExtractor, SourceValidator
+    from core.information_enricher import InformationEnricher
+    from core.section_aware_refinement import SectionType, ToolAugmentedRefinementLoop
+    from core.source_ranker import SourceAuthorityRanker
     from core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
     from core.tool_cache import get_tool_cache
     from storage import get_storage_provider
     from tools.enhanced_search import MultiProviderSearchEngine
-    from core.source_ranker import SourceAuthorityRanker
     TOOL_USAGE_AVAILABLE = True
     logger.info("Tool usage enhancement components loaded successfully")
 except ImportError as e:

@@ -1,12 +1,7 @@
 """Collections of tool functions and classes exposed to CrewAI agents."""
 
 from .enhanced_search import EnhancedSearchTool, SearchQuery, SearchResult
-from .grammar_linter import (
-    GrammarAndStyleLinter,
-    GrammarIssue,
-    LinterResult,
-    StyleIssue,
-)
+from .grammar_linter import GrammarAndStyleLinter, GrammarIssue, LinterResult, StyleIssue
 from .tools import *
 
 __all__ = [

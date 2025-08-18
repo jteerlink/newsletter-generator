@@ -1,12 +1,19 @@
 """Error handling tests for the newsletter generator."""
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from src.agents.agents import ResearchAgent, WriterAgent, EditorAgent
+
+from src.agents.agents import EditorAgent, ResearchAgent, WriterAgent
 from src.core.exceptions import (
-    NewsletterGeneratorError, LLMError, SearchError, 
-    ScrapingError, ValidationError, AgentError
+    AgentError,
+    LLMError,
+    NewsletterGeneratorError,
+    ScrapingError,
+    SearchError,
+    ValidationError,
 )
+
 
 class TestAgentErrorHandling:
     """Test agent error handling."""

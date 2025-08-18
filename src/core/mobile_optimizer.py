@@ -15,10 +15,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from core.readability_analyzer import MobileReadabilityAnalyzer
-from core.typography_manager import ResponsiveTypographyManager
-from core.template_manager import NewsletterTemplate, NewsletterType
 from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension
+from core.readability_analyzer import MobileReadabilityAnalyzer
+from core.template_manager import NewsletterTemplate, NewsletterType
+from core.typography_manager import ResponsiveTypographyManager
 
 logger = logging.getLogger(__name__)
 

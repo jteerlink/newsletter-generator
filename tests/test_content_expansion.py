@@ -5,28 +5,25 @@ Tests for Phase 1: Intelligent Content Expansion including unit tests,
 integration tests, and quality validation.
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, Any, List
-import sys
 import os
+import sys
+import unittest
+from typing import Any, Dict
+from unittest.mock import Mock
+
+# Import test utilities
+from test_utils import TestAssertions, TestConstants, TestDataFactory
 
 # Add src to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from core.content_expansion import (
-    IntelligentContentExpander, 
-    ExpansionStrategy, 
+    ContentExpansionResult,
     ExpansionPriority,
-    ContentExpansionResult
+    ExpansionStrategy,
+    IntelligentContentExpander,
 )
-from core.section_expansion import (
-    SectionExpansionOrchestrator,
-    SectionType,
-    SectionExpansionResult
-)
+from core.section_expansion import SectionExpansionOrchestrator, SectionExpansionResult, SectionType
 from core.template_manager import NewsletterTemplate
 
 
@@ -37,26 +34,9 @@ class TestIntelligentContentExpander(unittest.TestCase):
         """Set up test fixtures."""
         self.expander = IntelligentContentExpander()
         
-        # Sample content for testing
-        self.sample_content = """
-# AI Newsletter
-
-## Introduction
-Artificial intelligence is transforming industries.
-
-## Main Content
-Machine learning algorithms are becoming more sophisticated.
-
-## Conclusion
-The future of AI looks promising.
-"""
-        
-        # Sample metadata
-        self.sample_metadata = {
-            'newsletter_type': 'technical',
-            'target_audience': 'developers',
-            'complexity_level': 'intermediate'
-        }
+        # Use test utilities for consistent test data
+        self.sample_content = TestDataFactory.create_sample_newsletter_content()
+        self.sample_metadata = TestDataFactory.create_test_metadata()
     
     def test_initialization(self):
         """Test proper initialization of content expander."""
@@ -85,12 +65,10 @@ The future of AI looks promising.
             metadata=self.sample_metadata
         )
         
-        # Verify result structure
-        self.assertIsInstance(result, ContentExpansionResult)
+        # Verify result structure using test utilities
+        TestAssertions.assert_expansion_result_valid(result, self)
         self.assertEqual(result.original_content, self.sample_content)
-        self.assertIsNotNone(result.expanded_content)
-        self.assertGreater(len(result.expanded_content), len(self.sample_content))
-        self.assertTrue(result.success)
+        TestAssertions.assert_word_count_improvement(self.sample_content, result.expanded_content, self)
     
     def test_expansion_target_achievement(self):
         """Test that expansion achieves target word counts."""

@@ -9,18 +9,19 @@ Comprehensive tests for the granular quality assessment including:
 - Improvement recommendations
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from src.core.section_aware_prompts import SectionType
 from src.core.section_quality_metrics import (
+    AggregatedQualityReport,
     QualityDimension,
     QualityMetric,
-    SectionQualityMetrics,
-    AggregatedQualityReport,
+    SectionAwareQualitySystem,
     SectionQualityAnalyzer,
-    SectionAwareQualitySystem
+    SectionQualityMetrics,
 )
-from src.core.section_aware_prompts import SectionType
 
 
 class TestQualityDimension:

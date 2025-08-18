@@ -2,11 +2,12 @@
 UI component tests for the unified Streamlit application
 """
 
-import pytest
-import sys
 import os
+import sys
 from pathlib import Path
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
+
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent

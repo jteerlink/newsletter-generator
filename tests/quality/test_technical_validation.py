@@ -4,12 +4,13 @@ Tests for Technical Quality Validator
 Tests the unified technical quality validation functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
 
+import pytest
+
+from src.quality.base import QualityMetrics, QualityReport, QualityStatus
 from src.quality.technical_validator import TechnicalQualityValidator
-from src.quality.base import QualityStatus, QualityMetrics, QualityReport
 
 
 class TestTechnicalQualityValidator:

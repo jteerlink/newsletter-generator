@@ -1,6 +1,8 @@
 # tests/scrapers/test_content_analyzer.py
-import pytest
 from datetime import datetime, timezone
+
+import pytest
+
 from src.scrapers.content_analyzer import ContentAnalyzer
 
 

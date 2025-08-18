@@ -14,23 +14,23 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from agents.base import SimpleAgent
+from agents.continuity_manager_agent import ContinuityManagerAgent
 from agents.editing import EditorAgent
 from agents.management import ManagerAgent
-from agents.research import ResearchAgent
-from agents.writing import WriterAgent
-from agents.technical_accuracy_agent import TechnicalAccuracyAgent
 from agents.readability_agent import ReadabilityAgent
-from agents.continuity_manager_agent import ContinuityManagerAgent
-from .agent_coordinator import AgentCoordinator, AgentExecutionSpec
+from agents.research import ResearchAgent
+from agents.technical_accuracy_agent import TechnicalAccuracyAgent
+from agents.writing import WriterAgent
 from core.content_expansion import IntelligentContentExpander
 
+from .agent_coordinator import AgentCoordinator, AgentExecutionSpec
 from .campaign_context import CampaignContext
 from .config_manager import ConfigManager
 from .execution_state import ExecutionState
 from .learning_system import LearningSystem
 from .refinement_loop import RefinementLoop, RefinementResult
-from .tool_usage_tracker import get_tool_tracker
 from .template_manager import AIMLTemplateManager, NewsletterType
+from .tool_usage_tracker import get_tool_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -328,6 +328,7 @@ class WorkflowOrchestrator:
 
     def _build_processing_context(self, content: str, metadata: Dict[str, Any]):
         from agents.base_agent import ProcessingContext, ProcessingMode
+
         # Map campaign context fields when available
         audience = None
         technical_level = None
@@ -693,7 +694,7 @@ class WorkflowOrchestrator:
         """Execute quality validation including template compliance."""
         try:
             from .advanced_quality_gates import ConfigurableQualityGate
-            
+
             # Initialize quality gate with enforcing level
             quality_gate = ConfigurableQualityGate(enforcement_level="enforcing")
             

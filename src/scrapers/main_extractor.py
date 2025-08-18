@@ -16,11 +16,7 @@ from typing import Any, Dict, List
 try:
     # Try relative imports first (when imported as module)
     from .config_loader import ConfigLoader, SourceConfig
-    from .crawl4ai_web_scraper import (
-        Crawl4AiWebScraper,
-        SmartCrawl4AiWebScraper,
-        WebScraperWrapper,
-    )
+    from .crawl4ai_web_scraper import Crawl4AiWebScraper, SmartCrawl4AiWebScraper, WebScraperWrapper
     from .data_processor import DataProcessor, ReportGenerator
     from .rss_extractor import RSSExtractor
 except ImportError:

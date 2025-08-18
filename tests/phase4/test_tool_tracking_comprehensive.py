@@ -7,26 +7,32 @@ This module contains comprehensive test suites for validating the complete
 tool tracking system including unit tests, integration tests, and workflow tests.
 """
 
-import pytest
+import json
+import os
+import sys
+import tempfile
 import time
 import uuid
-import tempfile
-import os
-import json
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+from unittest.mock import MagicMock, Mock, patch
 
-import sys
+import pytest
+
 sys.path.append('.')
 
-from src.core.tool_usage_tracker import get_tool_tracker, ToolUsageLogger, ToolUsageEntry, ToolExecutionStatus
-from src.core.tool_usage_analytics import create_analytics_dashboard
-from src.core.workflow_orchestrator import WorkflowOrchestrator
-from src.core.feedback_orchestrator import FeedbackOrchestrator
+from src.agents.editing import EditorAgent
 from src.agents.research import ResearchAgent
 from src.agents.writing import WriterAgent
-from src.agents.editing import EditorAgent
+from src.core.feedback_orchestrator import FeedbackOrchestrator
+from src.core.tool_usage_analytics import create_analytics_dashboard
+from src.core.tool_usage_tracker import (
+    ToolExecutionStatus,
+    ToolUsageEntry,
+    ToolUsageLogger,
+    get_tool_tracker,
+)
+from src.core.workflow_orchestrator import WorkflowOrchestrator
 
 
 class TestToolUsageTrackerUnit:
@@ -217,9 +223,9 @@ class TestWorkflowIntegration:
         
     def test_feedback_orchestrator_tracking(self):
         """Test feedback orchestrator tool tracking."""
-        from src.core.execution_state import ExecutionState
         from src.core.campaign_context import CampaignContext
-        
+        from src.core.execution_state import ExecutionState
+
         # Create test context
         workflow_id = f"test-{uuid.uuid4()}"
         execution_state = ExecutionState(workflow_id=workflow_id)
@@ -292,8 +298,9 @@ class TestPerformanceImpact:
         
     def test_memory_usage_assessment(self):
         """Assess memory usage impact of tracking."""
-        import psutil
         import os
+
+        import psutil
         
         tracker = get_tool_tracker()
         process = psutil.Process(os.getpid())
@@ -389,8 +396,8 @@ class TestSystemResilience:
             
     def test_concurrent_tracking(self):
         """Test tracking system handles concurrent access."""
-        import threading
         import queue
+        import threading
         
         tracker = get_tool_tracker()
         results = queue.Queue()

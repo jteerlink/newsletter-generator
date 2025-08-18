@@ -7,15 +7,16 @@ This module measures the performance impact of the tool tracking system
 on real newsletter generation workflows and provides optimization recommendations.
 """
 
-import time
-import psutil
+import json
 import os
 import statistics
-from pathlib import Path
-from typing import Dict, List, Any, Tuple
-import json
-
 import sys
+import time
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import psutil
+
 sys.path.append('.')
 
 from src.core.tool_usage_tracker import get_tool_tracker
@@ -188,8 +189,8 @@ class PerformanceAssessment:
     
     def _test_concurrent_access(self) -> Dict[str, Any]:
         """Test concurrent access to tracking system."""
-        import threading
         import queue
+        import threading
         
         print("  Testing concurrent access...")
         results_queue = queue.Queue()

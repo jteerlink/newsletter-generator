@@ -5,20 +5,22 @@ This module tests the feedback orchestrator and refinement loop
 implemented in Phase 4 of the enhanced agent architecture.
 """
 
-import pytest
-import sys
 import os
-from unittest.mock import Mock, patch
+import sys
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from core.feedback_orchestrator import FeedbackOrchestrator, FeedbackOrchestrationResult
-from core.refinement_loop import RefinementLoop, RefinementResult
 from core.campaign_context import CampaignContext
 from core.execution_state import ExecutionState
-from core.feedback_system import RequiredAction, Severity, IssueType
+from core.feedback_orchestrator import FeedbackOrchestrationResult, FeedbackOrchestrator
+from core.feedback_system import IssueType, RequiredAction, Severity
+from core.refinement_loop import RefinementLoop, RefinementResult
+
 
 class TestFeedbackOrchestrator:
     """Test cases for the FeedbackOrchestrator class."""
@@ -62,7 +64,7 @@ class TestFeedbackOrchestrator:
         content = "Test content with issues."
         
         # Mock linter result
-        from tools.grammar_linter import LinterResult, GrammarIssue, StyleIssue
+        from tools.grammar_linter import GrammarIssue, LinterResult, StyleIssue
         
         mock_linter_result = LinterResult(
             grammar_issues=[
@@ -118,7 +120,7 @@ class TestFeedbackOrchestrator:
     def test_calculate_verification_score(self):
         """Test verification score calculation."""
         from tools.enhanced_search import SearchResult
-        
+
         # Mock search results
         mock_results = [
             SearchResult(
@@ -194,7 +196,7 @@ class TestFeedbackOrchestrator:
     def test_determine_required_action(self):
         """Test required action determination."""
         from core.feedback_system import FeedbackItem
-        
+
         # Test with high priority issues
         high_priority_items = [
             FeedbackItem(
@@ -286,7 +288,7 @@ class TestRefinementLoop:
         """Test quality threshold checking."""
         from core.feedback_orchestrator import FeedbackOrchestrationResult
         from core.feedback_system import StructuredFeedback
-        
+
         # Mock feedback result with good score
         mock_feedback = StructuredFeedback(
             overall_score=0.85,
@@ -317,7 +319,7 @@ class TestRefinementLoop:
         
         # Mock feedback result with style issues
         from core.feedback_orchestrator import FeedbackOrchestrationResult
-        from core.feedback_system import StructuredFeedback, FeedbackItem
+        from core.feedback_system import FeedbackItem, StructuredFeedback
         
         feedback_items = [
             FeedbackItem(

@@ -10,24 +10,26 @@ Tests the complete enhanced agent architecture workflow including:
 - End-to-end newsletter generation
 """
 
-import pytest
-import sys
 import os
+import sys
 import tempfile
 import time
-from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from core.workflow_orchestrator import WorkflowOrchestrator, WorkflowResult
-from core.config_manager import ConfigManager
 from core.campaign_context import CampaignContext
+from core.config_manager import ConfigManager
 from core.execution_state import ExecutionState
 from core.feedback_orchestrator import FeedbackOrchestrator
-from core.refinement_loop import RefinementLoop
 from core.learning_system import LearningSystem
+from core.refinement_loop import RefinementLoop
+from core.workflow_orchestrator import WorkflowOrchestrator, WorkflowResult
+
 
 class TestWorkflowIntegration:
     """Test complete workflow integration."""
@@ -514,8 +516,9 @@ class TestPerformanceIntegration:
     
     def test_memory_usage_integration(self):
         """Test memory usage of integrated components."""
-        import psutil
         import os
+
+        import psutil
         
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss

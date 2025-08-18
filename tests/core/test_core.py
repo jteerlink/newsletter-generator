@@ -1,14 +1,17 @@
 """Tests for core functionality."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from src.core.core import query_llm
-from src.core.exceptions import LLMError
-from src.core.content_validator import ContentValidator
-from src.core.quality_gate import NewsletterQualityGate, QualityGateStatus, QualityGateResult
-from src.core.utils import setup_logging, retry_on_failure, chunk_text, embed_chunks
 import logging
 import os
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+
+from src.core.content_validator import ContentValidator
+from src.core.core import query_llm
+from src.core.exceptions import LLMError
+from src.core.quality_gate import NewsletterQualityGate, QualityGateResult, QualityGateStatus
+from src.core.utils import chunk_text, embed_chunks, retry_on_failure, setup_logging
+
 
 class TestLLMQuery:
     """Test LLM query functionality."""
@@ -387,8 +390,11 @@ class TestConstants:
     def test_constants_import(self):
         """Test that constants can be imported."""
         from src.core.constants import (
-            DEFAULT_LLM_MODEL, LLM_TIMEOUT, DEFAULT_SEARCH_RESULTS,
-            MINIMUM_QUALITY_SCORE, LOG_LEVEL
+            DEFAULT_LLM_MODEL,
+            DEFAULT_SEARCH_RESULTS,
+            LLM_TIMEOUT,
+            LOG_LEVEL,
+            MINIMUM_QUALITY_SCORE,
         )
         
         assert DEFAULT_LLM_MODEL is not None
@@ -420,10 +426,14 @@ class TestExceptions:
     def test_exception_hierarchy(self):
         """Test exception hierarchy."""
         from src.core.exceptions import (
-            NewsletterGeneratorError, LLMError, SearchError,
-            ScrapingError, ValidationError, AgentError
+            AgentError,
+            LLMError,
+            NewsletterGeneratorError,
+            ScrapingError,
+            SearchError,
+            ValidationError,
         )
-        
+
         # Test that all exceptions inherit from base exception
         assert issubclass(LLMError, NewsletterGeneratorError)
         assert issubclass(SearchError, NewsletterGeneratorError)

@@ -5,15 +5,16 @@ This module tests the new modular agent architecture including base classes,
 specialized agents, and workflow management.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from typing import Dict, Any
+from typing import Any, Dict
+from unittest.mock import MagicMock, Mock, patch
 
-from src.agents.base import SimpleAgent, AgentType, TaskResult, TaskStatus, AgentContext
+import pytest
+
+from src.agents.base import AgentContext, AgentType, SimpleAgent, TaskResult, TaskStatus
+from src.agents.editing import EditorAgent
+from src.agents.management import ManagerAgent, WorkflowPlan, WorkflowStep
 from src.agents.research import ResearchAgent
 from src.agents.writing import WriterAgent
-from src.agents.editing import EditorAgent
-from src.agents.management import ManagerAgent, WorkflowStep, WorkflowPlan
 from src.core.template_manager import NewsletterType
 
 
@@ -447,7 +448,7 @@ class TestAgentIntegration:
     def test_agent_creation_function(self):
         """Test the convenience function for creating agents."""
         from src.agents.agents import create_agent, get_available_agent_types
-        
+
         # Test agent creation
         research_agent = create_agent('research')
         writer_agent = create_agent('writer')

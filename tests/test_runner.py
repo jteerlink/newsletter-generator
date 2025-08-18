@@ -5,10 +5,10 @@ Main test runner that executes all test suites and provides comprehensive
 reporting for the newsletter enhancement system.
 """
 
-import unittest
-import sys
 import os
+import sys
 import time
+import unittest
 from io import StringIO
 
 # Add src to path
@@ -16,23 +16,20 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Import all test modules
 from test_content_expansion import (
+    TestContentExpansionIntegration,
     TestIntelligentContentExpander,
     TestSectionExpansionOrchestrator,
-    TestContentExpansionIntegration
+)
+from test_integration_comprehensive import (
+    TestComprehensiveNewsletterEnhancement,
+    TestQualityGateIntegration,
 )
 from test_mobile_optimization import (
     TestMobileContentOptimizer,
     TestMobileReadabilityAnalyzer,
-    TestResponsiveTypographyManager
+    TestResponsiveTypographyManager,
 )
-from test_integration_comprehensive import (
-    TestComprehensiveNewsletterEnhancement,
-    TestQualityGateIntegration
-)
-from test_quality_gates_enhanced import (
-    TestEnhancedQualityGates,
-    TestQualityDimensionAssessment
-)
+from test_quality_gates_enhanced import TestEnhancedQualityGates, TestQualityDimensionAssessment
 
 
 class NewsletterTestResult(unittest.TestResult):

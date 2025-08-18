@@ -10,15 +10,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from core.constants import (
-    MANDATORY_TOOLS,
-    MANDATORY_VECTOR_TOP_K,
-    MANDATORY_WEB_MAX_RESULTS,
-)
+from core.constants import MANDATORY_TOOLS, MANDATORY_VECTOR_TOP_K, MANDATORY_WEB_MAX_RESULTS
 from core.tool_usage_tracker import get_tool_tracker
 from storage import get_storage_provider
 from tools.tools import search_web
-
 
 logger = logging.getLogger(__name__)
 

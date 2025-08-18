@@ -1,9 +1,11 @@
+import os
+from unittest.mock import MagicMock, patch
+
+import ollama
 import pytest
-from unittest.mock import patch, MagicMock
+
 from src.core.core import query_llm
 from src.core.exceptions import LLMError
-import ollama
-import os
 
 
 def test_query_llm_success():

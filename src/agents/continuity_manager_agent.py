@@ -10,18 +10,19 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
-from .base_agent import (
-    BaseSpecializedAgent,
-    ProcessingContext,
-    ProcessingResult,
-    AgentConfiguration,
-    ProcessingMode,
-)
 from core.continuity_validator import ContinuityValidator
 from core.section_aware_prompts import SectionType
+
+from .base_agent import (
+    AgentConfiguration,
+    BaseSpecializedAgent,
+    ProcessingContext,
+    ProcessingMode,
+    ProcessingResult,
+)
 
 logger = logging.getLogger(__name__)
 

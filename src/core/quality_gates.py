@@ -13,11 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from core.constants import (
-    MIN_VECTOR_QUERIES,
-    MIN_WEB_SEARCHES,
-    TOOL_ENFORCEMENT_ENABLED
-)
+from core.constants import MIN_VECTOR_QUERIES, MIN_WEB_SEARCHES, TOOL_ENFORCEMENT_ENABLED
 
 logger = logging.getLogger(__name__)
 

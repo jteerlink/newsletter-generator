@@ -908,7 +908,7 @@ class ConfigurableQualityGate:
     def _assess_template_compliance(self, content: str, metadata: Dict[str, Any]) -> QualityScore:
         """Assess template compliance using the template compliance validator."""
         try:
-            from .template_compliance import TemplateComplianceValidator, ComplianceLevel
+            from .template_compliance import ComplianceLevel, TemplateComplianceValidator
             
             template_type = metadata.get('template_type', 'general')
             validator = TemplateComplianceValidator(ComplianceLevel.STANDARD)

@@ -2,13 +2,22 @@
 Tests for the unified scraper interface.
 """
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock, AsyncMock
 from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
 from src.scrapers.scraper import (
-    ScrapedContent, ScrapingRequest, ScrapingProvider,
-    Crawl4AIScrapingProvider, RequestsScrapingProvider, SeleniumScrapingProvider,
-    UnifiedScraper, get_unified_scraper, scrape_url, async_scrape_url
+    Crawl4AIScrapingProvider,
+    RequestsScrapingProvider,
+    ScrapedContent,
+    ScrapingProvider,
+    ScrapingRequest,
+    SeleniumScrapingProvider,
+    UnifiedScraper,
+    async_scrape_url,
+    get_unified_scraper,
+    scrape_url,
 )
 
 

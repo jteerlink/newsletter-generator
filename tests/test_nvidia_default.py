@@ -5,10 +5,11 @@ Test to verify NVIDIA pipeline is configured as default.
 """
 
 import os
-import pytest
+import sys
 from unittest.mock import patch
 
-import sys
+import pytest
+
 sys.path.append('.')
 
 from src.core.constants import LLM_PROVIDER
@@ -67,10 +68,11 @@ class TestNvidiaDefault:
         }
         
         with patch.dict(os.environ, nvidia_env):
-            from src.core.constants import LLM_PROVIDER as current_provider
             # Reload the module to get updated constants
             import importlib
+
             import src.core.constants
+            from src.core.constants import LLM_PROVIDER as current_provider
             importlib.reload(src.core.constants)
             
             # Verify provider is nvidia

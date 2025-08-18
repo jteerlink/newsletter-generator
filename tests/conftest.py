@@ -1,13 +1,14 @@
 """Shared test fixtures and configuration."""
 
-import pytest
-import tempfile
+import logging
+import os
 import shutil
+import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
-import sys
-import os
-import logging
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))

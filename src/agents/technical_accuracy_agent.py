@@ -7,17 +7,20 @@ verifying technical terminology, and providing accuracy confidence scores.
 
 from __future__ import annotations
 
-import re
-import logging
-import os
-from typing import Dict, Any, List, Optional, Tuple, Set
-from dataclasses import dataclass, field
 import ast
 import json
+import logging
+import os
+import re
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from .base_agent import (
-    BaseSpecializedAgent, ProcessingContext, ProcessingResult, 
-    AgentConfiguration, ProcessingMode
+    AgentConfiguration,
+    BaseSpecializedAgent,
+    ProcessingContext,
+    ProcessingMode,
+    ProcessingResult,
 )
 
 logger = logging.getLogger(__name__)

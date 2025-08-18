@@ -5,26 +5,24 @@ End-to-end testing for the complete newsletter enhancement system including
 Phase 1 (content expansion) and Phase 2 (mobile optimization) integration.
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import sys
 import os
-import tempfile
+import sys
 import time
+import unittest
+from unittest.mock import Mock
 
 # Add src to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+from agents.writing import WriterAgent
+from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension
 from core.content_expansion import IntelligentContentExpander
-from core.section_expansion import SectionExpansionOrchestrator
 from core.mobile_optimizer import MobileContentOptimizer, MobileOptimizationLevel
 from core.readability_analyzer import MobileReadabilityAnalyzer
-from core.typography_manager import ResponsiveTypographyManager, DeviceType
-from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension
-from core.workflow_orchestrator import WorkflowOrchestrator
-from agents.writing import WriterAgent
+from core.section_expansion import SectionExpansionOrchestrator
 from core.template_manager import NewsletterTemplate
+from core.typography_manager import DeviceType, ResponsiveTypographyManager
+from core.workflow_orchestrator import WorkflowOrchestrator
 
 
 class TestComprehensiveNewsletterEnhancement(unittest.TestCase):

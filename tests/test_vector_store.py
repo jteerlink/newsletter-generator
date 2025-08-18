@@ -1,7 +1,10 @@
+import tempfile
+
 import pytest
+
 from src.storage import ChromaStorageProvider
 from src.storage.base import StorageConfig
-import tempfile
+
 
 def test_vector_store_add_and_query():
     text = "This is a test document. " * 50
@@ -15,8 +18,9 @@ def test_vector_store_add_and_query():
         store = ChromaStorageProvider(config)
         assert store.initialize()
         
-        from src.storage.base import DocumentMetadata, DataType
         from datetime import datetime
+
+        from src.storage.base import DataType, DocumentMetadata
         
         metadata = DocumentMetadata(
             doc_id="test123",

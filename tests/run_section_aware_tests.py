@@ -9,14 +9,14 @@ Comprehensive test runner for the Phase 1 section-aware components including:
 - Coverage reporting
 """
 
-import os
-import sys
-import subprocess
 import argparse
 import json
-from pathlib import Path
-from typing import List, Dict, Any
 import logging
+import os
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any, Dict, List
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -49,8 +49,8 @@ class SectionAwareTestRunner:
     def check_dependencies(self) -> bool:
         """Check if required dependencies are available."""
         try:
-            import pytest
             import coverage
+            import pytest
             logger.info("Required test dependencies found")
             return True
         except ImportError as e:

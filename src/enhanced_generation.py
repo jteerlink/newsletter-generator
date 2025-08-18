@@ -21,18 +21,22 @@ logger = logging.getLogger(__name__)
 def execute_tool_augmented_generation(topic: str, audience: str, 
                                     tool_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Execute newsletter generation with full tool usage enhancement and monitoring."""
-    from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
-    from core.information_enricher import InformationEnricher
-    from core.section_aware_refinement import ToolAugmentedRefinementLoop, SectionType
     from core.advanced_quality_gates import AdvancedQualityGate
+    from core.claim_validator import CitationGenerator, ClaimExtractor, SourceValidator
+    from core.core import query_llm
+    from core.generation_monitor import (
+        GenerationCheckpoint,
+        GenerationStatus,
+        get_generation_monitor,
+    )
+    from core.information_enricher import InformationEnricher
+    from core.section_aware_refinement import SectionType, ToolAugmentedRefinementLoop
+    from core.source_ranker import SourceAuthorityRanker
+    from core.template_compliance import ComplianceLevel, validate_newsletter_compliance
     from core.tool_analytics import ToolEffectivenessAnalyzer, ToolType
     from core.tool_cache import get_tool_cache
     from storage import get_storage_provider
     from tools.enhanced_search import MultiProviderSearchEngine
-    from core.source_ranker import SourceAuthorityRanker
-    from core.core import query_llm
-    from core.generation_monitor import get_generation_monitor, GenerationCheckpoint, GenerationStatus
-    from core.template_compliance import validate_newsletter_compliance, ComplianceLevel
     
     start_time = time.time()
     session_id = f"session_{int(time.time())}"
@@ -462,8 +466,9 @@ def execute_tool_augmented_generation(topic: str, audience: str,
 def execute_basic_generation(topic: str, audience: str, 
                            tool_usage_metrics: Dict[str, Any]) -> Dict[str, Any]:
     """Fallback to basic generation when tool components unavailable."""
-    from core.core import query_llm
     import os
+
+    from core.core import query_llm
     
     start_time = time.time()
     

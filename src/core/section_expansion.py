@@ -15,9 +15,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from core.content_expansion import ExpansionOpportunity, ExpansionStrategy, ExpansionPriority
-from core.template_manager import NewsletterTemplate, NewsletterType
 import core.core as core
+from core.content_expansion import ExpansionOpportunity, ExpansionPriority, ExpansionStrategy
+from core.template_manager import NewsletterTemplate, NewsletterType
 
 logger = logging.getLogger(__name__)
 

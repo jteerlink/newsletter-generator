@@ -9,19 +9,20 @@ Comprehensive tests for the cross-section coherence validation including:
 - Comprehensive continuity reporting
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from src.core.continuity_validator import (
-    ContinuityIssueType,
     ContinuityIssue,
-    TransitionAnalysis,
-    StyleAnalysis,
+    ContinuityIssueType,
     ContinuityReport,
-    TransitionAnalyzer,
-    StyleConsistencyAnalyzer,
+    ContinuityValidator,
     RedundancyDetector,
-    ContinuityValidator
+    StyleAnalysis,
+    StyleConsistencyAnalyzer,
+    TransitionAnalysis,
+    TransitionAnalyzer,
 )
 from src.core.section_aware_prompts import SectionType
 

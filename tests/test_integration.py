@@ -9,22 +9,23 @@ Comprehensive integration tests covering:
 - Backward compatibility
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-import tempfile
 import os
+import tempfile
+from unittest.mock import MagicMock, patch
 
-from src.core.section_aware_prompts import (
-    SectionType, SectionAwarePromptManager, PromptContext
-)
+import pytest
+
+from src.core.continuity_validator import ContinuityReport, ContinuityValidator
+from src.core.section_aware_prompts import PromptContext, SectionAwarePromptManager, SectionType
 from src.core.section_aware_refinement import (
-    SectionAwareRefinementLoop, SectionBoundaryDetector, SectionContent
+    SectionAwareRefinementLoop,
+    SectionBoundaryDetector,
+    SectionContent,
 )
 from src.core.section_quality_metrics import (
-    SectionAwareQualitySystem, SectionQualityAnalyzer, AggregatedQualityReport
-)
-from src.core.continuity_validator import (
-    ContinuityValidator, ContinuityReport
+    AggregatedQualityReport,
+    SectionAwareQualitySystem,
+    SectionQualityAnalyzer,
 )
 
 
@@ -539,7 +540,7 @@ class TestBackwardCompatibility:
     
     def test_convenience_functions(self):
         """Test convenience functions for backward compatibility."""
-        from src.core.section_aware_prompts import get_section_prompt, detect_section_type
+        from src.core.section_aware_prompts import detect_section_type, get_section_prompt
         
         context = {
             'topic': 'AI Research',

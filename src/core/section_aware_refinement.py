@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from .section_aware_prompts import SectionType, SectionAwarePromptManager
+from .section_aware_prompts import SectionAwarePromptManager, SectionType
 
 logger = logging.getLogger(__name__)
 
@@ -580,11 +580,11 @@ class ToolAugmentedRefinementLoop(SectionAwareRefinementLoop):
         super().__init__(max_iterations)
         
         # Import tool systems
-        from core.claim_validator import ClaimExtractor, SourceValidator, CitationGenerator
+        from core.claim_validator import CitationGenerator, ClaimExtractor, SourceValidator
         from core.information_enricher import InformationEnricher
         from core.tool_cache import get_tool_cache
         from storage import get_storage_provider
-        
+
         # Initialize tool components
         self.claim_extractor = ClaimExtractor()
         self.source_validator = SourceValidator()

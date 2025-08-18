@@ -5,17 +5,19 @@ This module tests the grammar linter and enhanced search tools
 implemented in Phase 3 of the enhanced agent architecture.
 """
 
-import pytest
-import sys
 import os
-from unittest.mock import Mock, patch
+import sys
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from tools.grammar_linter import GrammarAndStyleLinter, LinterResult, GrammarIssue, StyleIssue
-from tools.enhanced_search import EnhancedSearchTool, SearchResult, SearchQuery
+from tools.enhanced_search import EnhancedSearchTool, SearchQuery, SearchResult
+from tools.grammar_linter import GrammarAndStyleLinter, GrammarIssue, LinterResult, StyleIssue
+
 
 class TestGrammarAndStyleLinter:
     """Test cases for the GrammarAndStyleLinter class."""
@@ -357,8 +359,8 @@ class TestIntegration:
     
     def test_tool_availability(self):
         """Test that all Phase 3 tools are available."""
-        from tools import GrammarAndStyleLinter, EnhancedSearchTool
-        
+        from tools import EnhancedSearchTool, GrammarAndStyleLinter
+
         # Test linter availability
         linter = GrammarAndStyleLinter()
         assert linter is not None

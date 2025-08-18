@@ -9,17 +9,18 @@ Tests the complete Phase 2 workflow:
 - End-to-end workflow
 """
 
-import pytest
 import logging
-import sys
 import os
+import sys
+
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from src.agents.agents import ResearchAgent, SimpleAgent
-from src.tools.tools import search_web, search_knowledge_base, AVAILABLE_TOOLS
 from src.core.core import query_llm
+from src.tools.tools import AVAILABLE_TOOLS, search_knowledge_base, search_web
 
 logger = logging.getLogger(__name__)
 
@@ -133,8 +134,8 @@ class TestPhase2Requirements:
     
     def test_agent_framework_exists(self):
         """Verify agent framework exists (Task 2.4)."""
-        from src.agents.agents import SimpleAgent, ResearchAgent
-        
+        from src.agents.agents import ResearchAgent, SimpleAgent
+
         # Test that classes exist and are instantiable
         agent = SimpleAgent("Test", "Test", "Test", "Test")
         research_agent = ResearchAgent()

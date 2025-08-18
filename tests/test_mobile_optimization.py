@@ -5,34 +5,32 @@ Tests for Phase 2: Mobile-First Optimization including mobile content optimizati
 responsive typography, and readability analysis.
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-from dataclasses import dataclass
-from typing import Dict, Any, List
-import sys
 import os
+import sys
+import unittest
+from typing import Any, Dict
+from unittest.mock import Mock
 
 # Add src to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from core.mobile_optimizer import (
+    ContentStructureType,
     MobileContentOptimizer,
     MobileOptimizationLevel,
-    ContentStructureType,
-    MobileOptimizationResult
+    MobileOptimizationResult,
 )
 from core.readability_analyzer import (
+    MobileFriendlinessMetrics,
     MobileReadabilityAnalyzer,
     MobileReadabilityReport,
     ReadabilityMetrics,
-    MobileFriendlinessMetrics
 )
 from core.typography_manager import (
-    ResponsiveTypographyManager,
     DeviceType,
+    ResponsiveTypographyManager,
     TypographyLevel,
-    TypographyOptimizationResult
+    TypographyOptimizationResult,
 )
 
 

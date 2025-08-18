@@ -9,18 +9,19 @@ Comprehensive tests for the multi-pass section processing system including:
 - Content reassembly
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
+
+from src.core.section_aware_prompts import SectionType
 from src.core.section_aware_refinement import (
     RefinementPass,
-    SectionBoundary,
-    SectionContent,
     RefinementResult,
+    SectionAwareRefinementLoop,
+    SectionBoundary,
     SectionBoundaryDetector,
-    SectionAwareRefinementLoop
+    SectionContent,
 )
-from src.core.section_aware_prompts import SectionType
 
 
 class TestRefinementPass:

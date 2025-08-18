@@ -8,20 +8,21 @@ Comprehensive tests for the section-aware prompt system including:
 - Backward compatibility
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from src.core.section_aware_prompts import (
-    SectionType,
+    AnalysisPromptTemplate,
+    ConclusionPromptTemplate,
+    IntroductionPromptTemplate,
+    NewsPromptTemplate,
     PromptContext,
     SectionAwarePromptManager,
-    IntroductionPromptTemplate,
-    AnalysisPromptTemplate,
+    SectionType,
     TutorialPromptTemplate,
-    NewsPromptTemplate,
-    ConclusionPromptTemplate,
+    detect_section_type,
     get_section_prompt,
-    detect_section_type
 )
 
 

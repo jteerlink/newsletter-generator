@@ -16,13 +16,7 @@ from tools.grammar_linter import GrammarAndStyleLinter, LinterResult
 
 from .campaign_context import CampaignContext
 from .execution_state import ExecutionState
-from .feedback_system import (
-    FeedbackItem,
-    IssueType,
-    RequiredAction,
-    Severity,
-    StructuredFeedback,
-)
+from .feedback_system import FeedbackItem, IssueType, RequiredAction, Severity, StructuredFeedback
 from .tool_usage_tracker import get_tool_tracker
 
 logger = logging.getLogger(__name__)

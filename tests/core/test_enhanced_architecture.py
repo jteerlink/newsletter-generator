@@ -5,12 +5,20 @@ This module tests the new core data structures including CampaignContext,
 ExecutionState, and StructuredFeedback.
 """
 
-import pytest
 import time
+
+import pytest
+
 from src.core.campaign_context import CampaignContext
-from src.core.execution_state import ExecutionState, TaskResult
-from src.core.feedback_system import StructuredFeedback, FeedbackItem, IssueType, Severity, RequiredAction
 from src.core.config_manager import ConfigManager
+from src.core.execution_state import ExecutionState, TaskResult
+from src.core.feedback_system import (
+    FeedbackItem,
+    IssueType,
+    RequiredAction,
+    Severity,
+    StructuredFeedback,
+)
 
 
 class TestCampaignContext:

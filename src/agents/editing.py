@@ -12,8 +12,8 @@ import re
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from core.campaign_context import CampaignContext
 import core.core as core
+from core.campaign_context import CampaignContext
 from core.feedback_system import (
     FeedbackGenerator,
     IssueType,

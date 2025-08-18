@@ -2,12 +2,20 @@
 Tests for the unified search provider interface.
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+
 from src.tools.search_provider import (
-    SearchResult, SearchQuery, UnifiedSearchProvider,
-    SerperSearchProvider, DuckDuckGoSearchProvider, KnowledgeBaseSearchProvider,
-    get_unified_search_provider, search_web, search_web_with_alternatives
+    DuckDuckGoSearchProvider,
+    KnowledgeBaseSearchProvider,
+    SearchQuery,
+    SearchResult,
+    SerperSearchProvider,
+    UnifiedSearchProvider,
+    get_unified_search_provider,
+    search_web,
+    search_web_with_alternatives,
 )
 
 

@@ -5,23 +5,22 @@ Tests for the enhanced quality gate system including new Phase 1 and Phase 2
 quality dimensions and validation workflows.
 """
 
-import pytest
-import unittest
-from unittest.mock import Mock, patch, MagicMock
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import Mock
 
 # Add src to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from core.advanced_quality_gates import (
-    ConfigurableQualityGate,
-    QualityDimension,
-    QualityReport
-)
+from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension, QualityReport
 from core.content_expansion import ContentExpansionResult
 from core.mobile_optimizer import MobileOptimizationResult
-from core.readability_analyzer import MobileReadabilityReport, ReadabilityMetrics, MobileFriendlinessMetrics
+from core.readability_analyzer import (
+    MobileFriendlinessMetrics,
+    MobileReadabilityReport,
+    ReadabilityMetrics,
+)
 
 
 class TestEnhancedQualityGates(unittest.TestCase):

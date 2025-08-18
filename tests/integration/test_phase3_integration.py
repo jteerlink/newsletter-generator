@@ -6,17 +6,18 @@ integration with the newsletter workflow orchestrator.
 """
 
 import asyncio
-import pytest
 import tempfile
 import time
 from unittest.mock import Mock, patch
 
-from src.core.workflow_orchestrator import WorkflowOrchestrator, WorkflowResult
+import pytest
+
 from src.agents.writing import WriterAgent
-from src.tools.syntax_validator import SyntaxValidator, ValidationLevel
-from src.tools.code_executor import SafeCodeExecutor, ExecutionConfig, SecurityLevel
-from src.templates.code_templates import template_library, Framework, TemplateCategory
 from src.core.template_manager import AIMLTemplateManager, NewsletterType
+from src.core.workflow_orchestrator import WorkflowOrchestrator, WorkflowResult
+from src.templates.code_templates import Framework, TemplateCategory, template_library
+from src.tools.code_executor import ExecutionConfig, SafeCodeExecutor, SecurityLevel
+from src.tools.syntax_validator import SyntaxValidator, ValidationLevel
 
 
 class TestPhase3Integration:
@@ -413,8 +414,9 @@ class TestPhase3PerformanceMetrics:
     
     def test_memory_usage_optimization(self):
         """Test memory usage during code generation"""
-        import psutil
         import os
+
+        import psutil
         
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB

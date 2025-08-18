@@ -8,22 +8,26 @@ Tests the specialized agents implemented in Phase 2:
 - AgentCoordinator
 """
 
-import pytest
-import sys
 import os
-from typing import Dict, Any
+import sys
+from typing import Any, Dict
+
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.agents.technical_accuracy_agent import TechnicalAccuracyAgent, TechnicalClaim, CodeBlock
-from src.agents.readability_agent import ReadabilityAgent, ReadabilityMetrics
-from src.agents.continuity_manager_agent import ContinuityManagerAgent
-from src.core.agent_coordinator import AgentCoordinator, AgentExecutionSpec
 from src.agents.base_agent import (
-    ProcessingContext, ProcessingResult, ProcessingMode, 
-    AgentConfiguration, AgentStatus
+    AgentConfiguration,
+    AgentStatus,
+    ProcessingContext,
+    ProcessingMode,
+    ProcessingResult,
 )
+from src.agents.continuity_manager_agent import ContinuityManagerAgent
+from src.agents.readability_agent import ReadabilityAgent, ReadabilityMetrics
+from src.agents.technical_accuracy_agent import CodeBlock, TechnicalAccuracyAgent, TechnicalClaim
+from src.core.agent_coordinator import AgentCoordinator, AgentExecutionSpec
 
 
 class TestTechnicalAccuracyAgent:
@@ -259,7 +263,7 @@ class TestContinuityManagerAgent:
         agent = ContinuityManagerAgent()
         
         from src.core.section_aware_prompts import SectionType
-        
+
         # Test reordering with conclusion first
         current = [SectionType.CONCLUSION, SectionType.INTRODUCTION, SectionType.ANALYSIS]
         proposed = agent._propose_section_order(current)

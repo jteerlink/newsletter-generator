@@ -2,19 +2,28 @@
 Tests for the cache manager.
 """
 
-import pytest
-import tempfile
-import os
 import json
-from unittest.mock import Mock, patch, MagicMock
+import os
+import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 
 from src.tools.cache_manager import (
-    CacheEntry, MemoryCache, FileCache, CacheManager,
-    get_cache_manager, cached, cache_search_results, get_cached_search_results,
-    cache_scraped_content, get_cached_scraped_content,
-    clear_search_cache, clear_scraping_cache
+    CacheEntry,
+    CacheManager,
+    FileCache,
+    MemoryCache,
+    cache_scraped_content,
+    cache_search_results,
+    cached,
+    clear_scraping_cache,
+    clear_search_cache,
+    get_cache_manager,
+    get_cached_scraped_content,
+    get_cached_search_results,
 )
 
 

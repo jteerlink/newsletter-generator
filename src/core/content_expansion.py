@@ -15,9 +15,9 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-from core.template_manager import NewsletterTemplate, NewsletterType
-from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension
 import core.core as core
+from core.advanced_quality_gates import ConfigurableQualityGate, QualityDimension
+from core.template_manager import NewsletterTemplate, NewsletterType
 
 logger = logging.getLogger(__name__)
 

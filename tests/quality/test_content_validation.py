@@ -4,12 +4,13 @@ Tests for Content Quality Validator
 Tests the unified content quality validation functionality.
 """
 
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
 
+import pytest
+
+from src.quality.base import QualityMetrics, QualityReport, QualityStatus
 from src.quality.content_validator import ContentQualityValidator
-from src.quality.base import QualityStatus, QualityMetrics, QualityReport
 
 
 class TestContentQualityValidator:

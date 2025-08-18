@@ -5,15 +5,22 @@ This module tests the enhanced agent capabilities including context-driven writi
 tool-assisted auditing, and advanced research capabilities.
 """
 
-import pytest
+from typing import Any, Dict
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
-from src.agents.writing import WriterAgent
+import pytest
+
 from src.agents.editing import EditorAgent
 from src.agents.research import ResearchAgent
+from src.agents.writing import WriterAgent
 from src.core.campaign_context import CampaignContext
-from src.core.feedback_system import StructuredFeedback, FeedbackItem, IssueType, Severity, RequiredAction
+from src.core.feedback_system import (
+    FeedbackItem,
+    IssueType,
+    RequiredAction,
+    Severity,
+    StructuredFeedback,
+)
 
 
 class TestEnhancedWriterAgent:
